@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install:*)",
+      "Bash(playwright install:*)",
+      "Bash(python setup_login.py:*)",
+      "Bash(python3:*)",
+      "Bash(curl:*)",
+      "Bash(npm create:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run dev:*)",
+      "Bash(pkill:*)"
+    ]
+  }
+}
