@@ -65,12 +65,24 @@ python3 manual_login.py
 3. Log in with your credentials (email/password or Google)
 4. Wait for the chat interface to fully load
 5. Come back to the terminal and press **ENTER**
-6. Your session is saved in `default_profile/` folder
+6. Your session is saved in `chatgpt_profile/` folder
 
 **Important:**
 - Don't close the browser manually - let the script close it
 - Make sure you see the chat input box before pressing ENTER
 - This only needs to be done once (session persists)
+
+**Custom profile location (optional):**
+
+```bash
+python3 manual_login.py ./my_custom_profile
+```
+
+The chosen path is written to `profile_config.txt`, which the server reads on
+startup. That file is gitignored (it's machine-specific), so it won't exist on a
+fresh clone — `manual_login.py` creates it for you. You can also override the
+path per-run with the `CHATGPT_PROFILE_PATH` environment variable. The default
+is `./chatgpt_profile`.
 
 ---
 
@@ -238,6 +250,17 @@ Open http://localhost:5173 in your browser to:
 
 ## 🔧 Troubleshooting
 
+### `profile_config.txt does not exist`
+
+**Problem:** Older versions of `manual_login.py` required `profile_config.txt`,
+but that file is gitignored and so is never present on a fresh clone.
+
+**Solution:** Update to the latest version. `manual_login.py` now defaults to
+`./chatgpt_profile` and writes `profile_config.txt` itself on first run — no
+manual setup needed.
+
+---
+
 ### "Server not running" error
 
 **Problem:** The frontend can't connect to the API.
@@ -381,7 +404,7 @@ Get detailed server information.
 {
   "server": "running",
   "browser_ready": true,
-  "profile_path": "./default_profile"
+  "profile_path": "/path/to/chatgpt_profile"
 }
 ```
 
@@ -403,12 +426,23 @@ headless=True,  # Change from False to True
 
 ### Change Profile Location
 
-Edit `profile_config.txt`:
+Pass the path to the login script (it will be remembered):
+```bash
+python3 manual_login.py ./my_custom_profile
+```
+
+Or edit `profile_config.txt` directly:
 ```
 ./my_custom_profile
 ```
 
-Or specify when running `manual_login.py` (choose option 3 for custom name).
+Or set the environment variable for a single run:
+```bash
+CHATGPT_PROFILE_PATH=./my_custom_profile python3 chatgpt_api_server.py
+```
+
+Relative paths are resolved against the repo directory, not your shell's
+current directory.
 
 ---
 
@@ -469,9 +503,10 @@ def safe_ask(prompt):
 .
 ├── chatgpt_api_server.py    # Main API server (Flask + Playwright)
 ├── manual_login.py           # One-time login helper
+├── profile_config.py         # Shared profile-path resolution
 ├── requirements.txt          # Python dependencies
-├── profile_config.txt        # Stores profile path
-├── default_profile/          # Your saved ChatGPT session
+├── profile_config.txt        # Stores profile path (generated, gitignored)
+├── chatgpt_profile/          # Your saved ChatGPT session (gitignored)
 ├── frontend/                 # React web UI (optional)
 │   ├── src/
 │   │   ├── App.jsx          # Main React component
@@ -494,7 +529,7 @@ def safe_ask(prompt):
 
 2. **Profile corrupted:**
    ```bash
-   rm -rf default_profile/
+   rm -rf chatgpt_profile/
    python3 manual_login.py
    ```
 

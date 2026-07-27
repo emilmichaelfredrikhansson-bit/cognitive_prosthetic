@@ -13,6 +13,8 @@ import logging
 import os
 import sys
 
+from profile_config import load_profile_path
+
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 logging.basicConfig(
@@ -24,45 +26,56 @@ logging.basicConfig(
 task_queue = queue.Queue()
 result_queue = queue.Queue()
 is_ready = False
+startup_error = None
 browser_thread = None
-
-def load_profile_path():
-    """Load profile path from config file"""
-    if os.path.exists("profile_config.txt"):
-        with open("profile_config.txt", "r") as f:
-            return f.read().strip()
-    return "./chatgpt_profile"
 
 def browser_worker():
     """Dedicated thread for all browser operations"""
-    global is_ready
+    global is_ready, startup_error
 
     profile_path = load_profile_path()
 
     if not os.path.exists(profile_path):
-        logging.error(f"❌ Profile not found at: {profile_path}")
+        startup_error = (f"Profile not found at: {profile_path}. "
+                         "Run: python3 manual_login.py")
+        logging.error(f"❌ {startup_error}")
         return
 
     logging.info(f"Using profile: {profile_path}")
 
-    playwright = sync_playwright().start()
+    playwright = None
+    browser_context = None
+    try:
+        playwright = sync_playwright().start()
 
-    browser_context = playwright.chromium.launch_persistent_context(
-        profile_path,
-        headless=False,
-        viewport={"width": 1280, "height": 900},
-        args=[
-            '--disable-blink-features=AutomationControlled',
-            '--disable-dev-shm-usage',
-            '--no-sandbox'
-        ]
-    )
+        browser_context = playwright.chromium.launch_persistent_context(
+            profile_path,
+            headless=False,
+            viewport={"width": 1280, "height": 900},
+            args=[
+                '--disable-blink-features=AutomationControlled',
+                '--disable-dev-shm-usage',
+                '--no-sandbox'
+            ]
+        )
 
-    page = browser_context.pages[0] if browser_context.pages else browser_context.new_page()
+        page = browser_context.pages[0] if browser_context.pages else browser_context.new_page()
 
-    logging.info("🌐 Navigating to ChatGPT...")
-    page.goto("https://chat.openai.com", wait_until="domcontentloaded", timeout=30000)
-    time.sleep(3)
+        logging.info("🌐 Navigating to ChatGPT...")
+        page.goto("https://chat.openai.com", wait_until="domcontentloaded", timeout=30000)
+        time.sleep(3)
+    except Exception as e:
+        startup_error = f"Browser failed to start: {e}"
+        logging.error(f"❌ {startup_error}")
+        # Don't strand a Chromium process if we got partway through startup.
+        for closer in (getattr(browser_context, 'close', None),
+                       getattr(playwright, 'stop', None)):
+            try:
+                if closer:
+                    closer()
+            except Exception:
+                pass
+        return
 
     # Check if chat interface is ready
     try:
@@ -275,6 +288,13 @@ def new_chat():
 @app.route('/health', methods=['GET'])
 def health():
     """Health check"""
+    if startup_error:
+        return jsonify({
+            "status": "error",
+            "ready": False,
+            "error": startup_error
+        }), 503
+
     return jsonify({
         "status": "running" if is_ready else "initializing",
         "ready": is_ready
@@ -302,7 +322,7 @@ if __name__ == '__main__':
 
     profile_path = load_profile_path()
     if not os.path.exists(profile_path):
-        print("\n❌ No profile found!")
+        print(f"\n❌ No profile found at: {profile_path}")
         print("Please run: python3 manual_login.py")
         sys.exit(1)
 
@@ -310,9 +330,13 @@ if __name__ == '__main__':
     browser_thread = threading.Thread(target=browser_worker, daemon=True)
     browser_thread.start()
 
-    # Wait for browser to be ready
+    # Wait for browser to be ready — bail out if the worker died during startup
+    # instead of spinning here forever.
     print("\nInitializing browser...")
     while not is_ready:
+        if startup_error is not None or not browser_thread.is_alive():
+            print(f"\n❌ {startup_error or 'Browser worker exited unexpectedly.'}")
+            sys.exit(1)
         time.sleep(0.5)
 
     print("\n" + "="*60)
