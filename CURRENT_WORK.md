@@ -56,9 +56,9 @@ The inherited ChatGPT browser bridge is now a replaceable cognition transport. T
 
 ## LAST_COMPLETED
 
-`BOB_RUNTIME_PREFLIGHT`
+`BOB_PERSISTENT_RUNTIME_SYSTEMD_CONTRACT`
 
-Bob now includes a read-only runtime preflight entry point at `python -m bob.preflight`. It fails closed when either credential-bearing Python service is configured on a non-loopback host, then delegates provider identity checks to the existing `BobRuntime.qualify_workspace(...)` path for selected or all registered workspaces. The report exposes qualification/capability metadata but never credential values.
+Bob now has deployment templates for `bob-api.service` and `chatgpt-bridge.service` under `deploy/systemd/`. Both force loopback binding independently of the runtime env file, run as a dedicated unprivileged `bob` identity, use `/etc/bob/bob.env`, and apply basic systemd hardening. The browser bridge gets an explicit writable profile scope at `/var/lib/bob`; remote access remains outside these units and must use a separately authenticated proxy/tunnel boundary.\n\nBob now includes a read-only runtime preflight entry point at `python -m bob.preflight`. It fails closed when either credential-bearing Python service is configured on a non-loopback host, then delegates provider identity checks to the existing `BobRuntime.qualify_workspace(...)` path for selected or all registered workspaces. The report exposes qualification/capability metadata but never credential values.
 
 Bob is now the canonical product identity across root identity, governance schemas, workspace schema, operator routes and documentation. The historical foundation branch name `feat/builder-foundation-architecture` is intentionally unchanged.
 
@@ -185,7 +185,7 @@ This external reconciliation proves the bindings are still real; it does **not**
 
 The runtime-preflight tranche adds **5 isolated unittest methods**. The exact proposed `bob/preflight.py` + `tests/test_preflight.py` content was executed in the interactive sandbox before commit: **5/5 PASS**, and both files passed `py_compile`. This is narrow evidence for the new preflight logic only; it does not substitute for a full branch-suite run.
 
-The branch now declares **24 unittest methods** across protocol/workspace/driver/Cloudflare/server-surface/runtime-preflight tests. The full 24-test suite has not yet been executed on current head. The interactive sandbox could not perform that full run because it cannot resolve GitHub for a clone and does not provide the pinned Flask dependency; do not mislabel the isolated 5/5 preflight result as full-suite verification.
+The branch now declares **29 unittest methods** across protocol/workspace/driver/Cloudflare/server-surface/runtime-preflight tests. The 5 new systemd-contract tests were executed against the exact proposed unit content before commit: **5/5 PASS**. The full 29-test suite has not yet been executed on current head. The interactive sandbox could not perform that full run because it cannot resolve GitHub for a clone and does not provide the pinned Flask dependency; do not mislabel the isolated 5/5 preflight result as full-suite verification.
 
 ## ACTIVE_WORK
 
@@ -197,7 +197,7 @@ The code architecture exists and is unit-green. The next coherent work is to tur
 
 Manual relay is available now, so use it for protocol/integration development when the browser runtime is unavailable.
 
-1. Execute the current-head 24-test suite in an authorized execution environment; record exact head SHA + result.
+1. Execute the current-head 29-test suite in an authorized execution environment; record exact head SHA + result.
 2. Configure least-privilege persistent Bob runtime credentials for GitHub, Supabase, HF and Cloudflare.
 3. Run `python -m bob.preflight --pretty` on the persistent runtime (or equivalent `/bob/qualify` calls) against Bob + SL + AB; Cloudflare identity anchors must be live-read through Bob.
 4. Qualify one approved Bob-repo branch/PR write end to end through the Bob approval boundary.
