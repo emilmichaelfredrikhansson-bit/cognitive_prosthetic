@@ -1,0 +1,44 @@
+{
+  "schema": "BUILDER_PROJECT_IDENTITY_V1",
+  "project": {
+    "name": "Builder",
+    "code": "BLD",
+    "github_repository": "emilmichaelfredrikhansson-bit/cognitive_prosthetic",
+    "github_repository_id": 1374229539
+  },
+  "lineage": {
+    "fork_source": "CodeMongerrr/cognitive_prosthetic",
+    "foundation_reference": "emilmichaelfredrikhansson-bit/project-foundation",
+    "foundation_version": "0.3.0"
+  },
+  "infrastructure": {
+    "chatgpt": {
+      "enabled": true,
+      "role": "interactive cognition and code generation"
+    },
+    "github": {
+      "enabled": true,
+      "role": "source of truth, history, branches, commits and pull requests"
+    },
+    "hugging_face": {
+      "enabled": true,
+      "workspace_bound": true,
+      "role": "portable compute, tests and ML jobs"
+    },
+    "supabase": {
+      "enabled": true,
+      "workspace_bound": true,
+      "role": "runtime, database and durable project state"
+    },
+    "cloudflare": {
+      "enabled": true,
+      "workspace_bound": true,
+      "role": "Builder frontend and project hosting/runtime surfaces"
+    },
+    "digital_ocean": {
+      "enabled": true,
+      "role": "persistent authenticated ChatGPT browser/session bridge",
+      "home_egress_tunnel": true
+    }
+  }
+}

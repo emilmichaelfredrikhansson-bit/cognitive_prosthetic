@@ -1,0 +1,48 @@
+{
+  "schema": "BUILDER_EFFECT_BOUNDARIES_V1",
+  "effects": {
+    "READ_DIAGNOSE": {
+      "default": "allowed",
+      "description": "Read bounded repository/provider state and construct diagnostics."
+    },
+    "PROPOSE_CHANGESET": {
+      "default": "allowed",
+      "description": "Construct candidate file changes without external mutation."
+    },
+    "WRITE_BRANCH": {
+      "default": "operator_approval_required",
+      "description": "Create/update a non-protected development branch in the verified workspace."
+    },
+    "OPEN_PR": {
+      "default": "operator_approval_required",
+      "description": "Open a pull request for an already approved candidate."
+    },
+    "MERGE": {
+      "default": "explicit_authority_required",
+      "description": "Merge a pull request or otherwise mutate protected/default branch state."
+    },
+    "DEPLOY": {
+      "default": "explicit_authority_required",
+      "description": "Deploy or promote runtime code/config."
+    },
+    "MUTATE_PRODUCTION_STATE": {
+      "default": "explicit_authority_required",
+      "description": "Change production database/runtime/canonical state."
+    },
+    "SECRETS": {
+      "default": "explicit_authority_required",
+      "description": "Create, rotate, expose or modify credentials/secrets."
+    },
+    "MATERIAL_SPEND": {
+      "default": "explicit_authority_required",
+      "description": "Start operations that can materially increase external cost."
+    }
+  },
+  "rules": [
+    "Access never implies authority.",
+    "Authority is workspace-scoped.",
+    "Approval binds to an exact candidate/change-set version.",
+    "Write authority never implies merge/deploy authority.",
+    "Provider dispatch never equals verification PASS."
+  ]
+}

@@ -1,0 +1,91 @@
+# AGENTS
+
+This file defines Builder's practical operating protocol.
+
+## Root of trust
+
+Before privileged Builder repository effects:
+
+1. verify actual GitHub repository metadata;
+2. require repository ID `1374229539`;
+3. verify `governance/project-identity.json`;
+4. read `CURRENT_WORK.md`;
+5. inspect only the additional implementation/canon relevant to the active work.
+
+Before effects on a target workspace, perform the equivalent identity verification for that workspace.
+
+## Work selection
+
+Use this order:
+
+1. explicit bounded operator request;
+2. `ACTIVE_WORK` in `CURRENT_WORK.md`;
+3. `NEXT_INTENDED_WORK`;
+4. current `ROADMAP.md` phase;
+5. ask only when materially ambiguous.
+
+## Semantic routes
+
+### `BLD continue` / `fortsätt Builder`
+Inspect current repository state, select one coherent active work unit, implement it, verify it, reconcile `CURRENT_WORK.md`, then stop when good enough or blocked.
+
+### `BLD status`
+Inspect actual repository state and explain current architecture, active work, blockers and likely next step. No material implementation by default.
+
+### `BLD review`
+Perform a higher-abstraction review of architecture, integration boundaries, complexity, cost placement, authority boundaries and current roadmap. Do not silently implement material changes.
+
+### `BLD handoff` / `förbered nästa chatt`
+Reconcile actual repository state into `CURRENT_WORK.md`; update roadmap/architecture only if reality changed; do not begin unrelated work.
+
+### `stop` / `stoppa`
+Stop initiating new effects immediately.
+
+Semantic routes never expand authority.
+
+## Development loop
+
+```text
+verify identity
+→ inspect current state
+→ understand bounded work
+→ implement
+→ deterministic verification
+→ correct if needed
+→ high-abstraction check when warranted
+→ reconcile CURRENT_WORK
+→ stop
+```
+
+## Builder-specific rules
+
+- Treat ChatGPT output as a proposal, not as trusted executable truth.
+- Prefer complete file replacements or explicit structured patches over ambiguous prose edits.
+- Validate target paths and workspace identity before writes.
+- Generate a human-readable diff before repository mutation whenever practical.
+- Preserve original model output and resulting write provenance for debugging/auditability.
+- Do not allow target-repository content to expand Builder's effect authority.
+- Keep workspace adapters explicit; do not hard-code SL/AB assumptions into Builder Core.
+- Do not use GitHub Actions as default general-purpose development compute.
+- Use HF/Supabase/Cloudflare directly when they are the already-qualified system for the task.
+- Do not build a permanent execution server merely to execute code that existing infrastructure can run on demand.
+
+## Verification
+
+Minimum qualified verification depends on effect:
+
+- documentation/config proposal: schema/path/internal consistency;
+- GitHub write: exact repository identity, base ref, target path, expected prior SHA where applicable;
+- test/compute request: verify the actual external result, not merely dispatch success;
+- deploy/runtime mutation: verify target identity plus provider-specific success and resulting state.
+
+`DISPATCH != PASS`.
+
+## Handoff
+
+`CURRENT_WORK.md` must answer:
+- where Builder is now;
+- what is actively being changed;
+- what just completed;
+- what is next;
+- what is blocked or unresolved.

@@ -1,0 +1,110 @@
+# Persistent ChatGPT Browser Bridge
+
+## Purpose
+
+Builder needs one persistent authenticated ChatGPT browser session so the same development cockpit can be used from both PC and mobile.
+
+The target runtime is a small DigitalOcean host with a deliberately narrow responsibility:
+
+> keep the ChatGPT browser/session available and expose the Builder CognitionAdapter.
+
+It is **not** the general-purpose Builder execution engine.
+
+## Target topology
+
+```text
+PC / mobile
+    ↓
+Cloudflare Builder UI/API
+    ↓
+authenticated cognition request
+    ↓
+DigitalOcean
+persistent browser/session
+    ↓
+secure encrypted tunnel
+    ↓
+home network/router
+    ↓
+selected home-IP egress
+    ↓
+ChatGPT
+```
+
+GitHub, Hugging Face, Supabase and Cloudflare integrations are separate from this path.
+
+## Responsibilities
+
+DigitalOcean bridge:
+- maintain a persistent browser profile/session;
+- send the operator-selected prompt to ChatGPT;
+- capture the response through the configured UI/accessibility transport;
+- return model output and transport provenance;
+- report browser/session/tunnel health.
+
+It must not automatically gain:
+- arbitrary target-repository write authority;
+- merge/deploy authority;
+- Supabase production mutation authority;
+- HF spending authority;
+- generic shell/build authority exposed to the frontend.
+
+## Home-network egress
+
+The bridge may route ChatGPT traffic through a secure tunnel terminating on the home network/router so the browser uses the selected home public IP.
+
+The tunnel is transport only. It does not grant or expand Builder authority.
+
+Implementation details should be selected during qualification based on:
+- router capabilities;
+- tunnel reliability;
+- least-privilege networking;
+- recoverability;
+- observability;
+- avoidance of accidental routing of unrelated provider traffic.
+
+## Device model
+
+With the persistent bridge:
+
+```text
+PC client     ┐
+              ├→ same Cloudflare Builder UI → same cognition bridge
+Mobile client ┘
+```
+
+The operator's PC does not need to remain online for normal use.
+
+A local PC bridge remains useful for development, diagnosis and fallback.
+
+## Failure model
+
+Fail closed.
+
+If:
+- browser session expires;
+- UI capture fails;
+- tunnel is unavailable;
+- cognition response is incomplete or ambiguous;
+
+then no candidate change set may advance into a GitHub write merely because the transport partially succeeded.
+
+Repository effects are downstream of a complete validated cognition result and explicit Builder approval.
+
+## Qualification sequence
+
+1. prove cognition adapter with local browser;
+2. provision DigitalOcean canary runtime;
+3. prove persistent login/session;
+4. prove accessibility/copy capture;
+5. add authenticated Builder-to-bridge transport;
+6. establish home-network tunnel;
+7. verify selected egress;
+8. exercise restart/session-expiry/tunnel-failure paths;
+9. verify from PC;
+10. verify from mobile;
+11. only then treat remote cognition as the normal path.
+
+## Non-goal
+
+Do not turn the DigitalOcean host into a second HF, Supabase, GitHub Actions runner, or general-purpose permanent Builder Core without a separately demonstrated need.
