@@ -34,6 +34,11 @@
       "enabled": true,
       "workspace_bound": true,
       "role": "Builder frontend and project hosting/runtime surfaces"
+    },
+    "digital_ocean": {
+      "enabled": true,
+      "role": "persistent authenticated ChatGPT browser/session bridge",
+      "home_egress_tunnel": true
     }
   }
 }
