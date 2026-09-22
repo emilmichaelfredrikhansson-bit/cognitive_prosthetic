@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bob</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div>
+        <h1>Bob</h1>
+        <p>ChatGPT ↔ project reality</p>
+      </div>
+      <span id="health" class="pill">connecting</span>
+    </header>
+
+    <section class="toolbar">
+      <select id="workspace"></select>
+      <button id="newChat" class="secondary">New chat</button>
+    </section>
+
+    <section id="chat" class="chat"></section>
+
+    <section id="pending" class="pending hidden"></section>
+
+    <form id="composer">
+      <textarea id="message" rows="4" placeholder="Talk to ChatGPT through Bob…"></textarea>
+      <button type="submit">Send</button>
+    </form>
+  </main>
+  <script>
+    window.BOB_API_BASE = window.BOB_API_BASE || "http://localhost:5002";
+  </script>
+  <script src="./app.js"></script>
+</body>
+</html>
