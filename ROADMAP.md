@@ -52,7 +52,19 @@ Exit criteria:
 - [ ] existing provider/runtime contracts remain source of truth;
 - [ ] provider dispatch and verification are visibly distinct.
 
-## Phase 3 — Builder Web UI
+## Phase 3 — Persistent cognition bridge
+
+Goal: make subscription-backed ChatGPT cognition available from both PC and mobile through one remote bridge.
+
+Exit criteria:
+- [ ] DigitalOcean browser runtime provisioned with least privilege;
+- [ ] persistent authenticated ChatGPT session validated;
+- [ ] cognition adapter reachable only through authenticated Builder control-plane paths;
+- [ ] secure tunnel to the home network/router validated for selected home-IP egress;
+- [ ] PC-local bridge retained only as development/fallback path;
+- [ ] browser/session/tunnel failure cannot create ambiguous GitHub effects.
+
+## Phase 4 — Builder Web UI
 
 Goal: one responsive Cloudflare-hosted cockpit for PC and mobile.
 
@@ -66,16 +78,16 @@ Exit criteria:
 - [ ] mobile-quality layout;
 - [ ] secrets remain off the client.
 
-## Phase 4 — Cognition transport hardening
+## Phase 5 — Cognition transport hardening
 
 Goal: make ChatGPT transport robust without coupling Builder to one capture mechanism.
 
 Exit criteria:
 - [ ] cognition adapter interface stable;
 - [ ] DOM response extraction removed from preferred path;
-- [ ] PC accessibility/copy transport validated;
+- [ ] UI Automation/accessibility copy transport validated in the persistent browser runtime;
 - [ ] reconnect/session-expiry behavior defined;
-- [ ] mobile-equivalent cognition transport selected and validated;
+- [ ] DigitalOcean + home-egress transport validated from both PC and mobile clients;
 - [ ] transport failures cannot produce ambiguous repository effects.
 
 ## Later
