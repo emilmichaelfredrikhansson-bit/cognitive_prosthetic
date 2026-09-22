@@ -7,7 +7,7 @@ from typing import Any
 
 from huggingface_hub import HfApi
 
-from bob.errors import ProtocolError
+from bob.errors import IdentityMismatch, ProtocolError
 from bob.workspaces import Workspace
 
 
@@ -36,6 +36,7 @@ class HuggingFaceAdapter:
 
     def capabilities(self) -> list[str]:
         return [
+            "hf.identity",
             "hf.list_jobs",
             "hf.inspect_job",
             "hf.job_logs",
@@ -47,8 +48,42 @@ class HuggingFaceAdapter:
         cfg = workspace.providers.get("hugging_face") or {}
         return cfg.get("namespace")
 
+    def verify_workspace(self, workspace: Workspace) -> dict[str, Any]:
+        cfg = workspace.providers.get("hugging_face") or {}
+        namespace = cfg.get("namespace")
+        expected_account_id = cfg.get("account_id")
+        identity = self.api.whoami(token=self.token)
+        actual_name = identity.get("name") if isinstance(identity, dict) else None
+        actual_id = identity.get("id") if isinstance(identity, dict) else None
+
+        if namespace and actual_name and str(namespace) != str(actual_name):
+            orgs = identity.get("orgs") or identity.get("organizations") or []
+            org_names = {
+                str(item.get("name"))
+                for item in orgs
+                if isinstance(item, dict) and item.get("name")
+            }
+            if str(namespace) not in org_names:
+                raise IdentityMismatch(
+                    f"Hugging Face namespace mismatch: expected {namespace}, authenticated as {actual_name}"
+                )
+
+        if expected_account_id and str(actual_id) != str(expected_account_id):
+            raise IdentityMismatch(
+                f"Hugging Face account mismatch: expected {expected_account_id}, got {actual_id}"
+            )
+
+        return {
+            "name": actual_name,
+            "account_id": actual_id,
+            "namespace": namespace or actual_name,
+        }
+
     def read(self, workspace: Workspace, tool: str, args: dict[str, Any]) -> Any:
+        identity = self.verify_workspace(workspace)
         namespace = self._namespace(workspace)
+        if tool == "hf.identity":
+            return identity
         if tool == "hf.list_jobs":
             jobs = self.api.list_jobs(
                 namespace=namespace,
@@ -72,6 +107,7 @@ class HuggingFaceAdapter:
         raise ProtocolError(f"unsupported Hugging Face read tool: {tool}")
 
     def effect(self, workspace: Workspace, tool: str, args: dict[str, Any]) -> Any:
+        self.verify_workspace(workspace)
         namespace = self._namespace(workspace)
         if tool == "hf.run_job":
             image = args.get("image")
