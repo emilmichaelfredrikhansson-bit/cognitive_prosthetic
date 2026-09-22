@@ -11,12 +11,19 @@ import queue
 import time
 import logging
 import os
+import re
 import sys
+from urllib.parse import urlsplit
 
 from profile_config import load_profile_path
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
+
+CHATGPT_TARGET_URL = os.environ.get("CHATGPT_TARGET_URL", "https://chatgpt.com/").strip()
+CHATGPT_CAPTURE_MODE = os.environ.get("CHATGPT_CAPTURE_MODE", "copy").strip().lower()
+if CHATGPT_CAPTURE_MODE not in {"copy", "legacy_dom"}:
+    raise RuntimeError("CHATGPT_CAPTURE_MODE must be 'copy' or 'legacy_dom'")
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
@@ -61,9 +68,19 @@ def browser_worker():
 
         page = browser_context.pages[0] if browser_context.pages else browser_context.new_page()
 
-        logging.info("🌐 Navigating to ChatGPT...")
-        page.goto("https://chat.openai.com", wait_until="domcontentloaded", timeout=30000)
+        logging.info(f"🌐 Navigating to ChatGPT target: {CHATGPT_TARGET_URL}")
+        page.goto(CHATGPT_TARGET_URL, wait_until="domcontentloaded", timeout=30000)
         time.sleep(3)
+
+        origin_parts = urlsplit(page.url)
+        origin = f"{origin_parts.scheme}://{origin_parts.netloc}"
+        try:
+            browser_context.grant_permissions(
+                ["clipboard-read", "clipboard-write"],
+                origin=origin,
+            )
+        except Exception as e:
+            logging.warning(f"Could not pre-grant clipboard permissions: {e}")
     except Exception as e:
         startup_error = f"Browser failed to start: {e}"
         logging.error(f"❌ {startup_error}")
@@ -121,6 +138,7 @@ def find_textarea(page, timeout=10):
     start_time = time.time()
 
     selectors = [
+        '#prompt-textarea',
         'textarea[placeholder*="Message"]',
         'textarea[placeholder*="message"]',
         'textarea[data-id="root"]',
@@ -192,27 +210,14 @@ def send_message(page, prompt_text):
 
         time.sleep(1.5)
 
-        # Extract response
-        response_text = None
-
-        # Try multiple extraction methods
-        try:
-            messages = page.locator('[data-message-author-role="assistant"]').all()
-            if messages:
-                response_text = messages[-1].inner_text()
-        except:
-            pass
+        # Capture response through the visible Copy action by default.
+        response_text = capture_response(page)
 
         if not response_text:
-            try:
-                articles = page.locator('article').all()
-                if len(articles) >= 2:
-                    response_text = articles[-1].inner_text()
-            except:
-                pass
-
-        if not response_text:
-            return {"success": False, "error": "Could not extract response"}
+            return {
+                "success": False,
+                "error": f"Could not capture response using mode: {CHATGPT_CAPTURE_MODE}"
+            }
 
         logging.info(f"📥 Got response ({len(response_text)} chars)")
 
@@ -226,11 +231,80 @@ def send_message(page, prompt_text):
         logging.error(f"❌ Error: {e}")
         return {"success": False, "error": str(e)}
 
+def capture_response(page):
+    """Capture the last assistant response.
+
+    Default path clicks ChatGPT's visible Copy control and reads the browser
+    clipboard. Direct DOM text extraction exists only as an explicit legacy
+    compatibility mode.
+    """
+    if CHATGPT_CAPTURE_MODE == "copy":
+        copy_candidates = []
+        selectors = [
+            'button[aria-label*="Copy"]',
+            'button[aria-label*="copy"]',
+            'button[title*="Copy"]',
+            'button[title*="copy"]',
+        ]
+        for selector in selectors:
+            try:
+                copy_candidates.extend(page.locator(selector).all())
+            except Exception:
+                pass
+
+        try:
+            copy_candidates.extend(page.get_by_role(
+                "button",
+                name=re.compile("copy", re.IGNORECASE),
+            ).all())
+        except Exception:
+            pass
+
+        seen = set()
+        unique = []
+        for candidate in copy_candidates:
+            try:
+                key = candidate.evaluate("(el) => el.outerHTML")
+            except Exception:
+                key = str(id(candidate))
+            if key not in seen:
+                seen.add(key)
+                unique.append(candidate)
+
+        for candidate in reversed(unique):
+            try:
+                if not candidate.is_visible():
+                    continue
+                candidate.click()
+                time.sleep(0.4)
+                copied = page.evaluate("navigator.clipboard.readText()")
+                if isinstance(copied, str) and copied.strip():
+                    return copied.strip()
+            except Exception:
+                continue
+        return None
+
+    # Explicit compatibility escape hatch only.
+    try:
+        messages = page.locator('[data-message-author-role="assistant"]').all()
+        if messages:
+            return messages[-1].inner_text().strip()
+    except Exception:
+        pass
+    try:
+        articles = page.locator("article").all()
+        if len(articles) >= 2:
+            return articles[-1].inner_text().strip()
+    except Exception:
+        pass
+    return None
+
+
 def start_new_chat(page):
     """Start a new chat"""
     try:
         logging.info("🔄 Starting new chat...")
-        page.goto("https://chat.openai.com", wait_until="domcontentloaded")
+        page.goto(CHATGPT_TARGET_URL, wait_until="domcontentloaded")
         time.sleep(3)
 
         textarea = find_textarea(page, timeout=10)
@@ -307,6 +381,8 @@ def status():
         "server": "running",
         "browser_ready": is_ready,
         "profile_path": load_profile_path(),
+        "target_url": CHATGPT_TARGET_URL,
+        "capture_mode": CHATGPT_CAPTURE_MODE,
         "endpoints": {
             "chat": "POST /chat",
             "new_chat": "POST /new-chat",
