@@ -66,6 +66,7 @@ class BobRuntime:
         "supabase.query": "mutate_production_state",
         "hf.run_job": "material_spend",
         "hf.cancel_job": "material_spend",
+        "cloudflare.worker_deploy_version": "deploy",
         "cloudflare.pages_retry": "deploy",
         "cloudflare.pages_rollback": "deploy",
     }
