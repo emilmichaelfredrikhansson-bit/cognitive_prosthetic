@@ -185,7 +185,7 @@ This external reconciliation proves the bindings are still real; it does **not**
 
 The runtime-preflight tranche adds **5 isolated unittest methods**. The exact proposed `bob/preflight.py` + `tests/test_preflight.py` content was executed in the interactive sandbox before commit: **5/5 PASS**, and both files passed `py_compile`. This is narrow evidence for the new preflight logic only; it does not substitute for a full branch-suite run.
 
-The branch now declares **29 unittest methods** across protocol/workspace/driver/Cloudflare/server-surface/runtime-preflight tests. The 5 systemd-contract tests were re-executed after the Xvfb correction against the exact proposed unit content: **5/5 PASS**. The full 29-test suite has not yet been executed on current head. The interactive sandbox could not perform that full run because it cannot resolve GitHub for a clone and does not provide the pinned Flask dependency; do not mislabel the isolated 5/5 preflight result as full-suite verification.
+The branch now declares **29 unittest methods** across protocol/workspace/driver/Cloudflare/server-surface/runtime-preflight tests. The 5 systemd-contract tests were re-executed after the Xvfb correction against the exact proposed unit content: **5/5 PASS**. `systemd-analyze verify` also parsed both proposed units successfully; its only diagnostic in the interactive sandbox was the expected missing deployed interpreter path `/opt/bob/venv/bin/python`, because this sandbox is not the Bob host. The full 29-test suite has not yet been executed on current head. The interactive sandbox could not perform that full run because it cannot resolve GitHub for a clone and does not provide the pinned Flask dependency; do not mislabel the isolated 5/5 preflight result as full-suite verification.
 
 ## ACTIVE_WORK
 
@@ -208,7 +208,7 @@ Manual relay is available now, so use it for protocol/integration development wh
 
 ## OPEN_FINDINGS
 
-- Browser Copy-button selectors must be live-qualified against the current ChatGPT UI.
+- The connected HF account is independently verified as `Reallothesecond` / `6a986fdd2e846637191b1c5e`, and no HF jobs are currently running. A fresh `cpu-basic` job is the available qualified path for the full current-head suite, but it was not dispatched because new compute is a material-spend effect requiring explicit operator authority.\n- Browser Copy-button selectors must be live-qualified against the current ChatGPT UI.
 - DigitalOcean runtime and home-egress tunnel are designed but not provisioned. The local bridge is now loopback-only by default; remote exposure still requires authenticated transport.
 - SL Cloudflare account ID remains runtime-bound and is verified through its canonical R2 bucket. AB binds its canonical account ID directly but must verify the `autoblog-canary` Worker remotely before Cloudflare identity is trusted.
 - The current UI is functional scaffolding, not final product design; it now includes explicit read-only workspace qualification.
