@@ -58,6 +58,38 @@ class DriverTests(unittest.TestCase):
             self.assertEqual(result["visible_messages"], ["The file says hello."])
             self.assertIn("BOB.RESULT", bridge.sent[1])
 
+    def test_manual_relay_read_effect_and_approval(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            make_workspace(tmp)
+            runtime = BobRuntime(workspace_dir=tmp, bridge=FakeBridge([]))
+            runtime.adapters = {"github": FakeGitHub()}
+
+            read = runtime.relay_model_response(
+                "X",
+                'Checking reality.\n```bob\n{"type":"BOB.READ","id":"r1","tool":"github.read_file","args":{"path":"README.md"}}\n```'
+            )
+            self.assertEqual(read["status"], "RESULT_READY")
+            self.assertEqual(read["visible_text"], "Checking reality.")
+            self.assertIn("BOB.RESULT", read["feedback"])
+
+            effect = runtime.relay_model_response(
+                "X",
+                '```bob\n{"type":"BOB.EFFECT","id":"e1","tool":"github.create_file","args":{"path":"x.txt","content":"x","branch":"bob/test"}}\n```'
+            )
+            self.assertEqual(effect["status"], "AWAITING_APPROVAL")
+            pending_id = effect["pending"][0]["pending_id"]
+
+            approved = runtime.relay_approve(pending_id)
+            self.assertEqual(approved["status"], "PASS")
+            self.assertIn("BOB.RESULT", approved["feedback"])
+
+            done = runtime.relay_model_response(
+                "X",
+                'All done.\n```bob\n{"type":"BOB.DONE","id":"done-1","args":{"summary":"complete"}}\n```'
+            )
+            self.assertEqual(done["status"], "DONE")
+            self.assertEqual(done["visible_text"], "All done.")
+
     def test_effect_stops_for_approval_then_continues(self):
         with tempfile.TemporaryDirectory() as tmp:
             make_workspace(tmp)
