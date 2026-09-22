@@ -37,12 +37,39 @@ class SupabaseAdapter:
 
     def verify_workspace(self, workspace: Workspace) -> dict[str, Any]:
         ref = self._ref(workspace)
+        cfg = workspace.providers.get("supabase") or {}
+        expected_org = cfg.get("organization_id")
+
         project = self.http.request("GET", f"/v1/projects/{ref}")
         actual = str(project.get("id") or project.get("ref") or ref)
         if actual != ref:
             raise IdentityMismatch(f"Supabase project mismatch: expected {ref}, got {actual}")
+
+        organization_id = project.get("organization_id")
+        if expected_org and organization_id is None:
+            # The single-project response is not guaranteed to expose org identity
+            # in every Management API shape. Resolve from the canonical project list.
+            projects = self.http.request("GET", "/v1/projects")
+            match = next(
+                (
+                    item for item in projects
+                    if isinstance(item, dict)
+                    and str(item.get("ref") or item.get("id")) == ref
+                ),
+                None,
+            )
+            if match is None:
+                raise IdentityMismatch(f"Supabase project not present in accessible project list: {ref}")
+            organization_id = match.get("organization_id")
+
+        if expected_org and str(organization_id) != str(expected_org):
+            raise IdentityMismatch(
+                f"Supabase organization mismatch: expected {expected_org}, got {organization_id}"
+            )
+
         return {
             "project_id": ref,
+            "organization_id": organization_id,
             "name": project.get("name"),
             "region": project.get("region"),
             "status": project.get("status"),
