@@ -83,7 +83,20 @@ class GitHubAdapter:
                 f"/repos/{workspace.github_repository}/git/refs",
                 json_body={"ref": f"refs/heads/{branch}", "sha": base_sha},
             )
-            return {"branch": branch, "base_sha": base_sha, "ref": created.get("ref")}
+            actual = self.http.request(
+                "GET",
+                f"/repos/{workspace.github_repository}/git/ref/heads/{branch}",
+            )
+            if actual["object"]["sha"] != base_sha:
+                raise IdentityMismatch(
+                    f"GitHub branch read-back mismatch: expected {base_sha}, got {actual['object']['sha']}"
+                )
+            return {
+                "branch": branch,
+                "base_sha": base_sha,
+                "ref": created.get("ref"),
+                "read_back_verified": True,
+            }
 
         if tool == "github.create_file":
             path = self._required(args, "path")
@@ -150,7 +163,9 @@ class GitHubAdapter:
             )
             try:
                 self.read_file(workspace, path, branch)
-            except ExternalEffectError:
+            except ExternalEffectError as exc:
+                if exc.status_code != 404:
+                    raise
                 deleted = True
             else:
                 deleted = False
@@ -178,13 +193,20 @@ class GitHubAdapter:
                     "draft": bool(args.get("draft", False)),
                 },
             )
+            actual = self.http.request(
+                "GET",
+                f"/repos/{workspace.github_repository}/pulls/{result['number']}",
+            )
+            if actual["head"]["ref"] != head or actual["base"]["ref"] != base:
+                raise IdentityMismatch("GitHub PR read-back mismatch")
             return {
-                "number": result["number"],
-                "url": result["html_url"],
-                "head": head,
-                "base": base,
-                "state": result["state"],
+                "number": actual["number"],
+                "url": actual["html_url"],
+                "head": actual["head"]["ref"],
+                "base": actual["base"]["ref"],
+                "state": actual["state"],
                 "verified": True,
+                "read_back_verified": True,
             }
 
         raise ProtocolError(f"unsupported GitHub effect tool: {tool}")
