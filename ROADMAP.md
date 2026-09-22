@@ -17,21 +17,26 @@ Exit criteria:
 - [x] V1 implementation plan written;
 - [ ] architecture PR reviewed/merged.
 
-## Phase 1 — GitHub Development Loop V1
+## Phase 1 — Closed-loop Bob Core V1
 
-Goal: make Builder genuinely usable to develop a canary repository.
+Goal: make Bob a real two-way I/O layer between normal ChatGPT cognition and project infrastructure.
 
 Exit criteria:
-- [ ] workspace schema with stable repository ID;
-- [ ] bounded repository reads;
-- [ ] structured ChatGPT change-set contract;
-- [ ] deterministic create/replace/delete application;
-- [ ] stale-SHA fail-closed behavior;
-- [ ] human-readable diff before effect;
-- [ ] operator approval boundary;
-- [ ] branch creation + commits + PR;
-- [ ] provenance/audit record;
-- [ ] canary end-to-end success without GitHub Actions-based coding compute.
+- [x] workspace schema with stable repository ID;
+- [x] bounded repository reads;
+- [x] machine-readable Bob protocol;
+- [x] closed-loop READ -> RESULT -> cognition continuation;
+- [x] deterministic GitHub create/replace/delete primitives;
+- [x] stale-SHA fail-closed behavior;
+- [x] human-readable diff before GitHub effect;
+- [x] operator approval boundary;
+- [x] branch + file + PR API implementation;
+- [x] Supabase adapter;
+- [x] Hugging Face Jobs adapter;
+- [x] Cloudflare Workers/R2 + Pages adapter;
+- [x] unit qualification on HF compute;
+- [ ] live ChatGPT browser-loop qualification;
+- [ ] one end-to-end approved GitHub PR produced through Bob itself.
 
 ## Phase 2 — Real workspace integration
 
