@@ -138,13 +138,24 @@ Capabilities are runtime data and may differ between installations.
 - `hf.cancel_job`
 
 ### Cloudflare reads
+- `cloudflare.identity`
+- `cloudflare.r2_buckets`
+- `cloudflare.worker`
+- `cloudflare.worker_versions`
+- `cloudflare.worker_deployments`
+- `cloudflare.worker_deployment`
 - `cloudflare.pages_project`
 - `cloudflare.pages_deployments`
 - `cloudflare.pages_deployment`
 
 ### Cloudflare effects
+- `cloudflare.worker_deploy_version`
 - `cloudflare.pages_retry`
 - `cloudflare.pages_rollback`
+
+Cloudflare workspaces may bind an R2 bucket as their account identity anchor.
+The account id may be supplied only at runtime; Bob verifies the anchor before
+trusting Worker/Pages state or performing an effect.
 
 The vocabulary will grow only when a real project needs another semantic tool.
 
