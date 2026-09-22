@@ -24,6 +24,7 @@ class PendingEffect:
     message: BobMessage
     candidate_hash: str
     effect_class: str
+    preview: dict[str, Any] | None
 
 
 class ChatGPTBridge:
@@ -181,9 +182,10 @@ class BobRuntime:
         if pending is None:
             raise ProtocolError("unknown or already-consumed pending approval")
         workspace = self.registry.get(pending.workspace_code)
-        actual_hash = self._candidate_hash(workspace, pending.message)
+        current_preview = self._preview_effect(workspace, pending.message)
+        actual_hash = self._candidate_hash(workspace, pending.message, current_preview)
         if actual_hash != pending.candidate_hash:
-            raise AuthorityError("pending effect changed after approval request")
+            raise AuthorityError("pending effect or bound workspace state changed after approval request")
 
         try:
             data = self._execute_effect(workspace, pending.message)
@@ -296,9 +298,10 @@ class BobRuntime:
         if pending is None:
             raise ProtocolError("unknown or already-consumed pending approval")
         workspace = self.registry.get(pending.workspace_code)
-        actual_hash = self._candidate_hash(workspace, pending.message)
+        current_preview = self._preview_effect(workspace, pending.message)
+        actual_hash = self._candidate_hash(workspace, pending.message, current_preview)
         if actual_hash != pending.candidate_hash:
-            raise AuthorityError("pending effect changed after approval request")
+            raise AuthorityError("pending effect or bound workspace state changed after approval request")
 
         try:
             data = self._execute_effect(workspace, pending.message)
@@ -415,14 +418,16 @@ class BobRuntime:
             raise AuthorityError(
                 f"workspace {workspace.code} does not allow effect class {effect_class}"
             )
+        preview = self._preview_effect(workspace, message)
         pending_id = str(uuid.uuid4())
-        candidate_hash = self._candidate_hash(workspace, message)
+        candidate_hash = self._candidate_hash(workspace, message, preview)
         self.pending[pending_id] = PendingEffect(
             pending_id=pending_id,
             workspace_code=workspace.code,
             message=message,
             candidate_hash=candidate_hash,
             effect_class=effect_class,
+            preview=preview,
         )
         return {
             "pending_id": pending_id,
@@ -431,7 +436,7 @@ class BobRuntime:
             "effect_class": effect_class,
             "args": message.args,
             "candidate_hash": candidate_hash,
-            "preview": self._preview_effect(workspace, message),
+            "preview": preview,
         }
 
     def _preview_effect(self, workspace: Workspace, message: BobMessage) -> dict[str, Any] | None:
@@ -439,9 +444,31 @@ class BobRuntime:
         if not tool.startswith("github."):
             return None
         adapter = self._adapter_for(tool)
+        adapter.verify_workspace(workspace)
         args = message.args
+
+        if tool == "github.create_branch":
+            base = str(args.get("base") or workspace.default_branch)
+            base_sha = adapter.branch_head(workspace, base)
+            expected = args.get("expected_base_sha")
+            if expected and str(expected) != base_sha:
+                raise AuthorityError(
+                    f"stale base before approval: expected {expected}, got {base_sha}"
+                )
+            return {
+                "kind": "summary",
+                "tool": tool,
+                "args": args,
+                "base": base,
+                "base_sha": base_sha,
+            }
+
         if tool == "github.create_file":
             path = str(args.get("path") or "")
+            branch = str(args.get("branch") or "")
+            if not path or not branch:
+                raise ProtocolError("github.create_file preview requires path and branch")
+            branch_sha = adapter.branch_head(workspace, branch)
             content = str(args.get("content") or "")
             diff = "".join(difflib.unified_diff(
                 [],
@@ -449,10 +476,19 @@ class BobRuntime:
                 fromfile="/dev/null",
                 tofile=path,
             ))
-            return {"kind": "diff", "diff": diff}
+            return {
+                "kind": "diff",
+                "diff": diff,
+                "branch": branch,
+                "branch_sha": branch_sha,
+            }
+
         if tool in {"github.replace_file", "github.delete_file"}:
             path = str(args.get("path") or "")
-            branch = str(args.get("branch") or workspace.default_branch)
+            branch = str(args.get("branch") or "")
+            if not path or not branch:
+                raise ProtocolError(f"{tool} preview requires path and branch")
+            branch_sha = adapter.branch_head(workspace, branch)
             current = adapter.read_file(workspace, path, branch)
             expected_sha = args.get("expected_sha")
             if expected_sha and current["sha"] != expected_sha:
@@ -466,7 +502,33 @@ class BobRuntime:
                 fromfile=path,
                 tofile=path if new_content else "/dev/null",
             ))
-            return {"kind": "diff", "diff": diff, "current_sha": current["sha"]}
+            return {
+                "kind": "diff",
+                "diff": diff,
+                "current_sha": current["sha"],
+                "branch": branch,
+                "branch_sha": branch_sha,
+            }
+
+        if tool == "github.open_pr":
+            head = str(args.get("head") or "")
+            base = str(args.get("base") or workspace.default_branch)
+            if not head:
+                raise ProtocolError("github.open_pr preview requires head")
+            if ":" in head:
+                raise ProtocolError(
+                    "cross-repository PR heads are not supported by Bob V1 approval binding"
+                )
+            return {
+                "kind": "summary",
+                "tool": tool,
+                "args": args,
+                "head": head,
+                "head_sha": adapter.branch_head(workspace, head),
+                "base": base,
+                "base_sha": adapter.branch_head(workspace, base),
+            }
+
         return {"kind": "summary", "tool": tool, "args": args}
 
     def _adapter_for(self, tool: str | None) -> Any:
@@ -481,15 +543,29 @@ class BobRuntime:
         return adapter
 
     @staticmethod
-    def _candidate_hash(workspace: Workspace, message: BobMessage) -> str:
+    def _candidate_hash(
+        workspace: Workspace,
+        message: BobMessage,
+        preview: dict[str, Any] | None,
+    ) -> str:
+        authority_binding = {
+            "code": workspace.code,
+            "github": {
+                "repository": workspace.github_repository,
+                "repository_id": workspace.github_repository_id,
+                "default_branch": workspace.default_branch,
+            },
+            "providers": workspace.providers,
+            "effects": workspace.effects,
+        }
         canonical = json.dumps(
             {
-                "workspace": workspace.code,
-                "repository_id": workspace.github_repository_id,
+                "workspace": authority_binding,
                 "type": message.type,
                 "id": message.id,
                 "tool": message.tool,
                 "args": message.args,
+                "staged_state": preview,
             },
             ensure_ascii=False,
             sort_keys=True,

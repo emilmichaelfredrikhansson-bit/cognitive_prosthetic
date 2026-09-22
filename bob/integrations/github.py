@@ -44,6 +44,18 @@ class GitHubAdapter:
             "private": bool(repo.get("private")),
         }
 
+    def branch_head(self, workspace: Workspace, branch: str) -> str:
+        self.verify_workspace(workspace)
+        ref = self.http.request(
+            "GET",
+            f"/repos/{workspace.github_repository}/git/ref/heads/{branch}",
+        )
+        obj = ref.get("object") if isinstance(ref, dict) else None
+        sha = obj.get("sha") if isinstance(obj, dict) else None
+        if not sha:
+            raise ProtocolError(f"GitHub branch ref contained no commit SHA: {branch}")
+        return str(sha)
+
     def read(self, workspace: Workspace, tool: str, args: dict[str, Any]) -> Any:
         self.verify_workspace(workspace)
         if tool == "github.repo":

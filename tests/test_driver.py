@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 
 from bob.driver import BobRuntime
+from bob.errors import AuthorityError
 
 
 class FakeBridge:
@@ -20,6 +21,9 @@ class FakeBridge:
 
 
 class FakeGitHub:
+    def __init__(self):
+        self.branch_sha = "branch-abc"
+
     def capabilities(self):
         return ["github.read_file", "github.create_file"]
 
@@ -28,6 +32,9 @@ class FakeGitHub:
             "repository": workspace.github_repository,
             "repository_id": workspace.github_repository_id,
         }
+
+    def branch_head(self, workspace, branch):
+        return self.branch_sha
 
     def read(self, workspace, tool, args):
         return {"path": args["path"], "sha": "abc", "content": "hello"}
@@ -188,6 +195,44 @@ class DriverTests(unittest.TestCase):
             self.assertIn("BOB.WORKSPACE", result["prompt"])
             self.assertIn("Inspect current work", result["prompt"])
             self.assertIn("github.read_file", result["prompt"])
+
+
+    def test_approval_invalidates_when_git_branch_moves_after_staging(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            make_workspace(tmp)
+            runtime = BobRuntime(workspace_dir=tmp, bridge=FakeBridge([]))
+            github = FakeGitHub()
+            runtime.adapters = {"github": github}
+
+            effect = runtime.relay_model_response(
+                "X",
+                '```bob\n{"type":"BOB.EFFECT","id":"e-drift","tool":"github.create_file","args":{"path":"x.txt","content":"x","branch":"bob/test"}}\n```'
+            )
+            pending_id = effect["pending"][0]["pending_id"]
+            github.branch_sha = "branch-moved"
+
+            with self.assertRaises(AuthorityError):
+                runtime.relay_approve(pending_id)
+
+    def test_approval_invalidates_when_workspace_provider_binding_changes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            make_workspace(tmp)
+            runtime = BobRuntime(workspace_dir=tmp, bridge=FakeBridge([]))
+            runtime.adapters = {"github": FakeGitHub()}
+
+            effect = runtime.relay_model_response(
+                "X",
+                '```bob\n{"type":"BOB.EFFECT","id":"e-binding","tool":"github.create_file","args":{"path":"x.txt","content":"x","branch":"bob/test"}}\n```'
+            )
+            pending_id = effect["pending"][0]["pending_id"]
+
+            path = Path(tmp, "x.json")
+            data = json.loads(path.read_text())
+            data["providers"] = {"supabase": {"project_id": "different-project"}}
+            path.write_text(json.dumps(data))
+
+            with self.assertRaises(AuthorityError):
+                runtime.relay_approve(pending_id)
 
 
 if __name__ == "__main__":

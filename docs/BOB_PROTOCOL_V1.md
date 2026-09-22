@@ -52,8 +52,14 @@ Effects are checked against:
 - stable provider identity;
 - declared effect class;
 - workspace effect policy;
+- authority-relevant workspace binding;
+- staged external state for the target GitHub refs/files;
 - exact candidate hash;
 - operator approval.
+
+Bob recomputes the candidate binding immediately before execution. If a bound
+branch/file state or workspace/provider/effect-policy binding changed after
+staging, the approval is invalid and the effect fails closed.
 
 ### Ask human
 

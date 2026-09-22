@@ -116,13 +116,14 @@ A UI-selected workspace name is never sufficient proof of identity.
 
 Every candidate change set must bind:
 - workspace code;
-- stable repository ID;
-- base branch;
-- base commit SHA;
+- stable repository full name + ID;
+- default/base branch;
+- provider bindings and workspace effect policy;
+- relevant staged external state (for GitHub, branch/file commit identity);
 - exact candidate hash;
 - proposed operations.
 
-An approval is invalid if any of these change.
+Bob recomputes the binding immediately before execution. An approval is invalid if the workspace authority binding or relevant staged external state changes after staging. A branch move, file-SHA drift, provider rebinding or default-branch change therefore requires a fresh candidate/approval.
 
 ## Isolation invariant
 
