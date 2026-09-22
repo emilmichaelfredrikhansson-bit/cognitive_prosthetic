@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import asdict, is_dataclass
+from datetime import date, datetime
+from enum import Enum
 from typing import Any
 
 from huggingface_hub import HfApi
@@ -10,6 +12,12 @@ from bob.workspaces import Workspace
 
 
 def _serializable(value: Any) -> Any:
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return str(value)
+    if isinstance(value, (datetime, date)):
+        return value.isoformat()
+    if isinstance(value, Enum):
+        return value.value
     if is_dataclass(value):
         return asdict(value)
     if hasattr(value, "__dict__"):
