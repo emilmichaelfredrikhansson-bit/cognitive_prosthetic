@@ -93,6 +93,26 @@ then no candidate change set may advance into a GitHub write merely because the 
 
 Repository effects are downstream of a complete validated cognition result and explicit Bob approval.
 
+## Runtime preflight
+
+Once least-privilege runtime credentials are installed as environment variables, run:
+
+```bash
+python -m bob.preflight --pretty
+```
+
+The command is read-only. It exits successfully only when:
+- both credential-bearing Python services are configured on loopback hosts; and
+- every selected workspace independently passes the existing Bob workspace qualification path.
+
+By default it checks every registered workspace. Use repeated `--workspace` flags for a bounded canary, for example:
+
+```bash
+python -m bob.preflight --workspace BOB --workspace SL --pretty
+```
+
+The report contains binding, capability and qualification metadata only. It must never print credential values. A preflight PASS proves configured provider identity/readability for that runtime; it does **not** prove the live ChatGPT browser/clipboard transport, the home-egress tunnel, or any write/deploy effect.
+
 ## Qualification sequence
 
 1. prove cognition adapter with local browser;
