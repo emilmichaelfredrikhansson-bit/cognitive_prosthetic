@@ -56,6 +56,10 @@ The inherited ChatGPT browser bridge is now a replaceable cognition transport. T
 
 ## LAST_COMPLETED
 
+`BOB_RUNTIME_CREDENTIAL_CONTRACT`
+
+The persistent runtime credential floor is now documented as a staged least-privilege contract: read-only provider qualification first, then a bounded GitHub write credential only for the approved branch/PR canary. Supabase/Cloudflare/HF write or spend credentials are not required by the current workspaces. Current live Supabase project responses were re-read and contain the expected organization ID directly, so no account-wide project-list permission is required for the normal qualification path.
+
 `BOB_PERSISTENT_RUNTIME_SYSTEMD_CONTRACT`
 
 Bob now has deployment templates for `bob-api.service` and `chatgpt-bridge.service` under `deploy/systemd/`. Both force loopback binding independently of the runtime env file, run as a dedicated unprivileged `bob` identity, use `/etc/bob/bob.env`, and apply basic systemd hardening. The browser bridge gets an explicit writable profile scope at `/var/lib/bob` and launches its headed Chromium inside an ephemeral Xvfb display (`xvfb-run -a`), so a headless Ubuntu host can actually start it. Initial interactive ChatGPT login still requires a separately authenticated temporary display path; remote access remains outside these units and must use a separately authenticated proxy/tunnel boundary.\n\nBob now includes a read-only runtime preflight entry point at `python -m bob.preflight`. It fails closed when either credential-bearing Python service is configured on a non-loopback host, then delegates provider identity checks to the existing `BobRuntime.qualify_workspace(...)` path for selected or all registered workspaces. The report exposes qualification/capability metadata but never credential values.
@@ -205,13 +209,13 @@ The runtime-preflight and systemd-contract isolated checks remain useful narrow 
 
 ## ACTIVE_WORK
 
-`BOB_CORE_V1_RUNTIME_CREDENTIAL_AND_QUALIFICATION_WIRING`
+`BOB_CORE_V1_RUNTIME_CREDENTIAL_INSTALL_AND_QUALIFICATION`
 
-The implementation is current-suite green. The next coherent work is to install least-privilege credentials on the persistent runtime and prove read-only identity qualification before any Bob-mediated write canary.
+The implementation is current-suite green and the least-privilege credential contract is now explicit in `docs/BOB_RUNTIME_CREDENTIALS.md`. The next coherent work requires installing actual secret values on the persistent runtime and proving read-only identity qualification before any Bob-mediated write canary.
 
 ## NEXT_INTENDED_WORK
 
-1. Configure least-privilege persistent Bob runtime credentials for GitHub, Supabase, HF and Cloudflare without committing or exposing secret values.
+1. Install the credential values defined by `docs/BOB_RUNTIME_CREDENTIALS.md` into `/etc/bob/bob.env` on the selected persistent runtime; do not commit or expose them.
 2. Run `python -m bob.preflight --pretty` on the persistent runtime against Bob + SL + AB; require live Cloudflare identity-anchor read-back.
 3. Qualify one approved Bob-repo branch/PR write end to end through the Bob approval boundary.
 4. Qualify the persistent DigitalOcean browser runtime and authenticated temporary login/bootstrap path without making the host a general-purpose executor.
@@ -230,7 +234,7 @@ The implementation is current-suite green. The next coherent work is to install 
 
 ## FIRST_ACTION
 
-Continue `BOB_CORE_V1_RUNTIME_CREDENTIAL_AND_QUALIFICATION_WIRING` from actual branch state. Do not rebuild the protocol or adapters from chat memory.
+Continue `BOB_CORE_V1_RUNTIME_CREDENTIAL_INSTALL_AND_QUALIFICATION` from actual branch state. Do not rebuild the protocol or adapters from chat memory.
 
 ## HARD_BLOCKERS
 
