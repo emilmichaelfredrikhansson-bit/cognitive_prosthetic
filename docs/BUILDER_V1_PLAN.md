@@ -147,14 +147,17 @@ Acceptance:
 
 ## Work package 7 — Cognition capture V1
 
-Replace preferred response extraction path with a UI/accessibility copy transport on Windows while preserving the `CognitionAdapter` contract.
+Replace preferred response extraction path with a UI/accessibility copy transport while preserving the `CognitionAdapter` contract.
+
+First qualify the mechanism locally on Windows if useful, then run the production-oriented browser bridge on DigitalOcean.
 
 Keep transport-specific failure separate from repository effect logic.
 
 Acceptance:
 - no preferred-path DOM `inner_text()` extraction;
 - copied response is captured exactly;
-- session-expiry/copy failure cannot accidentally trigger a GitHub write.
+- session-expiry/copy failure cannot accidentally trigger a GitHub write;
+- the capture implementation is not coupled to GitHub/change-set logic.
 
 ## Work package 8 — Canary qualification
 
@@ -231,11 +234,38 @@ Views:
 
 PC and mobile share one web application.
 
+## Work package 13 — Persistent remote cognition bridge
+
+Goal: remove the requirement for the operator's PC to host the ChatGPT session.
+
+Target topology:
+
+```text
+Cloudflare Builder UI/API
+→ authenticated CognitionAdapter call
+→ DigitalOcean persistent browser/session
+→ secure tunnel to home network/router
+→ ChatGPT via selected home-IP egress
+```
+
+Responsibilities of the DigitalOcean component are intentionally narrow:
+- maintain the authenticated browser/session;
+- perform the UI/accessibility cognition transport;
+- report health/session state;
+- expose no generic shell/build authority to the UI.
+
+The home tunnel is an egress mechanism, not a Builder authority source.
+
+Acceptance:
+- cognition works from both PC and mobile through the same Builder UI;
+- no operator PC needs to remain online;
+- tunnel/browser restart is recoverable;
+- bridge failure cannot trigger repository writes;
+- GitHub/HF/Supabase/Cloudflare remain independently reachable when the cognition bridge is unavailable.
+
 ## Mobile cognition milestone
 
-Server-side integrations work from mobile immediately once the Cloudflare UI/API exists.
-
-Full subscription-backed ChatGPT cognition from mobile requires a reachable browser bridge. Qualify this separately after PC V1 rather than coupling it to GitHub Builder completion.
+Once the Cloudflare UI and persistent DigitalOcean cognition bridge exist, PC and mobile become equivalent control clients for the normal Builder development loop.
 
 ## V1 completion definition
 
