@@ -34,7 +34,10 @@ class JsonHttp:
         )
         if not response.ok:
             snippet = response.text[:1000]
-            raise ExternalEffectError(f"{method} {url} failed ({response.status_code}): {snippet}")
+            raise ExternalEffectError(
+                f"{method} {url} failed ({response.status_code}): {snippet}",
+                status_code=response.status_code,
+            )
         if not response.content:
             return None
         content_type = response.headers.get("content-type", "")
