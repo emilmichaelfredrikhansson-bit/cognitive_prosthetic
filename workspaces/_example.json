@@ -1,0 +1,38 @@
+{
+  "schema": "BUILDER_WORKSPACE_V1",
+  "project": {
+    "name": "Example Project",
+    "code": "EX"
+  },
+  "github": {
+    "repository": "owner/repository",
+    "repository_id": 123456789,
+    "default_branch": "main"
+  },
+  "context": {
+    "entry_documents": [
+      "CURRENT_WORK.md",
+      "AGENTS.md",
+      "ARCHITECTURE.md"
+    ]
+  },
+  "providers": {
+    "supabase": {
+      "project_id": "example-project-ref"
+    },
+    "hugging_face": {
+      "namespace": "example-namespace"
+    },
+    "cloudflare": {
+      "account_id": "example-account-id",
+      "project_name": "example-pages-project"
+    }
+  },
+  "effects": {
+    "write_branch": true,
+    "open_pr": true,
+    "mutate_production_state": false,
+    "material_spend": false,
+    "deploy": false
+  }
+}
