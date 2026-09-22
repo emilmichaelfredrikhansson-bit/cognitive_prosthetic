@@ -3,7 +3,7 @@ from __future__ import annotations
 import base64
 from typing import Any
 
-from bob.errors import IdentityMismatch, ProtocolError
+from bob.errors import ExternalEffectError, IdentityMismatch, ProtocolError
 from bob.workspaces import Workspace
 from .http import JsonHttp
 
@@ -99,7 +99,12 @@ class GitHubAdapter:
                 f"/repos/{workspace.github_repository}/contents/{path}",
                 json_body=payload,
             )
-            return self._write_receipt(result, path, branch)
+            receipt = self._write_receipt(result, path, branch)
+            actual = self.read_file(workspace, path, branch)
+            if actual["content"] != content or actual["sha"] != receipt["content_sha"]:
+                raise IdentityMismatch(f"GitHub read-back mismatch after create: {path}")
+            receipt["read_back_verified"] = True
+            return receipt
 
         if tool == "github.replace_file":
             path = self._required(args, "path")
@@ -120,7 +125,12 @@ class GitHubAdapter:
                 f"/repos/{workspace.github_repository}/contents/{path}",
                 json_body=payload,
             )
-            return self._write_receipt(result, path, branch)
+            receipt = self._write_receipt(result, path, branch)
+            actual = self.read_file(workspace, path, branch)
+            if actual["content"] != content or actual["sha"] != receipt["content_sha"]:
+                raise IdentityMismatch(f"GitHub read-back mismatch after replace: {path}")
+            receipt["read_back_verified"] = True
+            return receipt
 
         if tool == "github.delete_file":
             path = self._required(args, "path")
@@ -138,11 +148,20 @@ class GitHubAdapter:
                     "branch": branch,
                 },
             )
+            try:
+                self.read_file(workspace, path, branch)
+            except ExternalEffectError:
+                deleted = True
+            else:
+                deleted = False
+            if not deleted:
+                raise IdentityMismatch(f"GitHub read-back shows file still exists after delete: {path}")
             return {
                 "path": path,
                 "branch": branch,
                 "commit_sha": result["commit"]["sha"],
                 "verified": True,
+                "read_back_verified": True,
             }
 
         if tool == "github.open_pr":
