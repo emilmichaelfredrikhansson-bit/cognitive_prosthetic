@@ -161,6 +161,109 @@ class BobRuntime:
         msg = BobMessage("BOB.READ", "direct", tool, args, {})
         return self._execute_read(workspace, msg)
 
+    def relay_model_response(self, workspace_code: str, model_text: str) -> dict[str, Any]:
+        """Process one model response without calling the browser bridge.
+
+        This is the development/manual-relay seam: any external LLM (including
+        an interactive ChatGPT conversation) can play the cognition role while
+        Bob still owns all deterministic reads/effects and approval boundaries.
+        """
+        workspace = self.registry.get(workspace_code)
+        parsed = parse_model_response(model_text)
+        kinds = {m.type for m in parsed.messages}
+        if "BOB.READ" in kinds and "BOB.EFFECT" in kinds:
+            raise ProtocolError("model must not mix BOB.READ and BOB.EFFECT in one turn")
+
+        reads = [m for m in parsed.messages if m.type == "BOB.READ"]
+        effects = [m for m in parsed.messages if m.type == "BOB.EFFECT"]
+        terminal = [m for m in parsed.messages if m.type in {"BOB.DONE", "BOB.ASK"}]
+
+        if effects:
+            pending_items = [self._stage_effect(workspace, message) for message in effects]
+            return {
+                "status": "AWAITING_APPROVAL",
+                "visible_text": parsed.visible_text,
+                "feedback": None,
+                "pending": pending_items,
+            }
+
+        if reads:
+            results: list[str] = []
+            receipts: list[dict[str, Any]] = []
+            for message in reads:
+                try:
+                    data = self._execute_read(workspace, message)
+                    results.append(make_result(message.id, message.tool or "", "PASS", data=data))
+                    receipts.append({"id": message.id, "tool": message.tool, "status": "PASS"})
+                except Exception as exc:
+                    results.append(make_result(message.id, message.tool or "", "FAIL", error=str(exc)))
+                    receipts.append({
+                        "id": message.id,
+                        "tool": message.tool,
+                        "status": "FAIL",
+                        "error": str(exc),
+                    })
+            return {
+                "status": "RESULT_READY",
+                "visible_text": parsed.visible_text,
+                "feedback": "\n\n".join(results),
+                "receipts": receipts,
+                "pending": [],
+            }
+
+        if terminal:
+            message = terminal[-1]
+            return {
+                "status": "DONE" if message.type == "BOB.DONE" else "ASK_USER",
+                "visible_text": parsed.visible_text,
+                "feedback": None,
+                "terminal": message.raw,
+                "pending": [],
+            }
+
+        return {
+            "status": "NO_TOOL_REQUEST",
+            "visible_text": parsed.visible_text,
+            "feedback": None,
+            "pending": [],
+        }
+
+    def relay_approve(self, pending_id: str) -> dict[str, Any]:
+        """Execute one staged effect and return feedback without invoking ChatGPT."""
+        pending = self.pending.pop(pending_id, None)
+        if pending is None:
+            raise ProtocolError("unknown or already-consumed pending approval")
+        workspace = self.registry.get(pending.workspace_code)
+        actual_hash = self._candidate_hash(workspace, pending.message)
+        if actual_hash != pending.candidate_hash:
+            raise AuthorityError("pending effect changed after approval request")
+
+        try:
+            data = self._execute_effect(workspace, pending.message)
+            feedback = make_result(
+                pending.message.id,
+                pending.message.tool or "",
+                "PASS",
+                data=data,
+            )
+            status = "PASS"
+        except Exception as exc:
+            feedback = make_result(
+                pending.message.id,
+                pending.message.tool or "",
+                "FAIL",
+                error=str(exc),
+            )
+            status = "FAIL"
+
+        return {
+            "status": status,
+            "feedback": feedback,
+            "request_id": pending.message.id,
+            "tool": pending.message.tool,
+            "pending": [],
+        }
+
     def _drive(self, workspace: Workspace, prompt: str) -> dict[str, Any]:
         visible: list[str] = []
         tool_rounds: list[dict[str, Any]] = []
