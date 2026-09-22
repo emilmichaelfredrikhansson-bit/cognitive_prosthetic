@@ -95,21 +95,41 @@ HF Job `6ab2c4d651992417dfcd3e7d` cloned the exact implementation branch, instal
 python -m unittest discover -s tests -v
 ```
 
-Result:
+Initial HF verification:
 
 ```text
+job = 6ab2c4d651992417dfcd3e7d
 6 tests
 6 PASS
 job stage = COMPLETED
 ```
 
-The test harness proves:
-- protocol parsing;
-- stable workspace repository-ID requirement;
-- closed-loop READ -> RESULT -> continued cognition;
-- EFFECT -> approval stop -> verified RESULT -> continued cognition.
+A second HF verification added **manual LLM relay mode**, where an external interactive LLM can play ChatGPT without the browser bridge:
 
-This does not yet prove a live browser/ChatGPT session or live provider credentials.
+```text
+job = 6ab2c73251992417dfcd3ec2
+7 tests
+7 PASS
+```
+
+The manual relay proof covers:
+
+```text
+LLM emits BOB.READ
+→ Bob executes read
+→ Bob returns BOB.RESULT
+→ external LLM continues
+→ LLM emits BOB.EFFECT
+→ Bob stages exact effect
+→ approval
+→ Bob executes/verifies
+→ Bob returns BOB.RESULT
+→ LLM emits BOB.DONE
+```
+
+This means development and protocol qualification can continue with the current ChatGPT conversation acting as the cognition side until the real browser runtime is available.
+
+This still does not prove the live browser/clipboard transport or installed runtime credentials.
 
 ## ACTIVE_WORK
 
@@ -118,6 +138,8 @@ This does not yet prove a live browser/ChatGPT session or live provider credenti
 The code architecture exists and is unit-green. The next coherent work is to turn it into a real always-available Bob runtime.
 
 ## NEXT_INTENDED_WORK
+
+Manual relay is available now, so use it for protocol/integration development when the browser runtime is unavailable.
 
 1. Canonicalize the product name Bob across remaining Foundation-era Builder naming.
 2. Add/verify the second real workspace (AB) from its actual repository/provider identities.
