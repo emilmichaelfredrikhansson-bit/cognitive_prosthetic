@@ -207,6 +207,22 @@ class BobRuntime:
         msg = BobMessage("BOB.READ", "direct", tool, args, {})
         return self._execute_read(workspace, msg)
 
+    def relay_start(self, workspace_code: str, human_message: str) -> dict[str, Any]:
+        """Build the exact first prompt for a manual/external cognition loop."""
+        workspace = self.registry.get(workspace_code)
+        if not human_message.strip():
+            raise ProtocolError("human message must not be empty")
+        prompt = (
+            self.workspace_packet(workspace)
+            + "\n\nThe human says:\n"
+            + human_message.strip()
+        )
+        return {
+            "workspace": workspace.public_dict(),
+            "prompt": prompt,
+            "status": "PROMPT_READY",
+        }
+
     def relay_model_response(self, workspace_code: str, model_text: str) -> dict[str, Any]:
         """Process one model response without calling the browser bridge.
 

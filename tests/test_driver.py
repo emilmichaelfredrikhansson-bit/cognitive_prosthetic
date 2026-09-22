@@ -176,5 +176,19 @@ class DriverTests(unittest.TestCase):
             self.assertEqual(result["checks"]["supabase"]["status"], "PASS")
 
 
+    def test_manual_relay_start_returns_workspace_prompt(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            make_workspace(tmp)
+            runtime = BobRuntime(workspace_dir=tmp, bridge=FakeBridge([]))
+            runtime.adapters = {"github": FakeGitHub()}
+
+            result = runtime.relay_start("X", "Inspect current work")
+
+            self.assertEqual(result["status"], "PROMPT_READY")
+            self.assertIn("BOB.WORKSPACE", result["prompt"])
+            self.assertIn("Inspect current work", result["prompt"])
+            self.assertIn("github.read_file", result["prompt"])
+
+
 if __name__ == "__main__":
     unittest.main()

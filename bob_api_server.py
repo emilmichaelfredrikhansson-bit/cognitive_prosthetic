@@ -91,6 +91,16 @@ def direct_read():
     return jsonify({"success": True, "result": result})
 
 
+@app.post("/bob/relay/start")
+def relay_start():
+    data = request.get_json(force=True) or {}
+    result = runtime.relay_start(
+        str(data["workspace"]),
+        str(data["message"]),
+    )
+    return jsonify({"success": True, **result})
+
+
 @app.post("/bob/relay")
 def relay():
     data = request.get_json(force=True) or {}

@@ -14,6 +14,7 @@
 - Architecture: `ARCHITECTURE.md`
 - Strategic direction: `ROADMAP.md`
 - Bob protocol: `docs/BOB_PROTOCOL_V1.md`
+- Manual relay: `docs/BOB_MANUAL_RELAY_V1.md`
 - ChatGPT Project instructions: `docs/BOB_CHATGPT_PROJECT_INSTRUCTIONS.md`
 
 ## CURRENT_MODE
@@ -55,7 +56,7 @@ The inherited ChatGPT browser bridge is now a replaceable cognition transport. T
 
 ## LAST_COMPLETED
 
-`BOB_RUNTIME_WORKSPACE_QUALIFICATION_SURFACE`
+`BOB_MANUAL_RELAY_HTTP_COMPLETION`
 
 Bob is now the canonical product identity across root identity, governance schemas, workspace schema, operator routes and documentation. The historical foundation branch name `feat/builder-foundation-architecture` is intentionally unchanged.
 
@@ -80,6 +81,8 @@ Cloudflare identity handling was hardened at the same time: a bare account ID ca
 AB currently allows only approval-bound GitHub branch writes and PR creation. Supabase production mutation, HF spend and Cloudflare deploy remain disabled.
 
 Bob now also exposes a read-only workspace qualification surface through `BobRuntime.qualify_workspace(...)` and `POST /bob/qualify`. It verifies GitHub plus every provider configured for that workspace. A missing runtime adapter/credential is reported as `UNAVAILABLE`; provider mismatch/errors are `FAIL`; only all-PASS results set `qualified=true`. The web cockpit exposes this as **Verify workspace**, so identity/runtime diagnostics do not depend on the ChatGPT browser bridge.
+
+Manual relay is now a complete explicit HTTP transport: `POST /bob/relay/start` returns the exact initial `BOB.WORKSPACE` + human prompt, `POST /bob/relay` processes external model responses, and `POST /bob/relay/approve` executes an exact staged candidate after approval. The loop is documented in `docs/BOB_MANUAL_RELAY_V1.md`.
 
 The already-completed Core V1 runtime tranche on `feat/bob-core-v1` includes:
 

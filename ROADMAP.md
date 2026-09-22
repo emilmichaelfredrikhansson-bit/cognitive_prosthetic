@@ -35,6 +35,7 @@ Exit criteria:
 - [x] Hugging Face Jobs adapter;
 - [x] Cloudflare Workers/R2 + Pages adapter;
 - [x] unit qualification on HF compute;
+- [x] browser-independent manual relay transport exposed end to end;
 - [ ] live ChatGPT browser-loop qualification;
 - [ ] one end-to-end approved GitHub PR produced through Bob itself.
 
