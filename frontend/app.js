@@ -1,4 +1,4 @@
-const api = window.BOB_API_BASE;
+const api = window.BOB_API_BASE || window.location.origin;
 const healthEl = document.querySelector("#health");
 const workspaceEl = document.querySelector("#workspace");
 const chatEl = document.querySelector("#chat");
@@ -35,11 +35,16 @@ function renderPending(items = []) {
     const card = document.createElement("div");
     card.className = "approval";
     const pre = document.createElement("pre");
-    pre.textContent = JSON.stringify({
-      tool: item.tool,
-      effect_class: item.effect_class,
-      args: item.args,
-    }, null, 2);
+    if (item.preview?.kind === "diff") {
+      pre.textContent = item.preview.diff || "(empty diff)";
+    } else {
+      pre.textContent = JSON.stringify({
+        tool: item.tool,
+        effect_class: item.effect_class,
+        args: item.args,
+        preview: item.preview,
+      }, null, 2);
+    }
     const button = document.createElement("button");
     button.textContent = "Approve";
     button.onclick = async () => {
