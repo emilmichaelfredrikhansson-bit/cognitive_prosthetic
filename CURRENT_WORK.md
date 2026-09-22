@@ -185,26 +185,39 @@ This external reconciliation proves the bindings are still real; it does **not**
 
 The runtime-preflight tranche adds **5 isolated unittest methods**. The exact proposed `bob/preflight.py` + `tests/test_preflight.py` content was executed in the interactive sandbox before commit: **5/5 PASS**, and both files passed `py_compile`. This is narrow evidence for the new preflight logic only; it does not substitute for a full branch-suite run.
 
-The branch now declares **29 unittest methods** across protocol/workspace/driver/Cloudflare/server-surface/runtime-preflight tests. The 5 systemd-contract tests were re-executed after the Xvfb correction against the exact proposed unit content: **5/5 PASS**. `systemd-analyze verify` also parsed both proposed units successfully; its only diagnostic in the interactive sandbox was the expected missing deployed interpreter path `/opt/bob/venv/bin/python`, because this sandbox is not the Bob host. The full 29-test suite has not yet been executed on current head. The interactive sandbox could not perform that full run because it cannot resolve GitHub for a clone and does not provide the pinned Flask dependency; do not mislabel the isolated 5/5 preflight result as full-suite verification.
+The branch declares **29 unittest methods** across protocol/workspace/driver/Cloudflare/server-surface/runtime-preflight/systemd-contract tests.
+
+Current implementation verification is now executable and current:
+
+```text
+tested commit = 9bb18a495f4c9ed7acd93e2b1eda4d6ec6319816
+HF job = 6ab2e0d151992417dfcd41bd
+account = Reallothesecond / 6a986fdd2e846637191b1c5e
+hardware = cpu-basic
+result = 29 tests / 29 PASS
+job stage = COMPLETED
+finished = 2026-09-22T20:11:17.345Z
+```
+
+The job cloned the public repository, checked out the exact pinned commit, asserted `git rev-parse HEAD` matched that SHA before testing, installed the pinned requirements and ran `python -m unittest discover -s tests -v`. The unittest log ended with `Ran 29 tests` and `OK`.
+
+The runtime-preflight and systemd-contract isolated checks remain useful narrow evidence, but the HF current-implementation run supersedes them as the main execution-suite evidence. Any later documentation-only reconciliation commit must not be misrepresented as having been independently re-executed; the executable implementation tree remains the tested one unless code/runtime files change.
 
 ## ACTIVE_WORK
 
-`BOB_CORE_V1_RUNTIME_WIRING`
+`BOB_CORE_V1_RUNTIME_CREDENTIAL_AND_QUALIFICATION_WIRING`
 
-The code architecture exists and is unit-green. The next coherent work is to turn it into a real always-available Bob runtime.
+The implementation is current-suite green. The next coherent work is to install least-privilege credentials on the persistent runtime and prove read-only identity qualification before any Bob-mediated write canary.
 
 ## NEXT_INTENDED_WORK
 
-Manual relay is available now, so use it for protocol/integration development when the browser runtime is unavailable.
-
-1. Execute the current-head 29-test suite in an authorized execution environment; record exact head SHA + result.
-2. Configure least-privilege persistent Bob runtime credentials for GitHub, Supabase, HF and Cloudflare.
-3. Run `python -m bob.preflight --pretty` on the persistent runtime (or equivalent `/bob/qualify` calls) against Bob + SL + AB; Cloudflare identity anchors must be live-read through Bob.
-4. Qualify one approved Bob-repo branch/PR write end to end through the Bob approval boundary.
-5. Provision/qualify the persistent DigitalOcean browser runtime without making it a general-purpose executor.
-6. Install the Bob ChatGPT Project instructions and bind `CHATGPT_TARGET_URL`.
-7. Put remote/mobile access behind an authenticated Cloudflare/tunnel boundary while keeping the Python services loopback-only.
-8. Only after these are green, consider enabling any project-specific production effect classes.
+1. Configure least-privilege persistent Bob runtime credentials for GitHub, Supabase, HF and Cloudflare without committing or exposing secret values.
+2. Run `python -m bob.preflight --pretty` on the persistent runtime against Bob + SL + AB; require live Cloudflare identity-anchor read-back.
+3. Qualify one approved Bob-repo branch/PR write end to end through the Bob approval boundary.
+4. Qualify the persistent DigitalOcean browser runtime and authenticated temporary login/bootstrap path without making the host a general-purpose executor.
+5. Install the Bob ChatGPT Project instructions and bind `CHATGPT_TARGET_URL`.
+6. Put remote/mobile access behind an authenticated Cloudflare/tunnel boundary while keeping the Python services loopback-only.
+7. Only after these are green, consider enabling any project-specific production effect classes.
 
 ## OPEN_FINDINGS
 
@@ -217,7 +230,7 @@ Manual relay is available now, so use it for protocol/integration development wh
 
 ## FIRST_ACTION
 
-Continue `BOB_CORE_V1_RUNTIME_WIRING` from actual branch state. Do not rebuild the protocol or adapters from chat memory.
+Continue `BOB_CORE_V1_RUNTIME_CREDENTIAL_AND_QUALIFICATION_WIRING` from actual branch state. Do not rebuild the protocol or adapters from chat memory.
 
 ## HARD_BLOCKERS
 
