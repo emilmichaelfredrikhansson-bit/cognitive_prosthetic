@@ -5,15 +5,11 @@ import os
 from pathlib import Path
 
 from flask import Flask, jsonify, request, send_from_directory
-from flask_cors import CORS
-
 from bob.driver import BobRuntime
 from bob.errors import BobError
 
 BASE_DIR = Path(__file__).resolve().parent
 app = Flask(__name__, static_folder=str(BASE_DIR / "frontend"), static_url_path="")
-CORS(app)
-
 runtime = BobRuntime(
     workspace_dir=os.environ.get("BOB_WORKSPACE_DIR", str(BASE_DIR / "workspaces"))
 )
@@ -119,5 +115,6 @@ def relay_approve():
 
 
 if __name__ == "__main__":
+    host = os.environ.get("BOB_HOST", "127.0.0.1").strip() or "127.0.0.1"
     port = int(os.environ.get("BOB_PORT", "5002"))
-    app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
+    app.run(host=host, port=port, debug=False, threaded=True)

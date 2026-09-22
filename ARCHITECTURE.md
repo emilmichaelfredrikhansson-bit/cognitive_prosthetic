@@ -122,6 +122,8 @@ Core views:
 
 Secrets must not be exposed to browser JavaScript when a server-side Worker/API can hold them safely.
 
+The Python Bob API and ChatGPT browser bridge are **loopback-only by default** and do not grant cross-origin browser access. Remote/mobile reachability must be provided by an explicit authenticated reverse-proxy/tunnel boundary (the intended production boundary is Cloudflare Access/tunnel or an equivalent reviewed transport), not by binding the credential-bearing Python services directly to a public/LAN interface.
+
 ## ChatGPT transport and device independence
 
 Direct GitHub/Supabase/HF/Cloudflare operations are server-side and therefore work from both PC and mobile.

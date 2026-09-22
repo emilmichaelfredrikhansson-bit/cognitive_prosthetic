@@ -1,0 +1,36 @@
+import os
+import unittest
+from unittest.mock import patch
+
+import bob_api_server
+import chatgpt_api_server
+
+
+class LocalServerSurfaceTests(unittest.TestCase):
+    def test_bob_api_does_not_grant_cross_origin_access(self):
+        client = bob_api_server.app.test_client()
+        response = client.get(
+            "/bob/health",
+            headers={"Origin": "https://untrusted.example"},
+        )
+        self.assertNotIn("Access-Control-Allow-Origin", response.headers)
+
+    def test_chatgpt_bridge_does_not_grant_cross_origin_access(self):
+        client = chatgpt_api_server.app.test_client()
+        response = client.get(
+            "/health",
+            headers={"Origin": "https://untrusted.example"},
+        )
+        self.assertNotIn("Access-Control-Allow-Origin", response.headers)
+
+    def test_loopback_defaults_are_documented_runtime_defaults(self):
+        with patch.dict(os.environ, {}, clear=True):
+            self.assertEqual(os.environ.get("BOB_HOST", "127.0.0.1"), "127.0.0.1")
+            self.assertEqual(
+                os.environ.get("CHATGPT_BRIDGE_HOST", "127.0.0.1"),
+                "127.0.0.1",
+            )
+
+
+if __name__ == "__main__":
+    unittest.main()

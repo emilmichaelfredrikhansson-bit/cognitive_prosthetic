@@ -4,7 +4,6 @@ ChatGPT Web API Server (Thread-safe version)
 Uses a single dedicated thread for all Playwright operations
 """
 from flask import Flask, request, jsonify
-from flask_cors import CORS
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout
 import threading
 import queue
@@ -18,7 +17,6 @@ from urllib.parse import urlsplit
 from profile_config import load_profile_path
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
 
 CHATGPT_TARGET_URL = os.environ.get("CHATGPT_TARGET_URL", "https://chatgpt.com/").strip()
 CHATGPT_CAPTURE_MODE = os.environ.get("CHATGPT_CAPTURE_MODE", "copy").strip().lower()
@@ -429,7 +427,9 @@ if __name__ == '__main__':
     print("\n" + "="*60 + "\n")
 
     try:
-        app.run(host='0.0.0.0', port=5001, debug=False, threaded=True)
+        host = os.environ.get("CHATGPT_BRIDGE_HOST", "127.0.0.1").strip() or "127.0.0.1"
+        port = int(os.environ.get("CHATGPT_BRIDGE_PORT", "5001"))
+        app.run(host=host, port=port, debug=False, threaded=True)
     except KeyboardInterrupt:
         print("\n\n🛑 Shutting down...")
         task_queue.put(None)  # Signal shutdown

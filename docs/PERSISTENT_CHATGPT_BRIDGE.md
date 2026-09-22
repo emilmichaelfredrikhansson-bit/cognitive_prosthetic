@@ -42,6 +42,8 @@ DigitalOcean bridge:
 - return model output and transport provenance;
 - report browser/session/tunnel health.
 
+The browser-control HTTP service is loopback-only by default and exposes no permissive CORS surface. A later remote bridge must add an authenticated Bob-to-bridge transport before network exposure; changing the bind address alone is not authentication.
+
 It must not automatically gain:
 - arbitrary target-repository write authority;
 - merge/deploy authority;
