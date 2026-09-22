@@ -1,0 +1,28 @@
+{
+  "schema": "BUILDER_WORKSPACE_V1",
+  "project": {
+    "name": "Bob",
+    "code": "BOB"
+  },
+  "github": {
+    "repository": "emilmichaelfredrikhansson-bit/cognitive_prosthetic",
+    "repository_id": 1374229539,
+    "default_branch": "main"
+  },
+  "context": {
+    "entry_documents": [
+      "CURRENT_WORK.md",
+      "AGENTS.md",
+      "ARCHITECTURE.md",
+      "docs/BOB_CHATGPT_PROJECT_INSTRUCTIONS.md"
+    ]
+  },
+  "providers": {},
+  "effects": {
+    "write_branch": true,
+    "open_pr": true,
+    "mutate_production_state": false,
+    "material_spend": false,
+    "deploy": false
+  }
+}
