@@ -55,9 +55,29 @@ The inherited ChatGPT browser bridge is now a replaceable cognition transport. T
 
 ## LAST_COMPLETED
 
-`BOB_PRODUCT_IDENTITY_CANONICALIZATION`
+`BOB_AB_WORKSPACE_BINDING_AND_CLOUDFLARE_IDENTITY_HARDENING`
 
 Bob is now the canonical product identity across root identity, governance schemas, workspace schema, operator routes and documentation. The historical foundation branch name `feat/builder-foundation-architecture` is intentionally unchanged.
+
+AutoBlog is now registered as the second real target workspace from current external truth:
+
+```text
+GitHub repo = emilmichaelfredrikhansson-bit/autoblog-foundation
+GitHub repo ID = 1347272122
+Supabase project = ofnzyuosysdycrdxalve
+Supabase organization = wiibxuccedkxrvgruccq
+Supabase live status = ACTIVE_HEALTHY
+HF namespace = Reallothesecond
+HF account ID = 6a986fdd2e846637191b1c5e
+Cloudflare account = 7eb16181070aa18ecb28a1719fea7773
+Cloudflare Worker identity anchor = autoblog-canary
+```
+
+GitHub metadata, Supabase project/org and HF account were independently read back live during the binding work. The Cloudflare account/Worker identifiers came from current AutoBlog repository truth; live Cloudflare API read-back remains a runtime qualification step because this interactive session does not hold the Cloudflare runtime token.
+
+Cloudflare identity handling was hardened at the same time: a bare account ID can no longer produce an identity PASS. Bob now requires a remotely verifiable R2 bucket, Worker or Pages resource anchor. AB uses its canonical `autoblog-canary` Worker as that anchor.
+
+AB currently allows only approval-bound GitHub branch writes and PR creation. Supabase production mutation, HF spend and Cloudflare deploy remain disabled.
 
 The already-completed Core V1 runtime tranche on `feat/bob-core-v1` includes:
 
@@ -145,20 +165,19 @@ The code architecture exists and is unit-green. The next coherent work is to tur
 
 Manual relay is available now, so use it for protocol/integration development when the browser runtime is unavailable.
 
-1. Add/verify the second real workspace (AB) from its actual repository/provider identities.
-2. Provision/qualify the persistent DigitalOcean browser runtime.
-3. Install the Bob ChatGPT Project instructions and bind `CHATGPT_TARGET_URL`.
-4. Configure least-privilege runtime credentials for GitHub, Supabase, HF and Cloudflare.
-5. Run read-only live qualification through Bob against Bob + SL.
-6. Qualify one approved Bob-repo branch/PR write end to end.
-7. Deploy the responsive Bob UI/API behind authenticated Cloudflare access.
-8. Only after these are green, consider enabling any project-specific production effect classes.
+1. Run read-only live qualification through Bob/manual relay against Bob + SL + AB, including Cloudflare identity read-back where runtime credentials are available.
+2. Qualify one approved Bob-repo branch/PR write end to end through the Bob approval boundary.
+3. Provision/qualify the persistent DigitalOcean browser runtime.
+4. Install the Bob ChatGPT Project instructions and bind `CHATGPT_TARGET_URL`.
+5. Configure least-privilege persistent runtime credentials for GitHub, Supabase, HF and Cloudflare.
+6. Deploy the responsive Bob UI/API behind authenticated Cloudflare access.
+7. Only after these are green, consider enabling any project-specific production effect classes.
 
 ## OPEN_FINDINGS
 
 - Browser Copy-button selectors must be live-qualified against the current ChatGPT UI.
 - DigitalOcean runtime and home-egress tunnel are designed but not provisioned.
-- Cloudflare runtime account ID remains secret/runtime-bound; SL verifies it through the canonical R2 bucket before Worker state is trusted.
+- SL Cloudflare account ID remains runtime-bound and is verified through its canonical R2 bucket. AB binds its canonical account ID directly but must verify the `autoblog-canary` Worker remotely before Cloudflare identity is trusted.
 - The current UI is functional scaffolding, not final product design.
 - Bob effect approvals currently live in process memory; persistence/resume is a later hardening item.
 - One Bob runtime currently assumes one active ChatGPT browser conversation at a time; multi-session concurrency is intentionally not yet implemented.
@@ -172,6 +191,6 @@ Continue `BOB_CORE_V1_RUNTIME_WIRING` from actual branch state. Do not rebuild t
 - No privileged target-project effect before exact workspace identity verification.
 - No external effect is PASS until Bob has verified returned/after-state.
 - No model response may expand workspace authority.
-- No SL production mutation/deploy/spend is authorized by the current workspace.
+- No SL or AB production mutation/deploy/spend is authorized by the current workspaces.
 - No secret may be committed to the repository or sent to browser JavaScript.
 - Do not make DigitalOcean a general-purpose execution engine merely because it hosts the ChatGPT browser.

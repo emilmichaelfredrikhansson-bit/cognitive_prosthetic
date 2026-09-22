@@ -52,7 +52,7 @@ Order:
 7. Cloudflare project integration.
 
 Exit criteria:
-- [ ] SL and AB identities are independently bound;
+- [x] SL and AB identities are independently bound;
 - [ ] no cross-workspace authority leakage;
 - [ ] existing provider/runtime contracts remain source of truth;
 - [ ] provider dispatch and verification are visibly distinct.

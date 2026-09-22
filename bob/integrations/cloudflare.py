@@ -71,31 +71,82 @@ class CloudflareAdapter:
     def verify_workspace(self, workspace: Workspace) -> dict[str, Any]:
         cfg = self._provider(workspace)
         account_id = self._account_id(workspace)
-        anchor = cfg.get("identity_anchor_r2_bucket")
+        r2_anchor = cfg.get("identity_anchor_r2_bucket")
+        worker_script = cfg.get("worker_script")
+        pages_project = cfg.get("project_name") or cfg.get("resource")
 
         anchor_receipt = None
-        if anchor:
+        if r2_anchor:
             payload = self._unwrap(
                 self.http.request(
                     "GET",
                     f"/accounts/{account_id}/r2/buckets",
-                    params={"name": str(anchor), "per_page": 100},
+                    params={"name": str(r2_anchor), "per_page": 100},
                 )
             )
             # Current API shape is {"buckets": [...]}; tolerate a bare list.
             buckets = payload.get("buckets", []) if isinstance(payload, dict) else payload or []
             names = {str(item.get("name")) for item in buckets if isinstance(item, dict)}
-            if str(anchor) not in names:
+            if str(r2_anchor) not in names:
                 raise IdentityMismatch(
-                    f"Cloudflare R2 identity anchor not found in account {account_id}: {anchor}"
+                    f"Cloudflare R2 identity anchor not found in account {account_id}: {r2_anchor}"
                 )
-            anchor_receipt = {"bucket": str(anchor), "verified": True}
+            anchor_receipt = {
+                "kind": "r2_bucket",
+                "bucket": str(r2_anchor),
+                "verified": True,
+            }
+        elif worker_script:
+            scripts = self._unwrap(
+                self.http.request("GET", f"/accounts/{account_id}/workers/scripts")
+            )
+            records = scripts if isinstance(scripts, list) else []
+            match = next(
+                (
+                    item for item in records
+                    if isinstance(item, dict) and str(item.get("id")) == str(worker_script)
+                ),
+                None,
+            )
+            if match is None:
+                raise IdentityMismatch(
+                    f"Cloudflare Worker identity anchor not found in account {account_id}: "
+                    f"{worker_script}"
+                )
+            anchor_receipt = {
+                "kind": "worker",
+                "worker_script": str(worker_script),
+                "verified": True,
+            }
+        elif pages_project:
+            project = self._unwrap(
+                self.http.request(
+                    "GET",
+                    f"/accounts/{account_id}/pages/projects/{pages_project}",
+                )
+            )
+            actual_name = project.get("name") if isinstance(project, dict) else None
+            if str(actual_name) != str(pages_project):
+                raise IdentityMismatch(
+                    f"Cloudflare Pages identity anchor mismatch: expected {pages_project}, "
+                    f"got {actual_name}"
+                )
+            anchor_receipt = {
+                "kind": "pages_project",
+                "project_name": str(pages_project),
+                "verified": True,
+            }
+        else:
+            raise ProtocolError(
+                "Cloudflare binding has no remotely verifiable identity anchor; "
+                "configure identity_anchor_r2_bucket, worker_script or Pages project"
+            )
 
         return {
             "account_id": account_id,
             "identity_anchor": anchor_receipt,
-            "worker_script": cfg.get("worker_script"),
-            "pages_project": cfg.get("project_name") or cfg.get("resource"),
+            "worker_script": worker_script,
+            "pages_project": pages_project,
         }
 
     def _worker(self, workspace: Workspace, args: dict[str, Any]) -> tuple[str, str]:

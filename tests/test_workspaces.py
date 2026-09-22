@@ -34,6 +34,26 @@ class WorkspaceTests(unittest.TestCase):
             with self.assertRaises(ConfigurationError):
                 WorkspaceRegistry(tmp).get("X")
 
+    def test_packaged_real_workspaces_are_isolated(self):
+        registry = WorkspaceRegistry(Path(__file__).resolve().parents[1] / "workspaces")
+        bob = registry.get("BOB")
+        sl = registry.get("SL")
+        ab = registry.get("AB")
+
+        self.assertEqual(bob.github_repository_id, 1374229539)
+        self.assertEqual(sl.github_repository_id, 1306946195)
+        self.assertEqual(ab.github_repository_id, 1347272122)
+        self.assertEqual(
+            len({bob.github_repository_id, sl.github_repository_id, ab.github_repository_id}),
+            3,
+        )
+        for workspace in (sl, ab):
+            self.assertTrue(workspace.effects["write_branch"])
+            self.assertTrue(workspace.effects["open_pr"])
+            self.assertFalse(workspace.effects["mutate_production_state"])
+            self.assertFalse(workspace.effects["material_spend"])
+            self.assertFalse(workspace.effects["deploy"])
+
 
 if __name__ == "__main__":
     unittest.main()

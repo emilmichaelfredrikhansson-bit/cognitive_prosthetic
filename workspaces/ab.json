@@ -1,0 +1,43 @@
+{
+  "schema": "BOB_WORKSPACE_V1",
+  "project": {
+    "name": "AutoBlog",
+    "code": "AB"
+  },
+  "github": {
+    "repository": "emilmichaelfredrikhansson-bit/autoblog-foundation",
+    "repository_id": 1347272122,
+    "default_branch": "main"
+  },
+  "context": {
+    "entry_documents": [
+      "CURRENT_WORK.md",
+      "ROADMAP.md",
+      "ARCHITECTURE.md",
+      "INVARIANTS.md",
+      "AGENTS.md",
+      "COMPUTE_RUNTIME.md"
+    ]
+  },
+  "providers": {
+    "supabase": {
+      "project_id": "ofnzyuosysdycrdxalve",
+      "organization_id": "wiibxuccedkxrvgruccq"
+    },
+    "hugging_face": {
+      "namespace": "Reallothesecond",
+      "account_id": "6a986fdd2e846637191b1c5e"
+    },
+    "cloudflare": {
+      "account_id": "7eb16181070aa18ecb28a1719fea7773",
+      "worker_script": "autoblog-canary"
+    }
+  },
+  "effects": {
+    "write_branch": true,
+    "open_pr": true,
+    "mutate_production_state": false,
+    "material_spend": false,
+    "deploy": false
+  }
+}
