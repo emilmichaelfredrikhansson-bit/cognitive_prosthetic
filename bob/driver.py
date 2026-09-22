@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import difflib
 import hashlib
 import json
 import os
+import threading
 import uuid
 from dataclasses import dataclass
 from typing import Any
@@ -33,8 +35,8 @@ class ChatGPTBridge:
     def send(self, prompt: str) -> str:
         with self._lock:
             response = requests.post(
-            self.base_url + "/chat",
-            json={"prompt": prompt},
+                self.base_url + "/chat",
+                json={"prompt": prompt},
                 timeout=self.timeout,
             )
             response.raise_for_status()
