@@ -23,7 +23,7 @@
 
 ## CURRENT_ARCHITECTURE
 
-Builder is being established as a thin project-agnostic development control plane over ChatGPT + GitHub + Hugging Face + Supabase + Cloudflare.
+Builder is being established as a thin project-agnostic development control plane over ChatGPT + GitHub + Hugging Face + Supabase + Cloudflare, with a narrow persistent ChatGPT browser bridge targeted to DigitalOcean.
 
 The inherited repository currently supplies only a ChatGPT browser/local-API prototype. It does not yet implement workspace management, GitHub direct writes, structured change sets, provider adapters, or the Builder UI.
 
@@ -33,6 +33,8 @@ The inherited repository currently supplies only a ChatGPT browser/local-API pro
 - Project Foundation 0.3.0 principles reviewed and selectively adopted;
 - Builder root-of-trust, constitution, agent protocol and product architecture defined;
 - V1 explicitly rejects an unnecessary always-on general-purpose Builder Core;
+- persistent ChatGPT cognition is now targeted to a narrow DigitalOcean browser bridge, with secure home-network tunneling for selected home-IP egress;
+- PC and mobile are both thin clients of the same Cloudflare-hosted Builder surface;
 - compute placement preserves existing SL/AB infrastructure and minimizes GitHub Actions dependency.
 
 ## ACTIVE_WORK
@@ -59,8 +61,10 @@ Do this before adding broad provider orchestration.
 ## OPEN_FINDINGS
 
 - ChatGPT response transport must be separated from product logic. Current upstream DOM extraction is not the desired long-term capture path.
-- Windows UI Automation/accessibility is the preferred first PC capture experiment.
-- Full mobile ChatGPT cognition needs a reachable authenticated browser bridge or another cognition transport; direct GitHub/HF/Supabase/Cloudflare controls do not have this limitation.
+- Windows UI Automation/accessibility remains the preferred first capture mechanism inside the browser runtime.
+- Target browser runtime is a persistent DigitalOcean bridge rather than a permanently required local PC session.
+- The DigitalOcean bridge should route ChatGPT egress through a secure tunnel to the home network/router when that path is enabled.
+- Direct GitHub/HF/Supabase/Cloudflare controls do not depend on the browser bridge or home egress path.
 - The final Cloudflare authentication/session model is not yet selected.
 - SL and AB workspace contracts must be derived from their actual current root-of-trust, not reconstructed from memory.
 
