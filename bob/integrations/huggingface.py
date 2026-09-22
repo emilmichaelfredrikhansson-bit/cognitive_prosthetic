@@ -68,7 +68,7 @@ class HuggingFaceAdapter:
             if not job_id:
                 raise ProtocolError("hf.job_logs requires job_id")
             logs = self.api.fetch_job_logs(str(job_id), namespace=namespace, token=self.token)
-            return list(logs) if not isinstance(logs, str) else logs
+            return _serializable(list(logs) if not isinstance(logs, str) else logs)
         raise ProtocolError(f"unsupported Hugging Face read tool: {tool}")
 
     def effect(self, workspace: Workspace, tool: str, args: dict[str, Any]) -> Any:
