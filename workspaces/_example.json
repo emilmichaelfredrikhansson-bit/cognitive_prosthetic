@@ -1,5 +1,5 @@
 {
-  "schema": "BUILDER_WORKSPACE_V1",
+  "schema": "BOB_WORKSPACE_V1",
   "project": {
     "name": "Example Project",
     "code": "EX"

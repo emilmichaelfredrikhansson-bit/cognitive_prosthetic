@@ -1,5 +1,5 @@
 {
-  "schema": "BUILDER_EFFECT_BOUNDARIES_V1",
+  "schema": "BOB_EFFECT_BOUNDARIES_V1",
   "effects": {
     "READ_DIAGNOSE": {
       "default": "allowed",

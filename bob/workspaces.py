@@ -21,8 +21,8 @@ class Workspace:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "Workspace":
-        if data.get("schema") != "BUILDER_WORKSPACE_V1":
-            raise ConfigurationError("workspace schema must be BUILDER_WORKSPACE_V1")
+        if data.get("schema") != "BOB_WORKSPACE_V1":
+            raise ConfigurationError("workspace schema must be BOB_WORKSPACE_V1")
         project = data.get("project") or {}
         github = data.get("github") or {}
         context = data.get("context") or {}

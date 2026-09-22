@@ -32,7 +32,7 @@ class FakeGitHub:
 
 def make_workspace(tmp):
     Path(tmp, "x.json").write_text(json.dumps({
-        "schema": "BUILDER_WORKSPACE_V1",
+        "schema": "BOB_WORKSPACE_V1",
         "project": {"name": "X", "code": "X"},
         "github": {
             "repository": "owner/repo",

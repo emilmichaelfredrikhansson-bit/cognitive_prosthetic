@@ -11,7 +11,7 @@ class WorkspaceTests(unittest.TestCase):
     def test_loads_valid_workspace(self):
         with tempfile.TemporaryDirectory() as tmp:
             Path(tmp, "x.json").write_text(json.dumps({
-                "schema": "BUILDER_WORKSPACE_V1",
+                "schema": "BOB_WORKSPACE_V1",
                 "project": {"name": "X", "code": "X"},
                 "github": {
                     "repository": "owner/repo",
@@ -27,7 +27,7 @@ class WorkspaceTests(unittest.TestCase):
     def test_requires_stable_repo_id(self):
         with tempfile.TemporaryDirectory() as tmp:
             Path(tmp, "x.json").write_text(json.dumps({
-                "schema": "BUILDER_WORKSPACE_V1",
+                "schema": "BOB_WORKSPACE_V1",
                 "project": {"name": "X", "code": "X"},
                 "github": {"repository": "owner/repo"}
             }))
