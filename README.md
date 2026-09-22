@@ -9,6 +9,7 @@ It is being built from the `CodeMongerrr/cognitive_prosthetic` fork as a thin co
 - **Hugging Face** — portable compute, tests and ML jobs
 - **Supabase** — runtime, database and durable project state
 - **Cloudflare** — responsive web interface and project hosting/runtime surfaces
+- **DigitalOcean** — narrow persistent runtime for the authenticated ChatGPT browser bridge
 
 The aim is not to recreate those systems. The aim is to connect them into one operator-facing development workflow usable from PC and mobile.
 
@@ -60,7 +61,9 @@ Provider integrations and the polished Cloudflare UI follow after the GitHub dev
 
 Direct GitHub, HF, Supabase and Cloudflare integrations can be server-side and work from both PC and mobile.
 
-Subscription-backed ChatGPT browser cognition requires a reachable authenticated browser session. The inherited browser bridge is therefore treated as a replaceable `CognitionAdapter`, not as the product architecture itself.
+Subscription-backed ChatGPT browser cognition requires a reachable authenticated browser session. The target runtime is a narrow persistent DigitalOcean browser bridge, optionally routing ChatGPT traffic through a secure home-network tunnel for home-IP egress. The inherited browser bridge is therefore treated as a replaceable `CognitionAdapter`, not as the product architecture itself.
+
+This allows the same Cloudflare-hosted Builder UI to work from PC or mobile without requiring the operator's PC to stay online.
 
 ## Lineage
 
