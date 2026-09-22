@@ -1,0 +1,206 @@
+from __future__ import annotations
+
+import base64
+from typing import Any
+
+from bob.errors import IdentityMismatch, ProtocolError
+from bob.workspaces import Workspace
+from .http import JsonHttp
+
+
+class GitHubAdapter:
+    def __init__(self, token: str):
+        headers = {
+            "Accept": "application/vnd.github+json",
+            "Authorization": f"Bearer {token}",
+            "X-GitHub-Api-Version": "2022-11-28",
+        }
+        self.http = JsonHttp("https://api.github.com", headers=headers)
+
+    def capabilities(self) -> list[str]:
+        return [
+            "github.repo",
+            "github.read_file",
+            "github.read_files",
+            "github.list_contents",
+            "github.create_branch",
+            "github.create_file",
+            "github.replace_file",
+            "github.delete_file",
+            "github.open_pr",
+        ]
+
+    def verify_workspace(self, workspace: Workspace) -> dict[str, Any]:
+        repo = self.http.request("GET", f"/repos/{workspace.github_repository}")
+        actual_id = int(repo["id"])
+        if actual_id != workspace.github_repository_id:
+            raise IdentityMismatch(
+                f"GitHub repository ID mismatch: expected {workspace.github_repository_id}, got {actual_id}"
+            )
+        return {
+            "repository": repo["full_name"],
+            "repository_id": actual_id,
+            "default_branch": repo["default_branch"],
+            "private": bool(repo.get("private")),
+        }
+
+    def read(self, workspace: Workspace, tool: str, args: dict[str, Any]) -> Any:
+        self.verify_workspace(workspace)
+        if tool == "github.repo":
+            return self.verify_workspace(workspace)
+        if tool == "github.read_file":
+            return self.read_file(workspace, args["path"], args.get("ref"))
+        if tool == "github.read_files":
+            paths = args.get("paths")
+            if not isinstance(paths, list) or not paths:
+                raise ProtocolError("github.read_files requires non-empty paths")
+            return [self.read_file(workspace, str(path), args.get("ref")) for path in paths]
+        if tool == "github.list_contents":
+            path = str(args.get("path") or "")
+            params = {"ref": args["ref"]} if args.get("ref") else None
+            return self.http.request(
+                "GET",
+                f"/repos/{workspace.github_repository}/contents/{path}",
+                params=params,
+            )
+        raise ProtocolError(f"unsupported GitHub read tool: {tool}")
+
+    def effect(self, workspace: Workspace, tool: str, args: dict[str, Any]) -> Any:
+        self.verify_workspace(workspace)
+        if tool == "github.create_branch":
+            base = str(args.get("base") or workspace.default_branch)
+            branch = self._required(args, "branch")
+            ref = self.http.request(
+                "GET",
+                f"/repos/{workspace.github_repository}/git/ref/heads/{base}",
+            )
+            base_sha = ref["object"]["sha"]
+            expected = args.get("expected_base_sha")
+            if expected and expected != base_sha:
+                raise IdentityMismatch(f"stale base: expected {expected}, got {base_sha}")
+            created = self.http.request(
+                "POST",
+                f"/repos/{workspace.github_repository}/git/refs",
+                json_body={"ref": f"refs/heads/{branch}", "sha": base_sha},
+            )
+            return {"branch": branch, "base_sha": base_sha, "ref": created.get("ref")}
+
+        if tool == "github.create_file":
+            path = self._required(args, "path")
+            content = self._required(args, "content")
+            branch = self._required(args, "branch")
+            payload = {
+                "message": str(args.get("message") or f"Bob: create {path}"),
+                "content": base64.b64encode(content.encode("utf-8")).decode("ascii"),
+                "branch": branch,
+            }
+            result = self.http.request(
+                "PUT",
+                f"/repos/{workspace.github_repository}/contents/{path}",
+                json_body=payload,
+            )
+            return self._write_receipt(result, path, branch)
+
+        if tool == "github.replace_file":
+            path = self._required(args, "path")
+            content = self._required(args, "content")
+            branch = self._required(args, "branch")
+            expected_sha = self._required(args, "expected_sha")
+            current = self.read_file(workspace, path, branch)
+            if current["sha"] != expected_sha:
+                raise IdentityMismatch(f"stale file {path}: expected {expected_sha}, got {current['sha']}")
+            payload = {
+                "message": str(args.get("message") or f"Bob: update {path}"),
+                "content": base64.b64encode(content.encode("utf-8")).decode("ascii"),
+                "sha": expected_sha,
+                "branch": branch,
+            }
+            result = self.http.request(
+                "PUT",
+                f"/repos/{workspace.github_repository}/contents/{path}",
+                json_body=payload,
+            )
+            return self._write_receipt(result, path, branch)
+
+        if tool == "github.delete_file":
+            path = self._required(args, "path")
+            branch = self._required(args, "branch")
+            expected_sha = self._required(args, "expected_sha")
+            current = self.read_file(workspace, path, branch)
+            if current["sha"] != expected_sha:
+                raise IdentityMismatch(f"stale file {path}: expected {expected_sha}, got {current['sha']}")
+            result = self.http.request(
+                "DELETE",
+                f"/repos/{workspace.github_repository}/contents/{path}",
+                json_body={
+                    "message": str(args.get("message") or f"Bob: delete {path}"),
+                    "sha": expected_sha,
+                    "branch": branch,
+                },
+            )
+            return {
+                "path": path,
+                "branch": branch,
+                "commit_sha": result["commit"]["sha"],
+                "verified": True,
+            }
+
+        if tool == "github.open_pr":
+            head = self._required(args, "head")
+            base = str(args.get("base") or workspace.default_branch)
+            result = self.http.request(
+                "POST",
+                f"/repos/{workspace.github_repository}/pulls",
+                json_body={
+                    "title": self._required(args, "title"),
+                    "body": str(args.get("body") or ""),
+                    "head": head,
+                    "base": base,
+                    "draft": bool(args.get("draft", False)),
+                },
+            )
+            return {
+                "number": result["number"],
+                "url": result["html_url"],
+                "head": head,
+                "base": base,
+                "state": result["state"],
+                "verified": True,
+            }
+
+        raise ProtocolError(f"unsupported GitHub effect tool: {tool}")
+
+    def read_file(self, workspace: Workspace, path: str, ref: str | None = None) -> dict[str, Any]:
+        params = {"ref": ref} if ref else None
+        result = self.http.request(
+            "GET",
+            f"/repos/{workspace.github_repository}/contents/{path}",
+            params=params,
+        )
+        if result.get("type") != "file":
+            raise ProtocolError(f"path is not a file: {path}")
+        raw = base64.b64decode(result["content"]).decode("utf-8")
+        return {
+            "path": path,
+            "sha": result["sha"],
+            "ref": ref,
+            "content": raw,
+            "size": result.get("size"),
+        }
+
+    @staticmethod
+    def _required(args: dict[str, Any], key: str) -> Any:
+        value = args.get(key)
+        if value in (None, ""):
+            raise ProtocolError(f"missing required argument: {key}")
+        return value
+
+    @staticmethod
+    def _write_receipt(result: dict[str, Any], path: str, branch: str) -> dict[str, Any]:
+        return {
+            "path": path,
+            "branch": branch,
+            "commit_sha": result["commit"]["sha"],
+            "content_sha": result["content"]["sha"],
+            "verified": True,
+        }
