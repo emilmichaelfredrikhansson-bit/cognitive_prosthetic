@@ -84,6 +84,23 @@ def direct_read():
     return jsonify({"success": True, "result": result})
 
 
+@app.post("/bob/relay")
+def relay():
+    data = request.get_json(force=True) or {}
+    result = runtime.relay_model_response(
+        str(data["workspace"]),
+        str(data["model_response"]),
+    )
+    return jsonify({"success": True, **result})
+
+
+@app.post("/bob/relay/approve")
+def relay_approve():
+    data = request.get_json(force=True) or {}
+    result = runtime.relay_approve(str(data["pending_id"]))
+    return jsonify({"success": True, **result})
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("BOB_PORT", "5002"))
     app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
