@@ -13,20 +13,20 @@ from bob.workspaces import Workspace
 
 def _serializable(value: Any) -> Any:
     if value is None or isinstance(value, (str, int, float, bool)):
-        return str(value)
+        return value
     if isinstance(value, (datetime, date)):
         return value.isoformat()
     if isinstance(value, Enum):
         return value.value
     if is_dataclass(value):
-        return asdict(value)
+        return _serializable(asdict(value))
     if hasattr(value, "__dict__"):
         return {k: _serializable(v) for k, v in vars(value).items() if not k.startswith("_")}
     if isinstance(value, (list, tuple)):
         return [_serializable(v) for v in value]
     if isinstance(value, dict):
         return {str(k): _serializable(v) for k, v in value.items()}
-    return value
+    return str(value)
 
 
 class HuggingFaceAdapter:
