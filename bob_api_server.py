@@ -4,19 +4,24 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 
 from bob.driver import BobRuntime
 from bob.errors import BobError
 
 BASE_DIR = Path(__file__).resolve().parent
-app = Flask(__name__)
+app = Flask(__name__, static_folder=str(BASE_DIR / "frontend"), static_url_path="")
 CORS(app)
 
 runtime = BobRuntime(
     workspace_dir=os.environ.get("BOB_WORKSPACE_DIR", str(BASE_DIR / "workspaces"))
 )
+
+
+@app.get("/")
+def index():
+    return send_from_directory(app.static_folder, "index.html")
 
 
 @app.errorhandler(BobError)
