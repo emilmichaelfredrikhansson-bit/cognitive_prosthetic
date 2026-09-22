@@ -162,7 +162,26 @@ This means development and protocol qualification can continue with the current 
 
 This still does not prove the live browser/clipboard transport or installed runtime credentials.
 
-The Bob naming/schema canonicalization occurred after the latest HF job. The prior 7/7 result remains baseline runtime evidence, but a fresh execution-suite result has not yet been recorded for the canonicalized head; do not mislabel the older job as current-head verification.
+The Bob naming/schema canonicalization and subsequent AB binding, workspace qualification, manual-relay HTTP completion, approval-state binding and local control-plane hardening occurred after the latest HF job. The prior 7/7 result remains baseline runtime evidence, but a fresh execution-suite result has not yet been recorded for current head; do not mislabel the older job as current-head verification.
+
+Current external read-only reconciliation on 2026-09-22 independently confirmed:
+
+```text
+Bob GitHub = emilmichaelfredrikhansson-bit/cognitive_prosthetic / 1374229539
+SL GitHub = emilmichaelfredrikhansson-bit/signal-lab-pro / 1306946195
+AB GitHub = emilmichaelfredrikhansson-bit/autoblog-foundation / 1347272122
+
+SL Supabase = ttycbqaueeaedcrtcpuw / wiibxuccedkxrvgruccq / ACTIVE_HEALTHY
+AB Supabase = ofnzyuosysdycrdxalve / wiibxuccedkxrvgruccq / ACTIVE_HEALTHY
+
+HF = Reallothesecond / 6a986fdd2e846637191b1c5e
+HF job 6ab2c4d651992417dfcd3e7d = COMPLETED
+HF job 6ab2c73251992417dfcd3ec2 = COMPLETED
+```
+
+This external reconciliation proves the bindings are still real; it does **not** prove that a deployed Bob process has the required runtime credentials. Cloudflare live account/resource read-back remains unavailable from the interactive development session and must be performed through Bob once `CLOUDFLARE_API_TOKEN` is installed.
+
+Current head declares **19 unittest methods** across protocol/workspace/driver/Cloudflare/server-surface tests. They have been statically read back from GitHub but have not yet been executed on the current head.
 
 ## ACTIVE_WORK
 
@@ -174,13 +193,14 @@ The code architecture exists and is unit-green. The next coherent work is to tur
 
 Manual relay is available now, so use it for protocol/integration development when the browser runtime is unavailable.
 
-1. Run read-only live qualification through Bob/manual relay against Bob + SL + AB, including Cloudflare identity read-back where runtime credentials are available.
-2. Qualify one approved Bob-repo branch/PR write end to end through the Bob approval boundary.
-3. Provision/qualify the persistent DigitalOcean browser runtime.
-4. Install the Bob ChatGPT Project instructions and bind `CHATGPT_TARGET_URL`.
-5. Configure least-privilege persistent runtime credentials for GitHub, Supabase, HF and Cloudflare.
-6. Deploy the responsive Bob UI/API behind authenticated Cloudflare access.
-7. Only after these are green, consider enabling any project-specific production effect classes.
+1. Execute the current-head 19-test suite in an authorized execution environment; record exact head SHA + result.
+2. Configure least-privilege persistent Bob runtime credentials for GitHub, Supabase, HF and Cloudflare.
+3. Run `/bob/qualify` read-only against Bob + SL + AB; Cloudflare identity anchors must be live-read through Bob.
+4. Qualify one approved Bob-repo branch/PR write end to end through the Bob approval boundary.
+5. Provision/qualify the persistent DigitalOcean browser runtime without making it a general-purpose executor.
+6. Install the Bob ChatGPT Project instructions and bind `CHATGPT_TARGET_URL`.
+7. Put remote/mobile access behind an authenticated Cloudflare/tunnel boundary while keeping the Python services loopback-only.
+8. Only after these are green, consider enabling any project-specific production effect classes.
 
 ## OPEN_FINDINGS
 
