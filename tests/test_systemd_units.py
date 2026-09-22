@@ -32,6 +32,7 @@ class SystemdUnitTests(unittest.TestCase):
     def test_browser_profile_write_scope_is_explicit(self):
         self.assertIn("Environment=CHATGPT_PROFILE_PATH=/var/lib/bob/chatgpt-profile", BRIDGE)
         self.assertIn("ReadWritePaths=/var/lib/bob", BRIDGE)
+        self.assertIn("ExecStart=/usr/bin/xvfb-run -a ", BRIDGE)
 
 
 if __name__ == "__main__":
