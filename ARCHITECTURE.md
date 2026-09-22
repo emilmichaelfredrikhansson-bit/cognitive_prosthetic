@@ -11,7 +11,9 @@ Cloudflare-hosted Builder UI
    │
    ├──────────── ChatGPT cognition adapter
    │                │
-   │                └─ browser/subscription transport initially
+   │                └─ persistent authenticated browser bridge
+   │                     ├─ target runtime: DigitalOcean
+   │                     └─ secure tunnel via home network for home-IP egress
    │
    ├──────────── GitHub adapter
    │                ├─ repo/context reads
@@ -118,26 +120,37 @@ Core views:
 
 Secrets must not be exposed to browser JavaScript when a server-side Worker/API can hold them safely.
 
-## ChatGPT transport and PC/mobile constraint
+## ChatGPT transport and device independence
 
-Direct GitHub/Supabase/HF/Cloudflare operations can be server-side and therefore work from both PC and mobile.
+Direct GitHub/Supabase/HF/Cloudflare operations are server-side and therefore work from both PC and mobile.
 
-Subscription-backed ChatGPT browser automation is different: a live authenticated browser session must exist somewhere.
-
-V1 may use a PC-local companion/browser session.
-
-Therefore:
+Subscription-backed ChatGPT cognition requires a live authenticated browser session somewhere. The target architecture is a **persistent remote cognition bridge**:
 
 ```text
-PC:
-Cloudflare UI → local ChatGPT bridge → ChatGPT
-
-Mobile:
-Cloudflare UI → all server-side integrations work
-full ChatGPT cognition requires a reachable bridge
+PC or mobile
+   ↓
+Cloudflare Builder UI/API
+   ↓
+CognitionAdapter
+   ↓
+DigitalOcean browser bridge
+   ↓
+encrypted tunnel
+   ↓
+home network / router
+   ↓
+normal home-IP egress
+   ↓
+ChatGPT
 ```
 
-Mobile-equivalent cognition can later use a secure tunnel, remote browser bridge, or another authorized cognition transport. This is a transport problem, not a reason to create a permanent general-purpose Builder compute core.
+DigitalOcean is not a general-purpose Builder Core. Its narrow responsibility is to keep the authenticated ChatGPT browser/session available and expose the replaceable cognition transport.
+
+The home-network tunnel exists only to provide the selected network egress path. GitHub, HF, Supabase and Cloudflare integrations remain independent of it.
+
+A PC-local browser bridge remains useful as a development/canary fallback, but it is not the north-star device model.
+
+This makes Builder device-independent: PC and mobile use the same Cloudflare UI and the same remote cognition bridge.
 
 ## State model
 
@@ -171,6 +184,8 @@ GitHub       source/history/PR semantics
 HF           portable execution
 Supabase     DB/runtime/canonical project state
 Cloudflare   UI/edge hosting
+DigitalOcean persistent ChatGPT browser/session runtime
+Home tunnel   selected ChatGPT egress path
 ```
 
 Use GitHub Actions only when GitHub-native execution semantics add material value.
@@ -179,7 +194,7 @@ Use GitHub Actions only when GitHub-native execution semantics add material valu
 
 - replacing GitHub with a local Git service;
 - building a full local IDE;
-- building an always-on general-purpose Builder daemon;
+- building an always-on **general-purpose** Builder daemon (a narrow persistent ChatGPT browser bridge is allowed);
 - autonomous merge/deploy without operator authority;
 - generalized arbitrary shell execution;
 - reproducing HF/Supabase/Cloudflare features inside Builder.
