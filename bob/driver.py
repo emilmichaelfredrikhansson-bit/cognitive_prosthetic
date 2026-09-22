@@ -28,25 +28,28 @@ class ChatGPTBridge:
     def __init__(self, base_url: str | None = None, timeout: int = 220):
         self.base_url = (base_url or os.environ.get("CHATGPT_BRIDGE_URL") or "http://127.0.0.1:5001").rstrip("/")
         self.timeout = timeout
+        self._lock = threading.Lock()
 
     def send(self, prompt: str) -> str:
-        response = requests.post(
+        with self._lock:
+            response = requests.post(
             self.base_url + "/chat",
             json={"prompt": prompt},
-            timeout=self.timeout,
-        )
-        response.raise_for_status()
-        payload = response.json()
-        if not payload.get("success"):
-            raise BobError(payload.get("error") or "ChatGPT bridge failed")
-        text = payload.get("response")
-        if not isinstance(text, str):
-            raise BobError("ChatGPT bridge returned no response text")
-        return text
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            payload = response.json()
+            if not payload.get("success"):
+                raise BobError(payload.get("error") or "ChatGPT bridge failed")
+            text = payload.get("response")
+            if not isinstance(text, str):
+                raise BobError("ChatGPT bridge returned no response text")
+            return text
 
     def new_chat(self) -> None:
-        response = requests.post(self.base_url + "/new-chat", json={}, timeout=30)
-        response.raise_for_status()
+        with self._lock:
+            response = requests.post(self.base_url + "/new-chat", json={}, timeout=30)
+            response.raise_for_status()
 
 
 class BobRuntime:
@@ -86,8 +89,20 @@ class BobRuntime:
     def capabilities(self) -> dict[str, list[str]]:
         return {name: adapter.capabilities() for name, adapter in self.adapters.items()}
 
+    def workspace_capabilities(self, workspace: Workspace) -> dict[str, list[str]]:
+        provider_keys = {
+            "supabase": "supabase",
+            "hf": "hugging_face",
+            "cloudflare": "cloudflare",
+        }
+        result: dict[str, list[str]] = {}
+        for name, adapter in self.adapters.items():
+            if name == "github" or provider_keys.get(name) in workspace.providers:
+                result[name] = adapter.capabilities()
+        return result
+
     def workspace_packet(self, workspace: Workspace) -> str:
-        return make_workspace_packet(workspace.public_dict(), self.capabilities())
+        return make_workspace_packet(workspace.public_dict(), self.workspace_capabilities(workspace))
 
     def start_chat(self, workspace_code: str) -> dict[str, Any]:
         workspace = self.registry.get(workspace_code)
@@ -248,7 +263,43 @@ class BobRuntime:
             "effect_class": effect_class,
             "args": message.args,
             "candidate_hash": candidate_hash,
+            "preview": self._preview_effect(workspace, message),
         }
+
+    def _preview_effect(self, workspace: Workspace, message: BobMessage) -> dict[str, Any] | None:
+        tool = message.tool or ""
+        if not tool.startswith("github."):
+            return None
+        adapter = self._adapter_for(tool)
+        args = message.args
+        if tool == "github.create_file":
+            path = str(args.get("path") or "")
+            content = str(args.get("content") or "")
+            diff = "".join(difflib.unified_diff(
+                [],
+                content.splitlines(keepends=True),
+                fromfile="/dev/null",
+                tofile=path,
+            ))
+            return {"kind": "diff", "diff": diff}
+        if tool in {"github.replace_file", "github.delete_file"}:
+            path = str(args.get("path") or "")
+            branch = str(args.get("branch") or workspace.default_branch)
+            current = adapter.read_file(workspace, path, branch)
+            expected_sha = args.get("expected_sha")
+            if expected_sha and current["sha"] != expected_sha:
+                raise AuthorityError(
+                    f"stale file before approval: expected {expected_sha}, got {current['sha']}"
+                )
+            new_content = "" if tool == "github.delete_file" else str(args.get("content") or "")
+            diff = "".join(difflib.unified_diff(
+                current["content"].splitlines(keepends=True),
+                new_content.splitlines(keepends=True),
+                fromfile=path,
+                tofile=path if new_content else "/dev/null",
+            ))
+            return {"kind": "diff", "diff": diff, "current_sha": current["sha"]}
+        return {"kind": "summary", "tool": tool, "args": args}
 
     def _adapter_for(self, tool: str | None) -> Any:
         if not tool or "." not in tool:
