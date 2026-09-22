@@ -1,6 +1,6 @@
 # Foundation Adoption
 
-Builder selectively adopts the operating model of `emilmichaelfredrikhansson-bit/project-foundation` Foundation 0.3.0.
+Bob selectively adopts the operating model of `emilmichaelfredrikhansson-bit/project-foundation` Foundation 0.3.0.
 
 Adopted principles:
 - repository state outranks chat memory for current truth;
@@ -16,4 +16,4 @@ Adopted principles:
 - GitHub is not generic compute merely because source code lives there;
 - governance should remain minimal and useful.
 
-Builder intentionally does **not** copy Foundation mechanically. Product-specific architecture lives in Builder's own `ARCHITECTURE.md` and implementation plan.
+Bob intentionally does **not** copy Foundation mechanically. Product-specific architecture lives in Bob's own `ARCHITECTURE.md` and implementation plan.

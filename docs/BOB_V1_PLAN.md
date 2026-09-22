@@ -1,8 +1,8 @@
-# Builder V1 Implementation Plan
+# Bob V1 Implementation Plan
 
 ## Objective
 
-Create the smallest production-useful Builder that can develop a real repository through ChatGPT-generated code while writing accepted changes directly to GitHub, preserving the existing SL/AB infrastructure model.
+Create the smallest production-useful Bob that can develop a real repository through ChatGPT-generated code while writing accepted changes directly to GitHub, preserving the existing SL/AB infrastructure model.
 
 V1 is successful when the operator can:
 
@@ -36,7 +36,7 @@ Goal: isolate browser transport from product logic.
 Create modules conceptually equivalent to:
 
 ```text
-builder/
+bob/
   cognition/
   workspaces/
   changesets/
@@ -71,7 +71,7 @@ Implement schema validation and identity verification.
 
 Acceptance:
 - a wrong repository ID fails closed;
-- SL and AB can be represented without Builder-specific code branches;
+- SL and AB can be represented without Bob-specific code branches;
 - no provider credentials are stored in workspace files.
 
 ## Work package 3 — Repository context reader
@@ -92,7 +92,7 @@ Acceptance:
 
 ## Work package 4 — Structured change-set contract
 
-Define `BUILDER_CHANGESET_V1`.
+Define `BOB_CHANGESET_V1`.
 
 Initial operations:
 - `create`;
@@ -140,7 +140,7 @@ Implement:
 Prefer a dedicated branch per semantic work unit.
 
 Acceptance:
-- end-to-end canary PR from a Builder-generated change set;
+- end-to-end canary PR from a Bob-generated change set;
 - duplicate/replay behavior is explicit;
 - partial failure is visible and recoverable;
 - no silent write to `main`.
@@ -213,7 +213,7 @@ Add only the project operations that are actually needed.
 - explicit approval for material mutation.
 
 ### Cloudflare
-- Builder frontend deployment/status;
+- Bob frontend deployment/status;
 - target-project deploy/status when authorized.
 
 Provider adapters must not become new sources of authority.
@@ -241,7 +241,7 @@ Goal: remove the requirement for the operator's PC to host the ChatGPT session.
 Target topology:
 
 ```text
-Cloudflare Builder UI/API
+Cloudflare Bob UI/API
 → authenticated CognitionAdapter call
 → DigitalOcean persistent browser/session
 → secure tunnel to home network/router
@@ -254,10 +254,10 @@ Responsibilities of the DigitalOcean component are intentionally narrow:
 - report health/session state;
 - expose no generic shell/build authority to the UI.
 
-The home tunnel is an egress mechanism, not a Builder authority source.
+The home tunnel is an egress mechanism, not a Bob authority source.
 
 Acceptance:
-- cognition works from both PC and mobile through the same Builder UI;
+- cognition works from both PC and mobile through the same Bob UI;
 - no operator PC needs to remain online;
 - tunnel/browser restart is recoverable;
 - bridge failure cannot trigger repository writes;
@@ -265,13 +265,13 @@ Acceptance:
 
 ## Mobile cognition milestone
 
-Once the Cloudflare UI and persistent DigitalOcean cognition bridge exist, PC and mobile become equivalent control clients for the normal Builder development loop.
+Once the Cloudflare UI and persistent DigitalOcean cognition bridge exist, PC and mobile become equivalent control clients for the normal Bob development loop.
 
 ## V1 completion definition
 
 V1 is complete when:
 - one canary and one real workspace can complete the GitHub development loop safely;
-- SL can use Builder for ordinary branch/PR development;
+- SL can use Bob for ordinary branch/PR development;
 - GitHub Actions are not required as the coding engine;
 - project identity and authority boundaries fail closed;
 - ChatGPT transport is replaceable;
@@ -285,7 +285,7 @@ Start with exactly:
 workspace schema
 + GitHub identity verifier
 + bounded file reader
-+ BUILDER_CHANGESET_V1 parser
++ BOB_CHANGESET_V1 parser
 + diff renderer
 + branch/file/PR writer
 + canary tests

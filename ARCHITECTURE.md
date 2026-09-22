@@ -2,12 +2,12 @@
 
 ## North-star system
 
-Builder is a thin development control plane over existing project infrastructure.
+Bob is a thin development control plane over existing project infrastructure.
 
 ```text
 Operator
    ↕
-Cloudflare-hosted Builder UI
+Cloudflare-hosted Bob UI
    │
    ├──────────── ChatGPT cognition adapter
    │                │
@@ -31,7 +31,7 @@ Cloudflare-hosted Builder UI
                     └─ frontend / Worker / project hosting effects
 ```
 
-Builder does not replace these systems. It gives them one operator-facing development surface.
+Bob does not replace these systems. It gives them one operator-facing development surface.
 
 ## V1 components
 
@@ -97,7 +97,7 @@ Default V1 effect stops at branch/PR. Merge is a distinct authority class.
 
 ### 5. Provider Adapters
 
-Provider adapters expose project-native actions without turning Builder into a second runtime.
+Provider adapters expose project-native actions without turning Bob into a second runtime.
 
 - **HF:** dispatch and inspect qualified compute jobs.
 - **Supabase:** inspect/execute explicitly authorized DB/runtime operations.
@@ -129,7 +129,7 @@ Subscription-backed ChatGPT cognition requires a live authenticated browser sess
 ```text
 PC or mobile
    ↓
-Cloudflare Builder UI/API
+Cloudflare Bob UI/API
    ↓
 CognitionAdapter
    ↓
@@ -144,13 +144,13 @@ normal home-IP egress
 ChatGPT
 ```
 
-DigitalOcean is not a general-purpose Builder Core. Its narrow responsibility is to keep the authenticated ChatGPT browser/session available and expose the replaceable cognition transport.
+DigitalOcean is not a general-purpose Bob Core. Its narrow responsibility is to keep the authenticated ChatGPT browser/session available and expose the replaceable cognition transport.
 
 The home-network tunnel exists only to provide the selected network egress path. GitHub, HF, Supabase and Cloudflare integrations remain independent of it.
 
 A PC-local browser bridge remains useful as a development/canary fallback, but it is not the north-star device model.
 
-This makes Builder device-independent: PC and mobile use the same Cloudflare UI and the same remote cognition bridge.
+This makes Bob device-independent: PC and mobile use the same Cloudflare UI and the same remote cognition bridge.
 
 ## State model
 
@@ -194,7 +194,7 @@ Use GitHub Actions only when GitHub-native execution semantics add material valu
 
 - replacing GitHub with a local Git service;
 - building a full local IDE;
-- building an always-on **general-purpose** Builder daemon (a narrow persistent ChatGPT browser bridge is allowed);
+- building an always-on **general-purpose** Bob daemon (a narrow persistent ChatGPT browser bridge is allowed);
 - autonomous merge/deploy without operator authority;
 - generalized arbitrary shell execution;
-- reproducing HF/Supabase/Cloudflare features inside Builder.
+- reproducing HF/Supabase/Cloudflare features inside Bob.

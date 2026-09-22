@@ -1,10 +1,10 @@
 # Workspace Contract
 
-A Builder workspace is the smallest unit of project identity, context routing and effect authority.
+A Bob workspace is the smallest unit of project identity, context routing and effect authority.
 
 ## Goals
 
-The same Builder Core must support Signal Lab, AutoBlog and future projects without project-specific branches in product code.
+The same Bob Core must support Signal Lab, AutoBlog and future projects without project-specific branches in product code.
 
 A workspace is configuration plus verified external identity. It is not a source of new authority.
 
@@ -14,7 +14,7 @@ Each workspace must bind:
 
 ```json
 {
-  "schema": "BUILDER_WORKSPACE_V1",
+  "schema": "BOB_WORKSPACE_V1",
   "project": {
     "name": "Signal Lab",
     "code": "SL"
@@ -74,7 +74,7 @@ Credentials do not belong in the workspace file.
 
 ## Effect policy
 
-A workspace may narrow Builder's global effect policy, never broaden it.
+A workspace may narrow Bob's global effect policy, never broaden it.
 
 Example:
 
@@ -93,7 +93,7 @@ Example:
 ```
 
 Runtime authority is the intersection of:
-- Builder global effect boundary;
+- Bob global effect boundary;
 - workspace policy;
 - current operator approval;
 - provider/repository identity verification.

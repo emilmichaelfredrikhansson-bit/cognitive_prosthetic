@@ -1,6 +1,6 @@
 # Project Constitution
 
-This document is Builder's durable normative core.
+This document is Bob's durable normative core.
 
 ## Source of truth and handoff
 
@@ -12,7 +12,7 @@ This document is Builder's durable normative core.
 
 ## Product boundary
 
-Builder is an orchestration and development interface over existing systems.
+Bob is an orchestration and development interface over existing systems.
 
 It should not recreate mature infrastructure already supplied by:
 - ChatGPT for cognition and code generation;
@@ -34,7 +34,7 @@ The default architectural question is:
 - A proposed change becomes actionable only after identity checks, deterministic validation appropriate to the effect, and operator approval where required.
 - One semantic work item should have one active executor unless explicitly handed off or superseded.
 
-## Builder V1 contract
+## Bob V1 contract
 
 The V1 development loop is intentionally small:
 
@@ -48,7 +48,7 @@ target workspace
 → direct GitHub branch/commit/PR effect
 ```
 
-No always-on general-purpose Builder compute service is required for V1.
+No always-on general-purpose Bob compute service is required for V1.
 
 When code must actually execute, use existing qualified project infrastructure:
 - Hugging Face for portable tests, scripts, ML and batch compute;
@@ -86,7 +86,7 @@ Default:
 
 Each target project is a separate trust domain.
 
-A Builder workspace must bind at minimum:
+A Bob workspace must bind at minimum:
 - project name/code;
 - stable GitHub repository ID;
 - repository full name;
@@ -102,7 +102,7 @@ ChatGPT is a cognition provider, not the source of repository authority.
 
 The transport used to move prompts and model output may evolve independently from the development protocol.
 
-The current inherited implementation uses browser automation. The intended Builder design replaces DOM response extraction with a user-facing UI/accessibility copy path where practical, while keeping cognition transport behind an adapter boundary.
+The current inherited implementation uses browser automation. The intended Bob design replaces DOM response extraction with a user-facing UI/accessibility copy path where practical, while keeping cognition transport behind an adapter boundary.
 
 ## Good-enough rule
 

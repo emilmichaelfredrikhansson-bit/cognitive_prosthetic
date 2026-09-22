@@ -51,15 +51,17 @@ No component is globally smart.
 - providers own external state;
 - the operator owns material approvals.
 
-The inherited ChatGPT browser bridge is now a replaceable cognition transport. The intended persistent runtime remains DigitalOcean with optional secure home-network egress; that runtime is not a general-purpose Builder compute core.
+The inherited ChatGPT browser bridge is now a replaceable cognition transport. The intended persistent runtime remains DigitalOcean with optional secure home-network egress; that runtime is not a general-purpose Bob compute core.
 
 ## LAST_COMPLETED
 
-`BOB_CORE_V1_FIRST_VERTICAL_IMPLEMENTATION`
+`BOB_PRODUCT_IDENTITY_CANONICALIZATION`
 
-Implemented on `feat/bob-core-v1`:
+Bob is now the canonical product identity across root identity, governance schemas, workspace schema, operator routes and documentation. The historical foundation branch name `feat/builder-foundation-architecture` is intentionally unchanged.
 
-- versioned `BUILDER_WORKSPACE_V1` registry;
+The already-completed Core V1 runtime tranche on `feat/bob-core-v1` includes:
+
+- versioned `BOB_WORKSPACE_V1` registry;
 - `BOB.READ / BOB.EFFECT / BOB.RESULT / BOB.ASK / BOB.DONE` protocol;
 - closed-loop conversation driver that reinjects verified results into the same ChatGPT conversation;
 - effect staging with candidate hashes and explicit approval;
@@ -131,6 +133,8 @@ This means development and protocol qualification can continue with the current 
 
 This still does not prove the live browser/clipboard transport or installed runtime credentials.
 
+The Bob naming/schema canonicalization occurred after the latest HF job. The prior 7/7 result remains baseline runtime evidence, but a fresh execution-suite result has not yet been recorded for the canonicalized head; do not mislabel the older job as current-head verification.
+
 ## ACTIVE_WORK
 
 `BOB_CORE_V1_RUNTIME_WIRING`
@@ -141,15 +145,14 @@ The code architecture exists and is unit-green. The next coherent work is to tur
 
 Manual relay is available now, so use it for protocol/integration development when the browser runtime is unavailable.
 
-1. Canonicalize the product name Bob across remaining Foundation-era Builder naming.
-2. Add/verify the second real workspace (AB) from its actual repository/provider identities.
-3. Provision/qualify the persistent DigitalOcean browser runtime.
-4. Install the Bob ChatGPT Project instructions and bind `CHATGPT_TARGET_URL`.
-5. Configure least-privilege runtime credentials for GitHub, Supabase, HF and Cloudflare.
-6. Run read-only live qualification through Bob against Bob + SL.
-7. Qualify one approved Bob-repo branch/PR write end to end.
-8. Deploy the responsive Bob UI/API behind authenticated Cloudflare access.
-9. Only after these are green, consider enabling any project-specific production effect classes.
+1. Add/verify the second real workspace (AB) from its actual repository/provider identities.
+2. Provision/qualify the persistent DigitalOcean browser runtime.
+3. Install the Bob ChatGPT Project instructions and bind `CHATGPT_TARGET_URL`.
+4. Configure least-privilege runtime credentials for GitHub, Supabase, HF and Cloudflare.
+5. Run read-only live qualification through Bob against Bob + SL.
+6. Qualify one approved Bob-repo branch/PR write end to end.
+7. Deploy the responsive Bob UI/API behind authenticated Cloudflare access.
+8. Only after these are green, consider enabling any project-specific production effect classes.
 
 ## OPEN_FINDINGS
 

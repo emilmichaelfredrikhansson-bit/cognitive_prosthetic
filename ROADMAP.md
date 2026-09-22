@@ -2,7 +2,7 @@
 
 ## North Star
 
-Make Builder the low-friction development cockpit for ChatGPT-native projects: from PC or mobile, the operator can reason with ChatGPT, inspect current project truth, accept code changes, and operate existing GitHub/HF/Supabase/Cloudflare infrastructure without rebuilding that infrastructure inside Builder.
+Make Bob the low-friction development cockpit for ChatGPT-native projects: from PC or mobile, the operator can reason with ChatGPT, inspect current project truth, accept code changes, and operate existing GitHub/HF/Supabase/Cloudflare infrastructure without rebuilding that infrastructure inside Bob.
 
 ## Phase 0 — Foundation and architecture
 
@@ -13,7 +13,7 @@ Exit criteria:
 - [x] constitution and agent protocol defined;
 - [x] product architecture defined;
 - [x] existing infrastructure roles preserved;
-- [x] always-on general-purpose Builder Core rejected for V1;
+- [x] always-on general-purpose Bob Core rejected for V1;
 - [x] V1 implementation plan written;
 - [ ] architecture PR reviewed/merged.
 
@@ -64,12 +64,12 @@ Goal: make subscription-backed ChatGPT cognition available from both PC and mobi
 Exit criteria:
 - [ ] DigitalOcean browser runtime provisioned with least privilege;
 - [ ] persistent authenticated ChatGPT session validated;
-- [ ] cognition adapter reachable only through authenticated Builder control-plane paths;
+- [ ] cognition adapter reachable only through authenticated Bob control-plane paths;
 - [ ] secure tunnel to the home network/router validated for selected home-IP egress;
 - [ ] PC-local bridge retained only as development/fallback path;
 - [ ] browser/session/tunnel failure cannot create ambiguous GitHub effects.
 
-## Phase 4 — Builder Web UI
+## Phase 4 — Bob Web UI
 
 Goal: one responsive Cloudflare-hosted cockpit for PC and mobile.
 
@@ -85,7 +85,7 @@ Exit criteria:
 
 ## Phase 5 — Cognition transport hardening
 
-Goal: make ChatGPT transport robust without coupling Builder to one capture mechanism.
+Goal: make ChatGPT transport robust without coupling Bob to one capture mechanism.
 
 Exit criteria:
 - [ ] cognition adapter interface stable;
@@ -106,7 +106,7 @@ Exit criteria:
 ## Parked
 
 - full custom IDE/editor;
-- permanent general-purpose local Builder daemon;
+- permanent general-purpose local Bob daemon;
 - autonomous production merge/deploy;
 - broad GitHub Actions orchestration as the normal development engine;
 - speculative plugin ecosystem before SL/AB earn it.
@@ -114,6 +114,6 @@ Exit criteria:
 ## Rejected / retired directions
 
 - treating GitHub Actions as default compute merely because code is hosted on GitHub;
-- duplicating HF/Supabase/Cloudflare functionality inside Builder;
+- duplicating HF/Supabase/Cloudflare functionality inside Bob;
 - binding product logic directly to Playwright DOM selectors;
 - treating ChatGPT output as accepted repository state without an explicit deterministic write boundary.

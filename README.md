@@ -1,6 +1,6 @@
-# Builder
+# Bob
 
-Builder is a project-agnostic development control plane for ChatGPT-native software work.
+Bob is a project-agnostic development control plane for ChatGPT-native software work.
 
 It is being built from the `CodeMongerrr/cognitive_prosthetic` fork as a thin cockpit over the infrastructure already used by real projects:
 
@@ -30,9 +30,9 @@ GitHub Actions are not the default development compute layer. Existing qualified
 
 ## Current state
 
-The inherited upstream code currently provides a local ChatGPT browser/API prototype.
+Bob Core V1 is implemented on `feat/bob-core-v1`: the workspace registry, closed-loop Bob protocol, approval-bound effects, GitHub/Supabase/HF/Cloudflare adapters, manual LLM relay, and a responsive UI scaffold all exist.
 
-Builder architecture and operating model are now defined, but the V1 GitHub development loop is not implemented yet.
+The active work is runtime wiring and live qualification. Repository/runtime truth in `CURRENT_WORK.md` is authoritative.
 
 Start here:
 
@@ -41,7 +41,7 @@ Start here:
 3. `AGENTS.md`
 4. `ARCHITECTURE.md`
 5. `ROADMAP.md`
-6. `docs/BUILDER_V1_PLAN.md`
+6. `docs/BOB_V1_PLAN.md`
 
 ## V1 scope
 
@@ -63,11 +63,11 @@ Direct GitHub, HF, Supabase and Cloudflare integrations can be server-side and w
 
 Subscription-backed ChatGPT browser cognition requires a reachable authenticated browser session. The target runtime is a narrow persistent DigitalOcean browser bridge, optionally routing ChatGPT traffic through a secure home-network tunnel for home-IP egress. The inherited browser bridge is therefore treated as a replaceable `CognitionAdapter`, not as the product architecture itself.
 
-This allows the same Cloudflare-hosted Builder UI to work from PC or mobile without requiring the operator's PC to stay online.
+This allows the same Cloudflare-hosted Bob UI to work from PC or mobile without requiring the operator's PC to stay online.
 
 ## Lineage
 
-Builder is derived from:
+Bob is derived from:
 
 - `CodeMongerrr/cognitive_prosthetic` — MIT licensed upstream browser/API prototype
 - `emilmichaelfredrikhansson-bit/project-foundation` — operating-model inspiration, Foundation 0.3.0
