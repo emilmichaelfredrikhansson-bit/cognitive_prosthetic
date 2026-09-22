@@ -53,6 +53,13 @@ def workspaces():
     })
 
 
+@app.post("/bob/qualify")
+def qualify():
+    data = request.get_json(force=True) or {}
+    result = runtime.qualify_workspace(str(data["workspace"]))
+    return jsonify({"success": True, **result})
+
+
 @app.post("/bob/new-chat")
 def new_chat():
     data = request.get_json(force=True) or {}

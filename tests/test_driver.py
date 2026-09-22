@@ -23,6 +23,12 @@ class FakeGitHub:
     def capabilities(self):
         return ["github.read_file", "github.create_file"]
 
+    def verify_workspace(self, workspace):
+        return {
+            "repository": workspace.github_repository,
+            "repository_id": workspace.github_repository_id,
+        }
+
     def read(self, workspace, tool, args):
         return {"path": args["path"], "sha": "abc", "content": "hello"}
 
@@ -105,6 +111,69 @@ class DriverTests(unittest.TestCase):
             second = runtime.approve(pending_id)
             self.assertEqual(second["status"], "COMPLETE")
             self.assertEqual(second["visible_messages"], ["Applied and verified."])
+
+
+    def test_workspace_qualification_requires_every_configured_adapter(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            Path(tmp, "x.json").write_text(json.dumps({
+                "schema": "BOB_WORKSPACE_V1",
+                "project": {"name": "X", "code": "X"},
+                "github": {
+                    "repository": "owner/repo",
+                    "repository_id": 123,
+                    "default_branch": "main"
+                },
+                "providers": {
+                    "supabase": {"project_id": "project-ref"}
+                },
+                "effects": {}
+            }))
+            runtime = BobRuntime(workspace_dir=tmp, bridge=FakeBridge([]))
+            runtime.adapters = {"github": FakeGitHub()}
+
+            result = runtime.qualify_workspace("X")
+
+            self.assertFalse(result["qualified"])
+            self.assertEqual(result["checks"]["github"]["status"], "PASS")
+            self.assertEqual(result["checks"]["supabase"]["status"], "UNAVAILABLE")
+
+    def test_workspace_qualification_passes_verified_bindings(self):
+        class FakeSupabase:
+            def capabilities(self):
+                return ["supabase.project"]
+
+            def verify_workspace(self, workspace):
+                return {
+                    "project_id": workspace.providers["supabase"]["project_id"],
+                    "organization_id": "org",
+                    "status": "ACTIVE_HEALTHY",
+                }
+
+        with tempfile.TemporaryDirectory() as tmp:
+            Path(tmp, "x.json").write_text(json.dumps({
+                "schema": "BOB_WORKSPACE_V1",
+                "project": {"name": "X", "code": "X"},
+                "github": {
+                    "repository": "owner/repo",
+                    "repository_id": 123,
+                    "default_branch": "main"
+                },
+                "providers": {
+                    "supabase": {"project_id": "project-ref"}
+                },
+                "effects": {}
+            }))
+            runtime = BobRuntime(workspace_dir=tmp, bridge=FakeBridge([]))
+            runtime.adapters = {
+                "github": FakeGitHub(),
+                "supabase": FakeSupabase(),
+            }
+
+            result = runtime.qualify_workspace("X")
+
+            self.assertTrue(result["qualified"])
+            self.assertEqual(result["checks"]["github"]["status"], "PASS")
+            self.assertEqual(result["checks"]["supabase"]["status"], "PASS")
 
 
 if __name__ == "__main__":

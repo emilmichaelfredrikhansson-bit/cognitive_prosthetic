@@ -99,6 +99,8 @@ Default V1 effect stops at branch/PR. Merge is a distinct authority class.
 
 Provider adapters expose project-native actions without turning Bob into a second runtime.
 
+Before cognition/effects rely on a selected workspace, Bob may run a read-only workspace qualification pass. GitHub and every configured provider must independently verify their bound identity; missing credentials are UNAVAILABLE and mismatches are FAIL, never implicit PASS.
+
 - **HF:** dispatch and inspect qualified compute jobs.
 - **Supabase:** inspect/execute explicitly authorized DB/runtime operations.
 - **Cloudflare:** deploy/inspect explicitly authorized frontend/Worker resources.

@@ -107,6 +107,52 @@ class BobRuntime:
     def workspace_packet(self, workspace: Workspace) -> str:
         return make_workspace_packet(workspace.public_dict(), self.workspace_capabilities(workspace))
 
+    def qualify_workspace(self, workspace_code: str) -> dict[str, Any]:
+        """Verify the selected workspace against all configured external identities.
+
+        Qualification is read-only. Every configured provider must have a runtime
+        adapter and must independently verify its bound identity. Missing credentials
+        are reported as UNAVAILABLE rather than being treated as an implicit PASS.
+        """
+        workspace = self.registry.get(workspace_code)
+        checks: dict[str, dict[str, Any]] = {}
+
+        bindings = [("github", "github")]
+        for adapter_name, provider_key in (
+            ("supabase", "supabase"),
+            ("hf", "hugging_face"),
+            ("cloudflare", "cloudflare"),
+        ):
+            if provider_key in workspace.providers:
+                bindings.append((adapter_name, provider_key))
+
+        for adapter_name, _provider_key in bindings:
+            adapter = self.adapters.get(adapter_name)
+            if adapter is None:
+                checks[adapter_name] = {
+                    "status": "UNAVAILABLE",
+                    "error": f"adapter '{adapter_name}' unavailable; required credential may be missing",
+                }
+                continue
+            try:
+                data = adapter.verify_workspace(workspace)
+                checks[adapter_name] = {"status": "PASS", "data": data}
+            except Exception as exc:
+                checks[adapter_name] = {
+                    "status": "FAIL",
+                    "error": str(exc),
+                    "type": type(exc).__name__,
+                }
+
+        qualified = bool(checks) and all(
+            check.get("status") == "PASS" for check in checks.values()
+        )
+        return {
+            "workspace": workspace.public_dict(),
+            "qualified": qualified,
+            "checks": checks,
+        }
+
     def start_chat(self, workspace_code: str) -> dict[str, Any]:
         workspace = self.registry.get(workspace_code)
         self.bridge.new_chat()

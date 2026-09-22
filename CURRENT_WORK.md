@@ -55,7 +55,7 @@ The inherited ChatGPT browser bridge is now a replaceable cognition transport. T
 
 ## LAST_COMPLETED
 
-`BOB_AB_WORKSPACE_BINDING_AND_CLOUDFLARE_IDENTITY_HARDENING`
+`BOB_RUNTIME_WORKSPACE_QUALIFICATION_SURFACE`
 
 Bob is now the canonical product identity across root identity, governance schemas, workspace schema, operator routes and documentation. The historical foundation branch name `feat/builder-foundation-architecture` is intentionally unchanged.
 
@@ -78,6 +78,8 @@ GitHub metadata, Supabase project/org and HF account were independently read bac
 Cloudflare identity handling was hardened at the same time: a bare account ID can no longer produce an identity PASS. Bob now requires a remotely verifiable R2 bucket, Worker or Pages resource anchor. AB uses its canonical `autoblog-canary` Worker as that anchor.
 
 AB currently allows only approval-bound GitHub branch writes and PR creation. Supabase production mutation, HF spend and Cloudflare deploy remain disabled.
+
+Bob now also exposes a read-only workspace qualification surface through `BobRuntime.qualify_workspace(...)` and `POST /bob/qualify`. It verifies GitHub plus every provider configured for that workspace. A missing runtime adapter/credential is reported as `UNAVAILABLE`; provider mismatch/errors are `FAIL`; only all-PASS results set `qualified=true`. The web cockpit exposes this as **Verify workspace**, so identity/runtime diagnostics do not depend on the ChatGPT browser bridge.
 
 The already-completed Core V1 runtime tranche on `feat/bob-core-v1` includes:
 
@@ -178,7 +180,7 @@ Manual relay is available now, so use it for protocol/integration development wh
 - Browser Copy-button selectors must be live-qualified against the current ChatGPT UI.
 - DigitalOcean runtime and home-egress tunnel are designed but not provisioned.
 - SL Cloudflare account ID remains runtime-bound and is verified through its canonical R2 bucket. AB binds its canonical account ID directly but must verify the `autoblog-canary` Worker remotely before Cloudflare identity is trusted.
-- The current UI is functional scaffolding, not final product design.
+- The current UI is functional scaffolding, not final product design; it now includes explicit read-only workspace qualification.
 - Bob effect approvals currently live in process memory; persistence/resume is a later hardening item.
 - One Bob runtime currently assumes one active ChatGPT browser conversation at a time; multi-session concurrency is intentionally not yet implemented.
 

@@ -21,6 +21,11 @@ button:disabled { opacity: .5; cursor: wait; }
 .message { max-width: 82%; white-space: pre-wrap; line-height: 1.45; padding: 12px 14px; border-radius: 14px; background: white; }
 .message.human { align-self: flex-end; background: #171717; color: white; }
 .message.system { align-self: center; color: #666; background: transparent; font-size: .9rem; }
+.qualification { border: 1px solid #bbb; background: white; border-radius: 14px; padding: 12px; }
+.qualification.pass { border-color: #5a9b66; }
+.qualification.fail { border-color: #bb6b5e; }
+.qualification pre { margin: 8px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: .82rem; }
+.qualification.hidden { display: none; }
 .pending { border: 1px solid #e0bd61; background: #fff9e8; border-radius: 14px; padding: 12px; }
 .pending.hidden { display: none; }
 .approval pre { white-space: pre-wrap; overflow-wrap: anywhere; }

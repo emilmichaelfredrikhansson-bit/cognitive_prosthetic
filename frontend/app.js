@@ -6,6 +6,8 @@ const pendingEl = document.querySelector("#pending");
 const formEl = document.querySelector("#composer");
 const messageEl = document.querySelector("#message");
 const newChatEl = document.querySelector("#newChat");
+const verifyWorkspaceEl = document.querySelector("#verifyWorkspace");
+const qualificationEl = document.querySelector("#qualification");
 
 function append(role, text) {
   if (!text) return;
@@ -73,6 +75,19 @@ function renderResult(result) {
   }
 }
 
+function renderQualification(result) {
+  qualificationEl.innerHTML = "";
+  qualificationEl.classList.remove("hidden", "pass", "fail");
+
+  const title = document.createElement("strong");
+  title.textContent = result.qualified ? "Workspace verified" : "Workspace not qualified";
+  qualificationEl.classList.add(result.qualified ? "pass" : "fail");
+
+  const pre = document.createElement("pre");
+  pre.textContent = JSON.stringify(result.checks || {}, null, 2);
+  qualificationEl.append(title, pre);
+}
+
 async function boot() {
   try {
     const health = await json("/bob/health");
@@ -110,6 +125,30 @@ formEl.addEventListener("submit", async (event) => {
   } catch (error) {
     append("system", error.message);
   }
+});
+
+verifyWorkspaceEl.addEventListener("click", async () => {
+  if (!workspaceEl.value) return;
+  verifyWorkspaceEl.disabled = true;
+  qualificationEl.classList.remove("hidden", "pass", "fail");
+  qualificationEl.textContent = "Verifying external identities…";
+  try {
+    const result = await json("/bob/qualify", {
+      method: "POST",
+      body: JSON.stringify({workspace: workspaceEl.value}),
+    });
+    renderQualification(result);
+  } catch (error) {
+    qualificationEl.classList.add("fail");
+    qualificationEl.textContent = error.message;
+  } finally {
+    verifyWorkspaceEl.disabled = false;
+  }
+});
+
+workspaceEl.addEventListener("change", () => {
+  qualificationEl.innerHTML = "";
+  qualificationEl.className = "qualification hidden";
 });
 
 newChatEl.addEventListener("click", async () => {
