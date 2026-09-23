@@ -24,6 +24,10 @@ V1 uses the operator's existing ChatGPT account/subscription through a dedicated
 
 This isolates Bob's working conversations without requiring a second subscription. Account-level usage limits are still shared.
 
+## ChatGPT response-capture contract
+
+V1 uses the visible ChatGPT **Copy** action followed by clipboard read as the canonical response transport. Direct DOM extraction is retained only behind explicit `legacy_dom` compatibility mode and must not silently become the normal fallback. Windows UI Automation/accessibility is a deferred robustness option to investigate only if the canonical Copy path proves materially unreliable during live use.
+
 ## Design principles
 
 1. Repo-first current truth.
