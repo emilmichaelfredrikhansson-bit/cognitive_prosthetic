@@ -288,7 +288,9 @@ The 15k cap is enforced in the backend and is known to cognition from the beginn
 
 One cognition question uses one fresh ChatGPT conversation. Bob, not the chat, carries continuity.
 
-Every material technical answer should also receive a separate consequence evaluation against the relevant product vision, system map, decisions and strategic state. Local technical convenience must not silently rewrite operator intent.
+Fresh cognition may re-ground directly in the connected GitHub repository whenever implementation truth matters. Bob carries structure and source pointers; GitHub carries implementation truth; ChatGPT performs semantic reasoning against both.
+
+Impact checking belongs inside ordinary cognition by default. A separate review/meta cognition call is optional for difficult or cross-cutting work rather than a permanent Steward role. Local technical convenience must not silently rewrite operator intent.
 
 The detailed canon is `docs/BOB_MODULE_COGNITION_ARCHITECTURE.md`.
 
