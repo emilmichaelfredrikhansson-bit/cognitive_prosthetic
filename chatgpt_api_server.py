@@ -11,6 +11,7 @@ import time
 import logging
 import os
 import re
+import ipaddress
 import sys
 from urllib.parse import urlsplit
 
@@ -20,6 +21,7 @@ app = Flask(__name__)
 
 CHATGPT_TARGET_URL = os.environ.get("CHATGPT_TARGET_URL", "https://chatgpt.com/").strip()
 CHATGPT_CAPTURE_MODE = os.environ.get("CHATGPT_CAPTURE_MODE", "copy").strip().lower()
+BOB_COMPANION_UI_URL = os.environ.get("BOB_COMPANION_UI_URL", "http://127.0.0.1:5002/").strip()
 if CHATGPT_CAPTURE_MODE not in {"copy", "legacy_dom"}:
     raise RuntimeError("CHATGPT_CAPTURE_MODE must be 'copy' or 'legacy_dom'")
 logging.basicConfig(
@@ -33,6 +35,47 @@ result_queue = queue.Queue()
 is_ready = False
 startup_error = None
 browser_thread = None
+
+def validate_companion_ui_url(url):
+    """Return a local companion URL or fail closed for non-loopback targets."""
+    value = str(url or "").strip()
+    if not value:
+        raise ValueError("BOB_COMPANION_UI_URL must not be empty")
+    parts = urlsplit(value)
+    if parts.scheme not in {"http", "https"} or not parts.hostname:
+        raise ValueError("companion UI URL must be an absolute http(s) URL")
+    host = parts.hostname.strip().lower()
+    if host != "localhost":
+        try:
+            if not ipaddress.ip_address(host).is_loopback:
+                raise ValueError("companion UI URL must use a loopback host")
+        except ValueError as exc:
+            if "loopback" in str(exc):
+                raise
+            raise ValueError("companion UI URL must use localhost or a loopback IP") from exc
+    return value
+
+
+def show_companion_ui(chatgpt_page, url):
+    """Open/focus Bob in the same persistent browser while keeping ChatGPT available."""
+    target = validate_companion_ui_url(url)
+    target_parts = urlsplit(target)
+    target_origin = f"{target_parts.scheme}://{target_parts.netloc}"
+    for candidate in chatgpt_page.context.pages:
+        try:
+            current = urlsplit(candidate.url)
+            current_origin = f"{current.scheme}://{current.netloc}"
+            if current_origin == target_origin:
+                candidate.goto(target, wait_until="domcontentloaded", timeout=15000)
+                candidate.bring_to_front()
+                return {"success": True, "url": candidate.url, "reused": True}
+        except Exception:
+            continue
+    companion = chatgpt_page.context.new_page()
+    companion.goto(target, wait_until="domcontentloaded", timeout=15000)
+    companion.bring_to_front()
+    return {"success": True, "url": companion.url, "reused": False}
+
 
 def browser_worker():
     """Dedicated thread for all browser operations"""
@@ -121,6 +164,10 @@ def browser_worker():
 
             elif task_type == 'new_chat':
                 result = start_new_chat(page)
+                result_queue.put(result)
+
+            elif task_type == 'show_ui':
+                result = show_companion_ui(page, task.get('url') or BOB_COMPANION_UI_URL)
                 result_queue.put(result)
 
         except Exception as e:
@@ -357,6 +404,25 @@ def new_chat():
     except queue.Empty:
         return jsonify({"success": False, "error": "Request timed out"}), 504
 
+@app.route('/show-ui', methods=['POST'])
+def show_ui():
+    """Bring the local Bob companion UI to the front in the managed browser."""
+    if not is_ready:
+        return jsonify({"success": False, "error": "Server not ready"}), 503
+    data = request.get_json(silent=True) or {}
+    target = data.get("url") or BOB_COMPANION_UI_URL
+    try:
+        target = validate_companion_ui_url(target)
+    except ValueError as exc:
+        return jsonify({"success": False, "error": str(exc)}), 400
+    task_queue.put({"type": "show_ui", "url": target})
+    try:
+        result = result_queue.get(timeout=30)
+        return jsonify(result), 200 if result.get("success") else 500
+    except queue.Empty:
+        return jsonify({"success": False, "error": "Request timed out"}), 504
+
+
 @app.route('/health', methods=['GET'])
 def health():
     """Health check"""
@@ -381,9 +447,11 @@ def status():
         "profile_path": load_profile_path(),
         "target_url": CHATGPT_TARGET_URL,
         "capture_mode": CHATGPT_CAPTURE_MODE,
+        "companion_ui_url": BOB_COMPANION_UI_URL,
         "endpoints": {
             "chat": "POST /chat",
             "new_chat": "POST /new-chat",
+            "show_ui": "POST /show-ui",
             "health": "GET /health",
             "status": "GET /status"
         }
