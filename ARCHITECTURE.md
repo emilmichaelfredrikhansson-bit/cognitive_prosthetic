@@ -1,5 +1,32 @@
 # Architecture
 
+## Product-level architecture constraint
+
+Bob intentionally optimizes the human interface and the internal work engine for different things.
+
+- **Operator surface:** ordinary conversational language, simple status, minimal required technical knowledge, progressive disclosure.
+- **Internal system:** persistent state, deterministic adapters, verification, bounded parallel cognition, event-driven continuation, review, recovery and self-hosted development where useful.
+
+Internal sophistication should normally **reduce** operator effort rather than increase it. `PRODUCT_PRINCIPLES.md` is the canonical product-behavior contract.
+
+## Self-hosting / recursive development
+
+Bob is intended to become capable of developing Bob through the same bounded workflow it provides to other workspaces:
+
+```text
+current Bob
+→ read Bob reality
+→ cognition/design/implementation
+→ deterministic tests + review
+→ bounded approved effect
+→ verified new Bob version
+→ next Bob development cycle
+```
+
+This creates recursive **capability improvement**, not recursive authority. Authority remains external to the version being developed. Existing root-of-trust, approval classes, provider bindings and rollback requirements survive every self-hosted iteration unless explicitly changed by authorized human/canonical action.
+
+A self-hosted Bob change should be easier to independently verify and roll back than an equivalent ordinary project change, not harder.
+
 ## North-star system
 
 Bob is a thin development control plane over existing project infrastructure.
