@@ -2,7 +2,7 @@
 
 ## North Star
 
-Make Bob the low-friction development cockpit for ChatGPT-native projects. **V1 is local-first on the operator's own PC** so the product and cognition loop can be proven in daily use before adding remote infrastructure. **V2** may add DigitalOcean-backed persistence and authenticated mobile access.
+Make Bob a long-lived project work engine that feels as simple to use as ordinary ChatGPT while driving Signal Lab-scale projects or larger with much lower continuity, tooling and coordination friction. **V1 is local-first on the operator's own PC** so the product and cognition loop can be proven in daily use before adding remote infrastructure. **V2** may add DigitalOcean-backed persistence and authenticated mobile access.
 
 ## Phase 0 — Foundation and architecture
 
@@ -122,6 +122,11 @@ Exit criteria:
 
 ## Later
 
+- event-driven work resumption when external dependencies resolve;
+- durable goal/dependency graph beneath the conversational surface;
+- bounded cognition forks/review/fusion where they outperform one long thread;
+- safe self-hosting: Bob uses Bob to improve Bob, while external authority and rollback remain preserved;
+- reusable cross-project playbooks without cross-project private-context leakage;
 - repair loops driven by deterministic test evidence;
 - multi-repo workspaces when a real project needs them;
 - optional provider adapters beyond the current SL/AB stack;
