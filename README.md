@@ -58,6 +58,12 @@ V1 deliberately focuses on the smallest useful product:
 
 Provider integrations and the polished Cloudflare UI follow after the GitHub development loop works end to end.
 
+## ChatGPT account model
+
+Bob V1 deliberately uses the operator's **existing ChatGPT account/subscription**, not a second account. Isolation comes from a separate persistent Bob browser profile plus one dedicated private ChatGPT Project named **Bob**. The Bob Project should use **Project-only memory** so Bob's project conversations stay separate from the operator's ordinary ChatGPT conversations.
+
+Normal Bob runtime requires the exact project URL in `BOB_CHATGPT_PROJECT_URL` and will not accept the generic ChatGPT home page as its cognition target. The operator can continue using normal ChatGPT independently in another browser/session; account-level usage limits remain shared.
+
 ## Important architecture boundary
 
 Direct GitHub, HF, Supabase and Cloudflare integrations can be server-side and work from both PC and mobile.
