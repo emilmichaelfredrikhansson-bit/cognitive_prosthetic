@@ -14,6 +14,7 @@
 - Architecture: `ARCHITECTURE.md`
 - Strategic direction: `ROADMAP.md`
 - Product behavior canon: `PRODUCT_PRINCIPLES.md`
+- Large-project cognition canon: `docs/BOB_CHUNKING_CONTEXT_ARCHITECTURE.md`
 - Bob protocol: `docs/BOB_PROTOCOL_V1.md`
 - Manual relay: `docs/BOB_MANUAL_RELAY_V1.md`
 - ChatGPT Project instructions: `docs/BOB_CHATGPT_PROJECT_INSTRUCTIONS.md`
@@ -56,6 +57,20 @@ No component is globally smart.
 The inherited ChatGPT browser bridge is a replaceable cognition transport. **V1 response capture is canonically the visible ChatGPT Copy action -> clipboard; DOM scraping is legacy-only, while Windows UI Automation is deferred unless real-world robustness requires it.** **Bob V1 runs as Local Companion on the operator's own PC using the operator's existing ChatGPT account/subscription but a separate Bob-managed Chromium profile. All Bob cognition is confined to one dedicated private ChatGPT Project named `Bob`, with Project-only memory as the V1 isolation setting.** Bob API and bridge remain loopback-only, the Bob Project/ChatGPT tab lives in the background, and the Bob UI is brought to the foreground in the same managed browser. DigitalOcean/persistent remote cognition is deferred to V2.
 
 ## LAST_COMPLETED
+
+`BOB_RECURSIVE_CHUNKING_AND_CONTEXT_CANON`
+
+Bob now has a canonical large-project cognition architecture in `docs/BOB_CHUNKING_CONTEXT_ARCHITECTURE.md`.
+
+Foundational rule: **no chat owns the project**. Bob owns durable project/work state; ChatGPT threads own bounded cognition work. Large projects are represented as a recursive semantic graph of project/domain/workstream/work-unit nodes plus explicit dependency/interface/contract edges.
+
+A future **Context Compiler** compiles the smallest sufficient context packet for each cognition task from current durable truth: workspace/work-node identity, scope, relevant node summaries/contracts, dependencies, exact relevant files/reality, blockers, authority, provenance/freshness and exit criteria. If a packet is too large, Bob decomposes the work further rather than silently dropping critical context.
+
+Cross-cutting changes become explicit parent workstreams with bounded child tasks. Parallel child outcomes converge through bounded Fusion using durable results/contracts/conflicts/evidence rather than entire child transcripts. Completed cognition is distilled back into durable node state, implementation, evidence and follow-up work.
+
+Chunking is semantic rather than arbitrary file/token slicing, and chunking/context strategy itself is a recursively improvable Bob capability. Bob should eventually be able to replace cognition threads deliberately and continue from compiled durable context without loss of project continuity.
+
+This tranche is canon/documentation only. It does not change current effect authority or the active Local Companion live-qualification sequence.
 
 `BOB_PRODUCT_PRINCIPLES_AND_SELF_HOSTING_CANON`
 
