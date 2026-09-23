@@ -86,7 +86,7 @@ This normally happens without operator interruption. Bob must involve the operat
 
 Bob should therefore never intentionally create a module that is expected to need an operator conversation merely to stay within the cap.
 
-### Design-time consequence
+### Design-time effect
 
 The 15k hard cap is supplied to architecture cognition **before module boundaries are chosen**.
 
@@ -255,9 +255,9 @@ decision/canon references
 
 ChatGPT may expand from those pointers through the connected GitHub integration as needed.
 
-### No mandatory Steward role
+### Optional review/meta cognition
 
-Bob does **not** require a persistent or mandatory separate Steward/consequence cognition pass.
+Bob does **not** require a persistent or mandatory separate meta-cognition stage.
 
 Impact analysis belongs inside ordinary source-grounded cognition by default.
 
