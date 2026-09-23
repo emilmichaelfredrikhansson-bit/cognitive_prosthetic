@@ -278,10 +278,13 @@ For Bob-designed software, a large project should be composed from cognitively b
 
 A module is designed before implementation so that the current module, its immediate contract neighborhood, relevant mission/invariants and current question fit inside one fresh cognition packet.
 
-Initial engineering envelope:
+Canonical limits:
 
-- 20k compiled input tokens target;
-- 25k compiled input tokens hard ceiling.
+- **15k tokens absolute hard cap per Bob module**;
+- 20k compiled cognition target;
+- 25k compiled cognition hard ceiling.
+
+The 15k cap is enforced in the backend and is known to cognition from the beginning. If a proposed implementation would push a module above 15k, Bob must route a fresh architecture-cognition problem to reorganize the module graph/contracts until it is compliant. This should not interrupt the operator unless the required reorganization creates a genuine product/vision/end-goal tradeoff.
 
 One cognition question uses one fresh ChatGPT conversation. Bob, not the chat, carries continuity.
 
