@@ -29,6 +29,13 @@ const messageEl = document.querySelector("#message");
 const sendButtonEl = document.querySelector("#sendButton");
 const scrimEl = document.querySelector("#scrim");
 const recentLabelEl = document.querySelector(".recent-item .truncate");
+const themeToggleEl = document.querySelector("#themeToggle");
+const themeLabelEl = document.querySelector("#themeLabel");
+const documentViewerEl = document.querySelector("#documentViewer");
+const documentTitleEl = document.querySelector("#documentTitle");
+const documentPathEl = document.querySelector("#documentPath");
+const documentContentEl = document.querySelector("#documentContent");
+const documentCloseEl = document.querySelector("#documentClose");
 
 const state = {
   health: null,
@@ -208,10 +215,12 @@ function renderWorkspaceInspector(workspace) {
     contextDocsEl.appendChild(createElement("p", "muted", "No entry documents configured."));
   } else {
     for (const path of docs) {
-      const row = createElement("div", "context-item");
+      const row = createElement("button", "context-item context-button");
+      row.type = "button";
       const copy = createElement("span", "item-copy");
       copy.append(createElement("strong", null, path.split("/").pop()), createElement("span", null, path));
-      row.appendChild(copy);
+      row.append(copy, createElement("span", "context-open", "Open"));
+      row.addEventListener("click", () => openDocument(path));
       contextDocsEl.appendChild(row);
     }
   }
@@ -345,8 +354,28 @@ function renderPending(items = []) {
   }
 }
 
+function renderActivity(rounds = []) {
+  const reads = rounds.flatMap((round) => round.reads || []);
+  if (!reads.length) return;
+  const details = createElement("details", "activity-row");
+  const summary = createElement("summary", null, `Checked project reality · ${reads.length} read${reads.length === 1 ? "" : "s"}`);
+  const list = createElement("div", "activity-list");
+  for (const read of reads) {
+    const row = createElement("div", "activity-item");
+    row.append(
+      createElement("span", null, read.tool || "read"),
+      createElement("span", `state ${(read.status || "fail").toLowerCase()}`, read.status || "Unknown"),
+    );
+    list.appendChild(row);
+  }
+  details.append(summary, list);
+  chatEl.appendChild(details);
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+
 function renderResult(result) {
   for (const text of result.visible_messages || []) appendMessage("assistant", text);
+  renderActivity(result.tool_rounds || []);
   renderPending(result.pending || []);
   if (result.status === "ASK_USER" && result.terminal?.args?.question) {
     appendMessage("assistant", result.terminal.args.question);
@@ -398,8 +427,9 @@ function closeSidebar() {
   syncScrim();
 }
 function syncScrim() {
-  const show = appEl.classList.contains("sidebar-open") || appEl.classList.contains("inspector-open");
-  scrimEl.classList.toggle("hidden", !show);
+  const sidebarNeedsScrim = window.matchMedia("(max-width: 760px)").matches && appEl.classList.contains("sidebar-open");
+  const inspectorNeedsScrim = window.matchMedia("(max-width: 1060px)").matches && appEl.classList.contains("inspector-open");
+  scrimEl.classList.toggle("hidden", !(sidebarNeedsScrim || inspectorNeedsScrim));
 }
 
 async function verifyWorkspace() {
@@ -426,6 +456,40 @@ async function verifyWorkspace() {
   }
 }
 
+async function openDocument(path) {
+  if (!state.selectedCode || !path) return;
+  documentTitleEl.textContent = path.split("/").pop();
+  documentPathEl.textContent = path;
+  documentContentEl.textContent = "Reading project file…";
+  documentViewerEl.showModal();
+  try {
+    const payload = await json("/bob/read", {
+      method: "POST",
+      body: JSON.stringify({workspace: state.selectedCode, tool: "github.read_file", args: {path}}),
+    });
+    documentContentEl.textContent = payload.result?.content || "(empty file)";
+  } catch (error) {
+    documentContentEl.textContent = `Could not read ${path}.\n\n${error.message}`;
+  }
+}
+
+function setTheme(theme) {
+  const resolved = theme === "dark" || theme === "light" ? theme : "system";
+  if (resolved === "system") {
+    document.body.dataset.theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  } else {
+    document.body.dataset.theme = resolved;
+  }
+  localStorage.setItem("bob.theme", resolved);
+  themeLabelEl.textContent = resolved[0].toUpperCase() + resolved.slice(1);
+}
+
+function cycleTheme() {
+  const current = localStorage.getItem("bob.theme") || "system";
+  const next = current === "system" ? "light" : current === "light" ? "dark" : "system";
+  setTheme(next);
+}
+
 async function newChat() {
   if (!state.selectedCode) return;
   newChatEl.disabled = true;
@@ -435,7 +499,6 @@ async function newChat() {
       body: JSON.stringify({workspace: state.selectedCode}),
     });
     clearConversation();
-    appendMessage("system", `New ${workspaceByCode(state.selectedCode)?.name || state.selectedCode} conversation started.`);
   } catch (error) {
     appendMessage("system", error.message);
   } finally {
@@ -444,6 +507,7 @@ async function newChat() {
 }
 
 async function boot() {
+  setTheme(localStorage.getItem("bob.theme") || "system");
   try {
     const health = await json("/bob/health");
     state.health = health;
@@ -504,6 +568,12 @@ scrimEl.addEventListener("click", () => {
   closeSidebar();
   closeInspector();
 });
+themeToggleEl.addEventListener("click", cycleTheme);
+documentCloseEl.addEventListener("click", () => documentViewerEl.close());
+documentViewerEl.addEventListener("click", (event) => {
+  if (event.target === documentViewerEl) documentViewerEl.close();
+});
+window.addEventListener("resize", syncScrim);
 
 document.addEventListener("keydown", (event) => {
   if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {

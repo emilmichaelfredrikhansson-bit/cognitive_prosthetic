@@ -40,6 +40,20 @@ class FrontendShellTests(unittest.TestCase):
         ):
             self.assertIn(effect, JS)
 
+    def test_project_context_files_use_bob_read_and_real_document_viewer(self):
+        self.assertIn('id="documentViewer"', HTML)
+        self.assertIn("/bob/read", JS)
+        self.assertIn('tool: "github.read_file"', JS)
+
+    def test_appearance_is_local_ui_state_not_project_authority(self):
+        self.assertIn('id="themeToggle"', HTML)
+        self.assertIn('localStorage.setItem("bob.theme"', JS)
+        self.assertIn('body[data-theme="dark"]', CSS)
+
+    def test_read_activity_is_rendered_as_collapsible_project_reality(self):
+        self.assertIn("function renderActivity", JS)
+        self.assertIn("Checked project reality", JS)
+
     def test_mobile_shell_has_sidebar_and_inspector_drawers(self):
         self.assertIn("@media (max-width: 760px)", CSS)
         self.assertIn(".app-shell.sidebar-open .sidebar", CSS)

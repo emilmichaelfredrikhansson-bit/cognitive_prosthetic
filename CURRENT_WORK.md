@@ -56,6 +56,10 @@ The inherited ChatGPT browser bridge is now a replaceable cognition transport. T
 
 ## LAST_COMPLETED
 
+`BOB_CHATGPT_LIKE_PROJECT_SURFACES`
+
+The ChatGPT-like shell now includes truthful project-context file viewing through Bob's existing `github.read_file` path, local light/dark/system appearance, and collapsible READ activity so project-reality checks are visible without exposing protocol noise. The responsive inspector/scrim behavior was headlessly rendered at desktop and mobile widths; that visual pass caught and fixed a desktop scrim breakpoint bug plus mobile composer send-button alignment.
+
 `BOB_CHATGPT_LIKE_FRONTEND_V1`
 
 Bob now has a ChatGPT-like application shell rather than the earlier form-style cockpit. Workspaces render as Projects in a persistent sidebar; the main surface is a familiar chat/composer; a responsive Project inspector exposes Reality, Authority, Providers and context documents; qualification is rendered as human-readable provider status instead of raw JSON; and pending effects are first-class approval cards with diff/summary plus explicit Approve and Reject actions. The Reject path now consumes the staged pending effect server-side without executing it.
@@ -199,7 +203,7 @@ This external reconciliation proves the bindings are still real; it does **not**
 
 The runtime-preflight tranche adds **5 isolated unittest methods**. The exact proposed `bob/preflight.py` + `tests/test_preflight.py` content was executed in the interactive sandbox before commit: **5/5 PASS**, and both files passed `py_compile`. This is narrow evidence for the new preflight logic only; it does not substitute for a full branch-suite run.
 
-The branch now declares **43 unittest methods**: the previously declared 37 plus 5 frontend-shell contract tests and 1 reject-path driver test.
+The branch now declares **46 unittest methods**: the previously declared 37 plus 8 frontend-shell contract tests and 1 reject-path driver test.
 
 Current implementation verification is now executable and current:
 
@@ -217,7 +221,7 @@ The job cloned the public repository, checked out the exact pinned commit, asser
 
 The runtime-preflight and systemd-contract isolated checks remain useful narrow evidence, but the HF current-implementation run supersedes them as the main execution-suite evidence.
 
-Post-HF runtime packaging changed after the 29/29 application-suite run. The current deployment tranche was checked independently in the interactive sandbox: `tests/test_runtime_deploy.py` = **8/8 PASS**, `bash -n deploy/install_runtime.sh` = PASS, `py_compile` for the doctor/test = PASS, and `systemd-analyze verify` parsed both unit files; its only diagnostic was the expected absent `/opt/bob/venv/bin/python` because the sandbox is not an installed Bob host. This is deployment-tranche evidence, not a new full-suite run. The new frontend shell was separately checked before commit: `tests/test_frontend_shell.py` = **5/5 PASS**, `node --check frontend/app.js` = PASS and HTML parser validation = PASS. The new Reject backend path is covered by a declared driver test but the full current-head Python suite has not been rerun after that backend change. Any later documentation-only reconciliation commit must not be misrepresented as having been independently re-executed; the executable implementation tree remains the tested one unless code/runtime files change.
+Post-HF runtime packaging changed after the 29/29 application-suite run. The current deployment tranche was checked independently in the interactive sandbox: `tests/test_runtime_deploy.py` = **8/8 PASS**, `bash -n deploy/install_runtime.sh` = PASS, `py_compile` for the doctor/test = PASS, and `systemd-analyze verify` parsed both unit files; its only diagnostic was the expected absent `/opt/bob/venv/bin/python` because the sandbox is not an installed Bob host. This is deployment-tranche evidence, not a new full-suite run. The new frontend shell was separately checked before commit: `tests/test_frontend_shell.py` = **8/8 PASS**, `node --check frontend/app.js` = PASS and HTML parser validation = PASS. The new Reject backend path is covered by a declared driver test but the full current-head Python suite has not been rerun after that backend change. Any later documentation-only reconciliation commit must not be misrepresented as having been independently re-executed; the executable implementation tree remains the tested one unless code/runtime files change.
 
 ## ACTIVE_WORK
 
@@ -227,7 +231,7 @@ The live runtime qualification remains blocked on host access, so the active par
 
 ## NEXT_INTENDED_WORK
 
-1. Continue frontend parity from the new shell: project files/context management, project-scoped search and settings/appearance where they can be truthful without new runtime authority.
+1. Continue frontend parity from the new shell: project-scoped search and richer project settings where they can be truthful without new runtime authority; project context files and appearance are now landed.
 2. Design true conversation persistence/resume only after the browser bridge can record and reopen exact ChatGPT thread URLs; do not fake server history with localStorage.
 3. Live-qualify the visual shell, approval/reject flow and responsive mobile behavior when the persistent browser/runtime becomes available.
 4. Resume the already-prepared live runtime sequence when host access returns: exact-SHA install, credentials/profile, live acceptance, Cloudflare Access/Tunnel, then one approved Bob GitHub canary.

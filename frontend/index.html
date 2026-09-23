@@ -41,6 +41,9 @@
           <span id="healthDot" class="status-dot"></span>
           <div><strong id="healthLabel">Connecting</strong><span id="healthDetail">Bob runtime</span></div>
         </div>
+        <button id="themeToggle" class="theme-toggle" type="button">
+          <span aria-hidden="true">◐</span><span>Appearance</span><span id="themeLabel">System</span>
+        </button>
       </div>
     </aside>
 
@@ -108,6 +111,14 @@
     </aside>
 
     <div id="scrim" class="scrim hidden"></div>
+
+    <dialog id="documentViewer" class="document-viewer">
+      <header class="document-head">
+        <div><span class="eyebrow">Project file</span><h2 id="documentTitle">Document</h2><span id="documentPath"></span></div>
+        <button id="documentClose" class="icon-button" type="button" aria-label="Close document">×</button>
+      </header>
+      <pre id="documentContent" class="document-content"></pre>
+    </dialog>
   </div>
   <script src="./app.js"></script>
 </body>
