@@ -12,51 +12,56 @@ A ChatGPT thread is a replaceable cognition workspace, not the canonical memory 
 
 Bob must be able to discard a cognition thread, open a fresh one, reconstruct the relevant work context from durable project truth, and continue without requiring the old conversation transcript.
 
-## Cognition owns semantic structure
+## Bob carries structure so cognition does not have to
 
-The project graph is **not** a rigid deterministic decomposition imposed by Bob Core.
+One of Bob's primary large-project functions is to act as **externalized structural working memory** for ChatGPT cognition.
 
-Semantic cognition owns decisions such as:
+A single cognition thread should not have to simultaneously remember:
 
-- what the meaningful domains are;
-- where workstream boundaries belong;
-- which concepts should be coupled or separated;
-- which shared contracts exist;
-- when a node should split, merge, be superseded or be reorganized;
-- which dependencies matter;
-- which cross-cutting workstream best represents a change;
-- when the existing project structure itself has become wrong.
+- the whole architecture;
+- every domain and workstream;
+- all dependency relationships;
+- every shared contract;
+- current status across the project;
+- waiting conditions;
+- historical decisions;
+- verification state.
 
-Bob Core owns the mechanics around that structure:
+Bob carries that durable structure between cognition calls.
 
-- durable persistence;
-- schema validation;
-- stable identities;
-- provenance;
-- freshness;
-- bounded context compilation;
-- graph traversal;
-- authority boundaries;
-- deterministic effects;
-- verification and read-back.
-
-The canonical division is therefore:
+The canonical division is:
 
 ```text
+Bob
+→ stores the project/work graph
+→ stores contracts, dependencies, status and provenance
+→ keeps it durable and current
+→ selects the relevant structural neighborhood
+→ compiles it into bounded context
+
 ChatGPT cognition
-→ understands the project
-→ proposes/maintains semantic structure
+→ reasons deeply inside that bounded world
+→ may recognize that the existing structure is wrong
+→ proposes semantic restructuring when needed
 
 Bob
-→ persists that structure
-→ validates its mechanical integrity
-→ compiles bounded context from it
-→ verifies reality against it
+→ persists the accepted/reconciled new structure
+→ carries it forward for future cognition
 ```
 
-Bob must not confuse deterministic durability with semantic ownership.
+This means **Bob owns carrying structural state; cognition owns the semantic reasoning used to create or revise it.**
 
-A fixed orchestration engine that permanently decides the project's decomposition would recreate one of the limitations Bob is intended to overcome.
+The purpose is cognitive offloading. ChatGPT should spend its limited context and attention on the problem currently being solved rather than repeatedly reconstructing and remembering the entire project organization.
+
+Bob Core must therefore avoid two opposite failures:
+
+1. **chat-owned structure** — forcing one model conversation to remember the global project;
+2. **dumb fixed structure** — hard-coding a task tree that cognition cannot revise when understanding changes.
+
+The correct model is a durable Bob-maintained map whose semantic contents can be authored and reorganized through bounded cognition.
+
+Structural maintenance itself may be a bounded cognition task. For example, Bob can compile an architecture-level packet for a dedicated planning/restructuring thread, receive a proposed graph change, validate/reconcile it, and then persist the result without requiring later implementation threads to replay that architectural reasoning.
+
 
 ## Design objective
 
