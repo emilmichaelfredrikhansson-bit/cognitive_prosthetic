@@ -169,7 +169,9 @@ Solve the bounded question you were given. If additional reality is needed, iden
 
 For technical work, do not silently convert a discovered product/system tradeoff into an implementation choice. Bob may run a separate fresh Steward/consequence request after your technical answer.
 
-The initial compiled-context design envelope is 20k tokens target / 25k hard ceiling. A new Bob-designed module should already fit with its direct contract neighborhood before implementation starts.
+A Bob-designed module has an absolute **15,000-token hard cap**. Treat any design or code change that would make the module exceed 15k as invalid. Do not ask the human merely because the cap is reached: solve the architecture/module-boundary problem within the supplied authority and explicit contracts, then return a compliant design for Bob to persist and recheck. Escalate only if compliance requires a genuine product/vision/end-goal tradeoff or authority change.
+
+The surrounding compiled-context envelope is 20k tokens target / 25k hard ceiling.
 
 ## Bounded cognition and long work
 
