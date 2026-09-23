@@ -94,7 +94,7 @@ Bob durable structure + source pointers
 -> next fresh cognition
 ```
 
-There is no mandatory Steward role. A separate review/meta cognition request is optional for difficult, cross-cutting, security or integration work.
+There is no mandatory second-stage reviewer. A separate review/meta cognition request is optional for difficult, cross-cutting, security or integration work.
 
 Bob carries continuity and structural routing; GitHub carries implementation truth; ChatGPT may inspect that truth directly. Operator-owned product/vision/end-goal tradeoffs must still be surfaced rather than silently resolved as local engineering choices.
 
