@@ -83,6 +83,23 @@ Normal later start:
 9. the bridge opens/focuses Bob in the same persistent Chromium context, leaving the ChatGPT target available in the background;
 10. Ctrl+C stops both child processes.
 
+## ChatGPT response capture
+
+Bob V1 reads assistant responses through ChatGPT's normal visible **Copy** action:
+
+```text
+latest assistant response
+-> visible Copy action
+-> clipboard
+-> Bob bridge
+```
+
+This is the canonical V1 path. It deliberately avoids making ChatGPT DOM structure the primary interface.
+
+`CHATGPT_CAPTURE_MODE=copy` is the normal setting. `legacy_dom` exists only as an explicit compatibility escape hatch and must not be treated as an automatic fallback. If Copy capture fails during qualification or later use, surface it as a transport problem first.
+
+Windows UI Automation/accessibility remains a possible future hardening path if repeated live failures justify it; it is not required before V1 can ship or be useful.
+
 ## Security and authority
 
 Local does not mean unlimited.
