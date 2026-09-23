@@ -27,6 +27,24 @@ This creates recursive **capability improvement**, not recursive authority. Auth
 
 A self-hosted Bob change should be easier to independently verify and roll back than an equivalent ordinary project change, not harder.
 
+## Structural offloading
+
+Bob is the durable structural memory of a large project.
+
+The project/work graph, contracts, dependency relationships, workstream status and provenance live outside individual ChatGPT conversations. The Context Compiler supplies each cognition thread with the relevant structural neighborhood instead of requiring the model to hold the global organization in working memory.
+
+Cognition remains responsible for semantic judgment. If the current decomposition is wrong, a bounded architecture/planning cognition task may propose a better structure; Bob validates/persists the resulting graph and carries it forward.
+
+Thus:
+
+```text
+Bob carries global structure
+→ Context Compiler selects relevant slice
+→ ChatGPT reasons locally/deeply
+→ semantic structural changes may be proposed
+→ Bob persists the revised global structure
+```
+
 ## Large-project cognition architecture
 
 Bob's large-project architecture is governed by `docs/BOB_CHUNKING_CONTEXT_ARCHITECTURE.md`.
