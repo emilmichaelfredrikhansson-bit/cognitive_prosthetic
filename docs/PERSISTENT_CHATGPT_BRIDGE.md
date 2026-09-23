@@ -1,10 +1,10 @@
-# Persistent ChatGPT Browser Bridge
+# Persistent ChatGPT Browser Bridge — V2
 
 ## Purpose
 
-Bob needs one persistent authenticated ChatGPT browser session so the same development cockpit can be used from both PC and mobile.
+Bob V1 deliberately runs the authenticated ChatGPT browser session on the operator's own PC. See `docs/BOB_LOCAL_COMPANION.md`.
 
-The target runtime is a small DigitalOcean host with a deliberately narrow responsibility:
+This document describes **V2**: moving that replaceable cognition transport to a persistent remote host so Bob can be used without the operator PC remaining online. The current candidate runtime is a small DigitalOcean host with a deliberately narrow responsibility:
 
 > keep the ChatGPT browser/session available and expose the Bob CognitionAdapter.
 
@@ -77,7 +77,7 @@ Mobile client ┘
 
 The operator's PC does not need to remain online for normal use.
 
-A local PC bridge remains useful for development, diagnosis and fallback.
+The PC-local bridge is the canonical V1 runtime. In V2 it remains the development, diagnosis and fallback path.
 
 ## Failure model
 
@@ -115,7 +115,7 @@ The report contains binding, capability and qualification metadata only. It must
 
 ## Qualification sequence
 
-1. prove cognition adapter with local browser;
+1. qualify and use Bob V1 Local Companion with the local browser;
 2. provision DigitalOcean canary runtime;
 3. prove persistent login/session;
 4. prove accessibility/copy capture;
