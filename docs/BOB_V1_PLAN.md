@@ -28,6 +28,20 @@ This isolates Bob's working conversations without requiring a second subscriptio
 
 V1 uses the visible ChatGPT **Copy** action followed by clipboard read as the canonical response transport. Direct DOM extraction is retained only behind explicit `legacy_dom` compatibility mode and must not silently become the normal fallback. Windows UI Automation/accessibility is a deferred robustness option to investigate only if the canonical Copy path proves materially unreliable during live use.
 
+## Module/stateless cognition compatibility
+
+V1 must preserve a clean path toward the canonical large-project model in `docs/BOB_MODULE_COGNITION_ARCHITECTURE.md`.
+
+That model requires:
+
+- modules sized before implementation to fit with their immediate contract neighborhood;
+- 20k compiled-context target / 25k hard ceiling as initial defaults;
+- one fresh ChatGPT conversation per cognition question;
+- Bob-held continuity between cognition requests;
+- a separate consequence/Steward pass after material technical answers.
+
+The bridge therefore exposes a fresh `/cognition` primitive now. The existing stateful READ/RESULT driver is retained only until the Context Compiler can reconstruct each continuation self-containedly.
+
 ## Large-project continuity principle
 
 Even in V1, Bob must not evolve toward a design where one ChatGPT thread becomes the durable project brain.
