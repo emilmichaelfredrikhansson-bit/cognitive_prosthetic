@@ -38,6 +38,27 @@ class LocalCompanionTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             bob_local.assert_local_only(env)
 
+    def test_normal_runtime_requires_dedicated_chatgpt_project_url(self):
+        env = {
+            "BOB_HOST": "127.0.0.1",
+            "CHATGPT_BRIDGE_HOST": "127.0.0.1",
+            "BOB_COMPANION_UI_URL": "http://127.0.0.1:5002/",
+            "BOB_CHATGPT_PROJECT_URL": "",
+        }
+        with self.assertRaises(RuntimeError):
+            bob_local.assert_project_bound(env)
+
+        env["BOB_CHATGPT_PROJECT_URL"] = "https://chatgpt.com/"
+        with self.assertRaises(RuntimeError):
+            bob_local.assert_project_bound(env)
+
+    def test_bridge_accepts_explicit_non_root_chatgpt_project_target(self):
+        target = "https://chatgpt.com/g/g-p-example/project"
+        self.assertEqual(chatgpt_api_server.validate_chatgpt_project_url(target), target)
+
+        with self.assertRaises(ValueError):
+            chatgpt_api_server.validate_chatgpt_project_url("https://chatgpt.com/")
+
     def test_bridge_accepts_only_loopback_companion_ui(self):
         self.assertEqual(
             chatgpt_api_server.validate_companion_ui_url("http://localhost:5002/"),
