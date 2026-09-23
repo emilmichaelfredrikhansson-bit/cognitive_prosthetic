@@ -221,7 +221,7 @@ same ChatGPT Plus account
       └─ Bob-created cognition threads only
 ```
 
-The Bob project should use **Project-only memory** when the account offers it. Bob must never deliberately target the ChatGPT home page, a normal personal chat, or another project for cognition. New Bob conversations begin from the exact configured Bob Project URL. Project instructions belong in that project and define the ChatGPT side of the Bob protocol.
+The Bob project currently uses **Project-only memory** as the V1 isolation setting when the account offers it. This memory is not canonical project state and the stateless cognition architecture must never depend on cross-chat recall for correctness. If Bob can later preserve project instructions/isolation while disabling cross-chat memory influence, that is preferable for the stateless cognition path. Bob must never deliberately target the ChatGPT home page, a normal personal chat, or another project for cognition. New Bob conversations begin from the exact configured Bob Project URL. Project instructions belong in that project and define the ChatGPT side of the Bob protocol.
 
 The same-account model means normal human ChatGPT use can continue in parallel, but subscription/account usage limits are shared rather than multiplied.
 
