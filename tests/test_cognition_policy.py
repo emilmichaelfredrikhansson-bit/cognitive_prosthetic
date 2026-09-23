@@ -31,6 +31,12 @@ class CognitionPolicyTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             policy.require_fit(25_001)
 
+    def test_new_module_design_must_fit_target_not_only_ceiling(self):
+        policy = CognitionPolicy()
+        policy.require_module_design_fit(20_000)
+        with self.assertRaises(ValueError):
+            policy.require_module_design_fit(20_001)
+
     def test_fresh_chat_is_invariant_not_optional_tuning(self):
         with self.assertRaises(ValueError):
             CognitionPolicy(fresh_chat_per_request=False)
