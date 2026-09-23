@@ -69,6 +69,28 @@ def turn():
     return jsonify({"success": True, **result})
 
 
+@app.post("/bob/module-turn")
+def module_turn():
+    data = request.get_json(force=True) or {}
+    result = runtime.module_turn(
+        str(data["workspace"]),
+        str(data["module"]),
+        str(data["message"]),
+        None if data.get("ref") in (None, "") else str(data["ref"]),
+    )
+    return jsonify({"success": True, **result})
+
+
+@app.post("/bob/module-graph")
+def module_graph():
+    data = request.get_json(force=True) or {}
+    result = runtime.module_graph_status(
+        str(data["workspace"]),
+        None if data.get("ref") in (None, "") else str(data["ref"]),
+    )
+    return jsonify({"success": True, **result})
+
+
 @app.post("/bob/approve")
 def approve():
     data = request.get_json(force=True) or {}
