@@ -1,6 +1,6 @@
-# Bob Runtime Operations V1
+# Bob Remote Runtime Operations V2
 
-This runbook is the deterministic operating sequence for the future persistent Bob host.
+This runbook is the deterministic operating sequence for the optional **V2 persistent remote host**. It is not required for Bob V1 Local Companion; local V1 setup is documented in `docs/BOB_LOCAL_COMPANION.md`.
 
 ## Install an exact release
 
