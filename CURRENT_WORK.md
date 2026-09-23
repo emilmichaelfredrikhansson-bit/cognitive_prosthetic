@@ -13,6 +13,7 @@
 - Agent protocol: `AGENTS.md`
 - Architecture: `ARCHITECTURE.md`
 - Strategic direction: `ROADMAP.md`
+- Product behavior canon: `PRODUCT_PRINCIPLES.md`
 - Bob protocol: `docs/BOB_PROTOCOL_V1.md`
 - Manual relay: `docs/BOB_MANUAL_RELAY_V1.md`
 - ChatGPT Project instructions: `docs/BOB_CHATGPT_PROJECT_INSTRUCTIONS.md`
@@ -27,7 +28,7 @@
 
 ## CURRENT_ARCHITECTURE
 
-Bob is a bidirectional closed-loop coordination layer:
+Bob is a bidirectional closed-loop coordination layer. Its product behavior is governed by `PRODUCT_PRINCIPLES.md`: simple conversational surface, advanced internal orchestration, verified reality, and safe self-hosting.
 
 ```text
 human
@@ -55,6 +56,18 @@ No component is globally smart.
 The inherited ChatGPT browser bridge is a replaceable cognition transport. **V1 response capture is canonically the visible ChatGPT Copy action -> clipboard; DOM scraping is legacy-only, while Windows UI Automation is deferred unless real-world robustness requires it.** **Bob V1 runs as Local Companion on the operator's own PC using the operator's existing ChatGPT account/subscription but a separate Bob-managed Chromium profile. All Bob cognition is confined to one dedicated private ChatGPT Project named `Bob`, with Project-only memory as the V1 isolation setting.** Bob API and bridge remain loopback-only, the Bob Project/ChatGPT tab lives in the background, and the Bob UI is brought to the foreground in the same managed browser. DigitalOcean/persistent remote cognition is deferred to V2.
 
 ## LAST_COMPLETED
+
+`BOB_PRODUCT_PRINCIPLES_AND_SELF_HOSTING_CANON`
+
+Bob now has a dedicated `PRODUCT_PRINCIPLES.md` defining the canonical operator experience and long-term performance target.
+
+The product rule is: **as easy to use as a good ordinary ChatGPT conversation on the surface; as sophisticated as useful underneath.** Operator-facing answers should stay simple by default, with technical depth/evidence progressively disclosed when requested. The operator supplies goals, constraints and material approvals; Bob absorbs orchestration, provider and continuity complexity.
+
+A first-class performance target is now explicit: Bob should be able to drive Signal Lab-scale projects or larger with materially less continuity/tooling/coordination friction than ordinary single-chat work.
+
+Bob is also explicitly **self-hosting**: Bob may use its own bounded workflow to inspect, diagnose, implement, test and improve Bob itself. This creates a recursive capability-improvement loop where better Bob versions can make subsequent development easier. Self-hosting never means self-authorizing: a new Bob version cannot expand its own authority, weaken approval/verification boundaries or declare itself trusted.
+
+`AGENTS.md` now points product/UX/orchestration work to the product canon, and the Bob ChatGPT Project instructions now require simple operator-facing communication plus safe self-hosting semantics.
 
 `BOB_CHATGPT_CAPTURE_V1`
 
