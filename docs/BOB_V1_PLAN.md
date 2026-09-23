@@ -38,7 +38,7 @@ That model requires:
 - 20k compiled-context target / 25k hard ceiling as initial defaults;
 - one fresh ChatGPT conversation per cognition question;
 - Bob-held continuity between cognition requests;
-- a separate consequence/Steward pass after material technical answers.
+- direct GitHub re-grounding plus an impact check inside ordinary cognition, with separate review/meta cognition only when materially useful.
 
 The bridge therefore exposes a fresh `/cognition` primitive now. The existing stateful READ/RESULT driver is retained only until the Context Compiler can reconstruct each continuation self-containedly.
 
