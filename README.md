@@ -64,6 +64,10 @@ Bob V1 deliberately uses the operator's **existing ChatGPT account/subscription*
 
 Normal Bob runtime requires the exact project URL in `BOB_CHATGPT_PROJECT_URL` and will not accept the generic ChatGPT home page as its cognition target. The operator can continue using normal ChatGPT independently in another browser/session; account-level usage limits remain shared.
 
+## ChatGPT response capture
+
+Bob V1 uses ChatGPT's visible **Copy** action and reads the resulting clipboard text. That is the canonical response-capture path. Direct DOM extraction is legacy-only compatibility behavior, not the preferred interface. Windows UI Automation/accessibility may be evaluated later only if the Copy path proves unreliable in real use.
+
 ## Important architecture boundary
 
 Direct GitHub, HF, Supabase and Cloudflare integrations can be server-side and work from both PC and mobile.
