@@ -93,7 +93,7 @@ Bob's initial graph intentionally has `coverage=PARTIAL`. Current measured footp
 
 ```text
 BOB_PROTOCOL              3,236   compliant
-BOB_MODULE_COGNITION     13,667   compliant
+BOB_MODULE_COGNITION      13,824   compliant
 BOB_RUNTIME_ORCHESTRATION 19,040  NON-COMPLIANT / MIGRATION_REQUIRED
 ```
 
@@ -387,7 +387,7 @@ Current deterministic graph evidence under `BOB_TOKEN_ESTIMATE_V1`:
 
 ```text
 BOB_PROTOCOL               3,236   compliant
-BOB_MODULE_COGNITION      13,667   compliant
+BOB_MODULE_COGNITION      13,824   compliant
 BOB_RUNTIME_ORCHESTRATION 19,040   MIGRATION_REQUIRED
 ```
 
