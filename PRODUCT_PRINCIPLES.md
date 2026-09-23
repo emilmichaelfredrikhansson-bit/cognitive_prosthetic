@@ -272,6 +272,23 @@ Key rules:
 - use explicit cross-cutting workstreams and Fusion when changes span chunks;
 - improve chunking/context strategy recursively from real evidence.
 
+## 16. Module-first, stateless cognition
+
+For Bob-designed software, a large project should be composed from cognitively bounded modules connected by explicit contracts/adapters.
+
+A module is designed before implementation so that the current module, its immediate contract neighborhood, relevant mission/invariants and current question fit inside one fresh cognition packet.
+
+Initial engineering envelope:
+
+- 20k compiled input tokens target;
+- 25k compiled input tokens hard ceiling.
+
+One cognition question uses one fresh ChatGPT conversation. Bob, not the chat, carries continuity.
+
+Every material technical answer should also receive a separate consequence evaluation against the relevant product vision, system map, decisions and strategic state. Local technical convenience must not silently rewrite operator intent.
+
+The detailed canon is `docs/BOB_MODULE_COGNITION_ARCHITECTURE.md`.
+
 ## Canonical summary
 
 > **Bob is a long-lived project work engine with a conversational interface.**
