@@ -51,50 +51,66 @@ VERIFICATION
 
 Its semantic responsibility should remain stable. New unrelated responsibility should normally become another module rather than silently enlarging the existing one.
 
-## Pre-implementation cognition-fit gate
+## Absolute module-size invariant
 
-Bob must not intentionally create a new module that is already too large for one fresh cognition request to understand with its relevant neighborhood.
+A Bob module has an absolute hard cap:
 
-Before implementation begins, Bob must be able to compile:
+~~~text
+MODULE_HARD_CAP = 15,000 tokens
+~~~
 
-- the current module in sufficient detail;
-- summarized direct producer/consumer modules;
-- exact relevant input/output contracts;
-- relevant shared invariants;
-- a compact mission/product slice;
-- the current problem/question;
+This is not an alert threshold, recommendation or operator decision. It is a backend invariant known to both Bob and ChatGPT from the beginning.
 
-inside the canonical cognition envelope.
+A valid module must remain at or below 15k throughout its lifecycle, including when it is nearly complete. This preserves enough surrounding cognition space for a fresh ChatGPT conversation to understand, debug, modify and finish the module together with contracts, neighboring summaries and current evidence.
 
-If that design does not fit, **module design is not ready for implementation**.
+Bob enforces the numerical boundary deterministically. ChatGPT owns the semantic response when a proposed change would violate it.
 
-The normal response is to return to architecture/flow design before code is written. Bob should not knowingly build a cognitively oversized module and rely on a later emergency split.
+Canonical backend behavior:
 
-Legacy/external systems may already contain oversized components; those are migration/refactoring problems, not the target Bob design pattern.
+~~~text
+proposed module/change
+→ deterministic module token count
+
+<= 15k
+→ continue
+
+> 15k
+→ proposed module/change is invalid
+→ fresh architecture cognition receives the module/flow/contracts + hard-cap invariant
+→ cognition proposes a compliant reorganization
+→ Bob persists/rechecks the resulting module graph
+→ continue only when every affected module is <= 15k
+~~~
+
+This normally happens without operator interruption. Bob must involve the operator only if the required reorganization creates a genuine operator-owned product/vision/end-goal tradeoff, not merely because a module crossed the size boundary.
+
+Bob should therefore never intentionally create a module that is expected to need an operator conversation merely to stay within the cap.
+
+Legacy/external systems may already contain oversized components; those are migration/refactoring problems, but Bob-designed target modules must satisfy the same 15k invariant before being accepted as compliant.
 
 ## Initial cognition envelope
 
 The initial canonical engineering defaults are:
 
 ~~~text
-NEW_MODULE_DESIGN_GATE = 20,000 tokens
+MODULE_HARD_CAP = 15,000 tokens
 COMPILED_CONTEXT_TARGET = 20,000 tokens
 COMPILED_CONTEXT_HARD_CEILING = 25,000 tokens
 ~~~
 
-These limits apply to the **whole compiled input world**, not only source code.
+The **15k module cap** applies to the module itself as canonically measured by Bob's module manifest/token-counting contract. It is a hard architectural invariant.
 
-That includes the relevant combination of:
+The **20k target / 25k hard ceiling** apply to the whole compiled cognition input world, which may include:
 
 - mission/product constraints;
-- module implementation/context;
+- the module;
 - direct contract neighborhood;
 - current reality/evidence;
 - the problem/question itself.
 
-The target exists to preserve cognitive headroom. **A new module must fit at or below 20k before implementation begins.** The 20–25k band is reserved for an exceptional heavier compiled question, not as permission to design modules at the ceiling.
+20k is a preferred cognition target and 25k is the absolute compiled-context ceiling. The module cap leaves deliberate room between 15k and the cognition envelope for surrounding context and difficult end-stage work.
 
-20k/25k are initial learnable engineering parameters, not claims about an eternal model limit. Bob may later improve them from measured evidence, but a running policy must never silently exceed its configured hard ceiling.
+The cognition-envelope numbers may later improve from measured evidence. The 15k module cap remains canonical until explicitly changed in Bob's architecture; Bob may not tune it upward on its own.
 
 The runtime defaults live in bob/cognition_policy.py.
 
@@ -369,7 +385,7 @@ Useful signals may include:
 
 Those observations may improve:
 
-- the 20k/25k envelope;
+- the 20k/25k cognition envelope;
 - module archetypes;
 - contract design;
 - neighborhood selection;
@@ -377,15 +393,17 @@ Those observations may improve:
 - consequence routing;
 - adapter patterns.
 
-Hard invariants such as fresh cognition, durable state and operator authority remain separate from learnable tuning parameters.
+Hard invariants such as the 15k module cap, fresh cognition, durable state and operator authority remain separate from learnable tuning parameters. Bob may collect evidence suggesting a future cap change, but only explicit canon/operator authority may change the cap.
 
 ## Canonical summary
 
 > **A large Bob project is a graph of bounded transformation modules.**
 >
-> **Every module is designed to fit, together with its contract neighborhood, inside a fresh cognition envelope before implementation starts.**
+> **Every Bob module is absolutely capped at 15k tokens throughout its lifecycle.**
 >
-> **Initial envelope: 20k target, 25k hard ceiling.**
+> **Compiled cognition envelope: 20k target, 25k hard ceiling.**
+>
+> **If a change would push a module above 15k, Bob + fresh architecture cognition reorganize it in the backend; the operator is involved only for genuine product/vision tradeoffs.**
 >
 > **One cognition question uses one fresh ChatGPT conversation.**
 >
