@@ -93,8 +93,8 @@ Bob's initial graph intentionally has `coverage=PARTIAL`. Current measured footp
 
 ```text
 BOB_PROTOCOL              3,236   compliant
-BOB_MODULE_COGNITION     12,706   compliant
-BOB_RUNTIME_ORCHESTRATION 18,411  NON-COMPLIANT / MIGRATION_REQUIRED
+BOB_MODULE_COGNITION     13,178   compliant
+BOB_RUNTIME_ORCHESTRATION 18,464  NON-COMPLIANT / MIGRATION_REQUIRED
 ```
 
 The oversized runtime node is inherited/legacy architecture and is now explicitly marked `MIGRATION_REQUIRED`; it is the natural first self-hosting decomposition target.
