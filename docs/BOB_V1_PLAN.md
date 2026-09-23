@@ -149,7 +149,7 @@ Acceptance:
 
 Replace preferred response extraction path with a UI/accessibility copy transport while preserving the `CognitionAdapter` contract.
 
-First qualify the mechanism locally on Windows if useful, then run the production-oriented browser bridge on DigitalOcean.
+Qualify and use the mechanism locally on Windows as the canonical V1 runtime. DigitalOcean is a V2 transport option after local Bob has proven useful.
 
 Keep transport-specific failure separate from repository effect logic.
 
@@ -218,9 +218,9 @@ Add only the project operations that are actually needed.
 
 Provider adapters must not become new sources of authority.
 
-## Work package 12 — Cloudflare web UI
+## Work package 12 — Bob web UI
 
-Build the responsive operator surface after the GitHub development loop is proven.
+Build the responsive operator surface so V1 can run from the loopback Bob API on the operator PC. Cloudflare hosting is optional V2 remote-access infrastructure, not a V1 dependency.
 
 Views:
 - workspace selector;
@@ -232,40 +232,33 @@ Views:
 - PR/job/provider status;
 - provenance/audit.
 
-PC and mobile share one web application.
+V1 targets the operator PC. The same web product should remain portable to PC/mobile in V2.
 
-## Work package 13 — Persistent remote cognition bridge
+## Work package 13 — Local Companion runtime
 
-Goal: remove the requirement for the operator's PC to host the ChatGPT session.
+Goal: make V1 runnable as a normal local product on the operator's Windows PC.
 
 Target topology:
 
 ```text
-Cloudflare Bob UI/API
-→ authenticated CognitionAdapter call
-→ DigitalOcean persistent browser/session
-→ secure tunnel to home network/router
-→ ChatGPT via selected home-IP egress
+Bob UI foreground tab
+→ loopback Bob API
+→ loopback CognitionAdapter bridge
+→ ChatGPT background tab
 ```
 
-Responsibilities of the DigitalOcean component are intentionally narrow:
-- maintain the authenticated browser/session;
-- perform the UI/accessibility cognition transport;
-- report health/session state;
-- expose no generic shell/build authority to the UI.
-
-The home tunnel is an egress mechanism, not a Bob authority source.
-
 Acceptance:
-- cognition works from both PC and mobile through the same Bob UI;
-- no operator PC needs to remain online;
-- tunnel/browser restart is recoverable;
-- bridge failure cannot trigger repository writes;
-- GitHub/HF/Supabase/Cloudflare remain independently reachable when the cognition bridge is unavailable.
+- one setup command installs local dependencies;
+- one explicit first-run flow creates the authenticated ChatGPT profile;
+- normal startup launches Bob API + bridge and health-gates both;
+- Bob is brought to the foreground in the same managed browser;
+- ChatGPT remains available in the background for cognition;
+- non-loopback configuration fails closed;
+- transport failure cannot trigger repository writes.
 
-## Mobile cognition milestone
+## V2 remote milestone
 
-Once the Cloudflare UI and persistent DigitalOcean cognition bridge exist, PC and mobile become equivalent control clients for the normal Bob development loop.
+Only after V1 is useful in practice, move the replaceable cognition transport to a persistent remote host such as DigitalOcean and add authenticated mobile access.
 
 ## V1 completion definition
 
@@ -275,7 +268,7 @@ V1 is complete when:
 - GitHub Actions are not required as the coding engine;
 - project identity and authority boundaries fail closed;
 - ChatGPT transport is replaceable;
-- existing HF/Supabase/Cloudflare infrastructure remains intact and separately authoritative.
+- existing HF/Supabase/Cloudflare infrastructure remains intact and separately authoritative;\n- the normal V1 product can run on the operator PC without DigitalOcean.
 
 ## First implementation slice
 
