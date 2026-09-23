@@ -76,6 +76,7 @@ verify identity
 - No chat owns a large project. Durable project/work state must live outside any single cognition thread.
 - Decompose substantial work semantically and give each cognition task bounded compiled context; do not dump the whole repository/history into a model merely because it is available.
 - Cross-cutting changes must name affected contracts/nodes and integrate through explicit coordination/Fusion rather than implicit transcript memory.
+- Bob carries global structural state so cognition does not have to. Supply bounded relevant structure to a cognition task; use separate bounded cognition to revise the structure itself when semantic judgment says the map is wrong.
 
 ## Verification
 
