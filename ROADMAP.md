@@ -49,7 +49,7 @@ Exit criteria:
 - [x] visible ChatGPT Copy -> clipboard canonicalized as V1 response capture;
 - [x] direct DOM extraction retained only as explicit legacy compatibility mode;
 - [ ] evaluate Windows UI Automation only if live Copy capture proves materially unreliable;
-- [ ] private ChatGPT Project `Bob` created on the operator account with Project-only memory;
+- [ ] private ChatGPT Project `Bob` created on the operator account with Project-only memory for V1 isolation only; stateless cognition must not rely on cross-chat recall;
 - [x] one-time local login flow;
 - [x] Windows setup/first-run/start launchers;
 - [x] local launcher health-gates both services;
@@ -93,7 +93,7 @@ Exit criteria:
 - [ ] canonical module contract implemented (purpose, input/output, contracts, adapters, invariants, state, verification/evidence);
 - [ ] product-vision/mission bootstrap persists operator intent and success criteria;
 - [ ] Context Compiler produces bounded cognition packets from current project truth;
-- [ ] module cognition-fit gate runs before implementation begins;
+- [ ] module cognition-fit gate enforces <=20k compiled tokens before implementation begins;
 - [ ] every cognition question uses a fresh ChatGPT conversation in the production orchestration path;
 - [ ] tool/reality continuation recompiles the full relevant problem into a fresh cognition request;
 - [ ] technical answers trigger a separate bounded consequence/Steward pass;
