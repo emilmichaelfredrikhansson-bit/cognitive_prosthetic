@@ -85,7 +85,7 @@ verify identity
 - The surrounding cognition envelope remains 20k target / 25k hard ceiling.
 - Canonical large-project cognition is stateless: one cognition question -> one fresh ChatGPT conversation. Bob carries continuity; chat reuse is not a project-memory strategy.
 - Fresh cognition should re-ground directly in connected GitHub source/history/tests when repository truth matters, rather than relying only on Bob summaries.
-- Ordinary cognition owns its own impact check against relevant contracts/module neighbors/product intent. Use a separate fresh review/meta cognition request only when materially useful; there is no mandatory Steward role.
+- Ordinary cognition owns its own impact check against relevant contracts/module neighbors/product intent. Use a separate fresh review/meta cognition request only when materially useful; there is no mandatory second-stage reviewer.
 - Escalate operator-owned product/vision/end-goal tradeoffs instead of silently optimizing them away.
 
 ## Verification
