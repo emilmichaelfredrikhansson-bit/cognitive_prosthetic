@@ -12,7 +12,8 @@ Before privileged Bob repository effects:
 4. read `CURRENT_WORK.md`;
 5. read `PRODUCT_PRINCIPLES.md` when product behavior, UX, cognition orchestration or Bob self-development is in scope;
 6. read `docs/BOB_CHUNKING_CONTEXT_ARCHITECTURE.md` for large/cross-cutting work, context management or work decomposition;
-7. inspect only the additional implementation/canon relevant to the active work.
+7. read `docs/BOB_MODULE_COGNITION_ARCHITECTURE.md` for Bob-designed software, module boundaries, cognition budgets or Steward/consequence work;
+8. inspect only the additional implementation/canon relevant to the active work.
 
 Before effects on a target workspace, perform the equivalent identity verification for that workspace.
 
