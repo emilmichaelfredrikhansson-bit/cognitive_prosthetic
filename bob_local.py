@@ -128,7 +128,13 @@ def main() -> int:
     if args.login:
         run_login(env)
 
-    profile = Path(load_profile_path())
+    profile_override = env.get("CHATGPT_PROFILE_PATH", "").strip()
+    if profile_override:
+        profile = Path(profile_override).expanduser()
+        if not profile.is_absolute():
+            profile = (ROOT / profile).resolve()
+    else:
+        profile = Path(load_profile_path())
     if not profile.exists():
         print(f"Bob cannot find a ChatGPT browser profile at: {profile}")
         print("Run: python bob_local.py --login")
