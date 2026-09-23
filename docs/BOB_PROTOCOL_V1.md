@@ -83,7 +83,7 @@ staging, the approval is invalid and the effect fails closed.
 
 ## Bob-to-model messages
 
-Bob injects results back into the **same ChatGPT conversation**:
+Current V1 stateful transport can inject results back into the same ChatGPT conversation:
 
 ```bob-result
 {
@@ -165,6 +165,31 @@ trusting Worker/Pages state or performing an effect.
 
 The vocabulary will grow only when a real project needs another semantic tool.
 
+## Stateless large-project cognition
+
+The protocol messages themselves do not require persistent ChatGPT conversation state.
+
+The canonical large-project path is:
+
+```text
+bounded problem/context
+→ fresh cognition conversation
+→ model request/answer
+→ Bob deterministic reality/effect handling
+→ durable state update
+→ next bounded problem/context
+→ fresh cognition conversation
+```
+
+When a model answer requests additional reality, Bob should obtain that reality and compile the next self-contained question rather than relying on the old chat transcript.
+
+Initial compiled input policy:
+
+- target: 20,000 tokens;
+- hard ceiling: 25,000 tokens.
+
+The current V1 `/chat` closed-loop driver remains stateful until durable compiled continuation is implemented. The bridge now also exposes `/cognition`, which starts a fresh ChatGPT conversation for one cognition request.
+
 ## Large-work context envelope
 
 BOB Protocol V1 currently injects a workspace packet and verified tool results into a cognition conversation. For large-project orchestration, the canonical architecture additionally requires a **bounded compiled context envelope** around a coherent work node.
@@ -198,4 +223,4 @@ request
 → continue cognition
 ```
 
-No external effect is considered successful before verified reality feedback returns to the same cognition loop.
+No external effect is considered successful before verified reality feedback is available to the next relevant cognition step. In the canonical stateless path that step may be a new ChatGPT conversation.
