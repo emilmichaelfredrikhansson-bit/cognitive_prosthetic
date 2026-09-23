@@ -45,7 +45,7 @@ GitHub / Supabase / Hugging Face / Cloudflare
 ↕
 verified reality feedback
 ↕
-same ChatGPT conversation
+current V1 ChatGPT conversation transport
 ```
 
 No component is globally smart.
@@ -55,7 +55,7 @@ No component is globally smart.
 - providers own external state;
 - the operator owns material approvals.
 
-The inherited ChatGPT browser bridge is a replaceable cognition transport. **V1 response capture is canonically the visible ChatGPT Copy action -> clipboard; DOM scraping is legacy-only, while Windows UI Automation is deferred unless real-world robustness requires it.** **Bob V1 runs as Local Companion on the operator's own PC using the operator's existing ChatGPT account/subscription but a separate Bob-managed Chromium profile. All Bob cognition is confined to one dedicated private ChatGPT Project named `Bob`, with Project-only memory as the V1 isolation setting.** Bob API and bridge remain loopback-only, the Bob Project/ChatGPT tab lives in the background, and the Bob UI is brought to the foreground in the same managed browser. DigitalOcean/persistent remote cognition is deferred to V2.
+The inherited ChatGPT browser bridge is a replaceable cognition transport. **Canonical large-project cognition is nevertheless stateless: one cognition question -> one fresh ChatGPT conversation, with Bob carrying all continuity. The current same-conversation V1 READ/RESULT loop is a temporary transport implementation until Context Compiler continuation exists.** **V1 response capture is canonically the visible ChatGPT Copy action -> clipboard; DOM scraping is legacy-only, while Windows UI Automation is deferred unless real-world robustness requires it.** **Bob V1 runs as Local Companion on the operator's own PC using the operator's existing ChatGPT account/subscription but a separate Bob-managed Chromium profile. All Bob cognition is confined to one dedicated private ChatGPT Project named `Bob`, with Project-only memory as the V1 isolation setting.** Bob API and bridge remain loopback-only, the Bob Project/ChatGPT tab lives in the background, and the Bob UI is brought to the foreground in the same managed browser. DigitalOcean/persistent remote cognition is deferred to V2.
 
 ## LAST_COMPLETED
 
@@ -68,6 +68,7 @@ For Bob-designed software, a module is the pre-implementation cognitive atom: ex
 Initial compiled-input policy is codified in `bob/cognition_policy.py`:
 
 ```text
+new-module design gate = 20,000 tokens
 target = 20,000 tokens
 hard ceiling = 25,000 tokens
 fresh chat per cognition request = required
@@ -99,7 +100,7 @@ Bob now has a canonical large-project cognition architecture in `docs/BOB_CHUNKI
 
 Foundational rule: **no chat owns the project**. Bob owns durable project/work state; ChatGPT threads own bounded cognition work. Large projects are represented as a recursive semantic graph of project/domain/workstream/work-unit nodes plus explicit dependency/interface/contract edges.
 
-A future **Context Compiler** compiles the smallest sufficient context packet for each cognition task from current durable truth: workspace/work-node identity, scope, relevant node summaries/contracts, dependencies, exact relevant files/reality, blockers, authority, provenance/freshness and exit criteria. If a packet is too large, Bob decomposes the work further rather than silently dropping critical context.
+A future **Context Compiler** compiles the smallest sufficient context packet for each cognition task from current durable truth: workspace/work-node identity, scope, relevant node summaries/contracts, dependencies, exact relevant files/reality, blockers, authority, provenance/freshness and exit criteria. For new Bob-designed modules, cognition-fit is a pre-implementation gate: the whole module neighborhood must fit the 20k design target before coding starts; Bob must not knowingly build an oversized module and plan to split it later for cognitive reasons.
 
 Cross-cutting changes become explicit parent workstreams with bounded child tasks. Parallel child outcomes converge through bounded Fusion using durable results/contracts/conflicts/evidence rather than entire child transcripts. Completed cognition is distilled back into durable node state, implementation, evidence and follow-up work.
 
@@ -131,7 +132,7 @@ This direction matches the current implementation: `CHATGPT_CAPTURE_MODE=copy` i
 
 `BOB_CHATGPT_PROJECT_ISOLATION_V1`
 
-Bob's ChatGPT-side product boundary is now canonical: use the operator's **same ChatGPT account/Plus subscription**, but through a separate persistent Bob browser profile and one dedicated private ChatGPT Project named **Bob**. The project is expected to use **Project-only memory** so Bob cognition stays separated from ordinary personal chats while still allowing Bob's own project chats to share context.
+Bob's ChatGPT-side product boundary is now canonical: use the operator's **same ChatGPT account/Plus subscription**, but through a separate persistent Bob browser profile and one dedicated private ChatGPT Project named **Bob**. Project-only memory remains the current V1 isolation setting, but it is **not** canonical project memory: stateless cognition must be correct without cross-chat recall, and Bob should prefer disabling cross-chat memory influence later if the product allows that while preserving Bob project instructions/isolation.
 
 Normal Local Companion runtime now requires an explicit `BOB_CHATGPT_PROJECT_URL` (legacy `CHATGPT_TARGET_URL` remains compatibility-only). The bridge rejects an empty target, the ChatGPT home page, and non-ChatGPT hosts; every Bob New Chat navigates back to the configured project target before creating another cognition thread. The runtime no longer treats the generic ChatGPT home page as an acceptable cognition target.
 
