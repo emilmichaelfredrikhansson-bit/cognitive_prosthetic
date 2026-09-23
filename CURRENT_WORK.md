@@ -15,6 +15,7 @@
 - Strategic direction: `ROADMAP.md`
 - Product behavior canon: `PRODUCT_PRINCIPLES.md`
 - Large-project cognition canon: `docs/BOB_CHUNKING_CONTEXT_ARCHITECTURE.md`
+- Module/stateless cognition canon: `docs/BOB_MODULE_COGNITION_ARCHITECTURE.md`
 - Bob protocol: `docs/BOB_PROTOCOL_V1.md`
 - Manual relay: `docs/BOB_MANUAL_RELAY_V1.md`
 - ChatGPT Project instructions: `docs/BOB_CHATGPT_PROJECT_INSTRUCTIONS.md`
@@ -57,6 +58,40 @@ No component is globally smart.
 The inherited ChatGPT browser bridge is a replaceable cognition transport. **V1 response capture is canonically the visible ChatGPT Copy action -> clipboard; DOM scraping is legacy-only, while Windows UI Automation is deferred unless real-world robustness requires it.** **Bob V1 runs as Local Companion on the operator's own PC using the operator's existing ChatGPT account/subscription but a separate Bob-managed Chromium profile. All Bob cognition is confined to one dedicated private ChatGPT Project named `Bob`, with Project-only memory as the V1 isolation setting.** Bob API and bridge remain loopback-only, the Bob Project/ChatGPT tab lives in the background, and the Bob UI is brought to the foreground in the same managed browser. DigitalOcean/persistent remote cognition is deferred to V2.
 
 ## LAST_COMPLETED
+
+`BOB_MODULE_STATELESS_COGNITION_CANON`
+
+Bob now has a canonical **module-first, stateless cognition architecture** in `docs/BOB_MODULE_COGNITION_ARCHITECTURE.md`.
+
+For Bob-designed software, a module is the pre-implementation cognitive atom: explicit input -> bounded responsibility -> explicit output, connected through contracts/adapters. Bob must not knowingly create a new module that is already too large for one fresh cognition request to understand with its immediate contract neighborhood.
+
+Initial compiled-input policy is codified in `bob/cognition_policy.py`:
+
+```text
+target = 20,000 tokens
+hard ceiling = 25,000 tokens
+fresh chat per cognition request = required
+```
+
+The limits apply to the whole compiled world: relevant mission/invariants + current module + summarized direct producer/consumer neighborhood + exact contracts/reality + current question. The numeric envelope is a learnable engineering parameter; bounded cognition and fresh requests are architectural invariants.
+
+The ChatGPT bridge now exposes `POST /cognition`, which atomically starts a fresh conversation inside the configured Bob Project and sends one prompt. `ChatGPTBridge.cognition(...)` exposes that primitive to Bob Core. The current V1 `_drive` READ/RESULT loop remains intentionally stateful for now because the Context Compiler/durable continuation layer does not yet exist; switching it prematurely would make later fresh chats receive incomplete context.
+
+Canonical large-project cadence is now:
+
+```text
+technical problem
+-> fresh cognition
+-> technical answer
+
+technical answer + relevant mission/system/decision state
+-> fresh consequence/Steward cognition
+-> NONE / STRUCTURAL / OPERATOR
+```
+
+Bob carries all continuity and structure between requests. Operator-owned product/vision/end-goal tradeoffs must be surfaced rather than silently resolved as local engineering choices.
+
+This tranche adds policy/runtime primitives and canon. It does **not** yet implement the durable module graph, Context Compiler, product-vision bootstrap, automatic Steward routing or production replacement of the current stateful driver.
 
 `BOB_RECURSIVE_CHUNKING_AND_CONTEXT_CANON`
 
