@@ -1,1 +1,26 @@
-[Unit]\nDescription=Bob ChatGPT browser bridge\nAfter=network-online.target\nWants=network-online.target\n\n[Service]\nType=simple\nUser=bob\nGroup=bob\nWorkingDirectory=/opt/bob/current\nEnvironmentFile=/etc/bob/bob.env\nEnvironment=CHATGPT_BRIDGE_HOST=127.0.0.1\nEnvironment=CHATGPT_PROFILE_PATH=/var/lib/bob/chatgpt-profile\nExecStart=/usr/bin/xvfb-run -a /opt/bob/venv/bin/python /opt/bob/current/chatgpt_api_server.py\nRestart=on-failure\nRestartSec=5\nNoNewPrivileges=true\nPrivateTmp=true\nProtectSystem=full\nProtectHome=true\nReadWritePaths=/var/lib/bob\nUMask=0077\n\n[Install]\nWantedBy=multi-user.target\n
+[Unit]
+Description=Bob ChatGPT browser bridge
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=bob
+Group=bob
+WorkingDirectory=/opt/bob/current
+EnvironmentFile=/etc/bob/bob.env
+Environment=CHATGPT_BRIDGE_HOST=127.0.0.1
+Environment=CHATGPT_PROFILE_PATH=/var/lib/bob/chatgpt-profile
+Environment=PLAYWRIGHT_BROWSERS_PATH=/opt/bob/ms-playwright
+ExecStart=/usr/bin/xvfb-run -a /opt/bob/venv/bin/python /opt/bob/current/chatgpt_api_server.py
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/var/lib/bob
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

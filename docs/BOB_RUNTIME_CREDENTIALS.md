@@ -2,7 +2,7 @@
 
 This document defines the least-privilege credential floor for the persistent Bob runtime.
 
-Secrets never belong in Git, browser JavaScript, Bob protocol messages, logs, or documentation. Runtime values live in `/etc/bob/bob.env`, owned by the dedicated `bob` user and readable only by that identity.
+Secrets never belong in Git, browser JavaScript, Bob protocol messages, logs, or documentation. Runtime values live in `/etc/bob/bob.env`, owned by `root:root` with mode `0600`. systemd reads it when constructing the service environment; the unprivileged Bob process does not need write access to the credential file.
 
 ## Two-stage rollout
 
@@ -118,7 +118,7 @@ The systemd units also force the credential-bearing HTTP services to loopback in
 Recommended host controls:
 
 ```text
-owner = bob:bob
+owner = root:root
 mode = 0600
 path = /etc/bob/bob.env
 ```

@@ -56,13 +56,15 @@ The inherited ChatGPT browser bridge is now a replaceable cognition transport. T
 
 ## LAST_COMPLETED
 
-`BOB_RUNTIME_CREDENTIAL_CONTRACT`
+`BOB_OFFLINE_RUNTIME_DEPLOYMENT_PACKAGE`
 
-The persistent runtime credential floor is now documented as a staged least-privilege contract: read-only provider qualification first, then a bounded GitHub write credential only for the approved branch/PR canary. Supabase/Cloudflare/HF write or spend credentials are not required by the current workspaces. Current live Supabase project responses were re-read and contain the expected organization ID directly, so no account-wide project-list permission is required for the normal qualification path.
+Bob is now offline-deploy-ready. `deploy/install_runtime.sh` installs an exact Git SHA into an immutable release directory, prepares the venv/Playwright/Xvfb runtime, installs and enables (but deliberately does not start) the loopback-only services, and creates a root-owned empty credential file. `deploy/runtime_doctor.py` verifies local host prerequisites without exposing secrets and can fail closed on missing credentials/profile when those are required. During this work a real serialization defect was found in the committed ChatGPT bridge unit: it contained literal `\\n` sequences. The unit is now a real multiline systemd file, and tests explicitly reject literal escaped newlines.\n\nThe persistent runtime credential floor remains staged least-privilege: read-only provider qualification first, then a bounded GitHub write credential only for the approved branch/PR canary. Supabase/Cloudflare/HF write or spend credentials are not required by the current workspaces. Current live Supabase project responses were re-read and contain the expected organization ID directly, so no account-wide project-list permission is required for the normal qualification path.
 
 `BOB_PERSISTENT_RUNTIME_SYSTEMD_CONTRACT`
 
-Bob now has deployment templates for `bob-api.service` and `chatgpt-bridge.service` under `deploy/systemd/`. Both force loopback binding independently of the runtime env file, run as a dedicated unprivileged `bob` identity, use `/etc/bob/bob.env`, and apply basic systemd hardening. The browser bridge gets an explicit writable profile scope at `/var/lib/bob` and launches its headed Chromium inside an ephemeral Xvfb display (`xvfb-run -a`), so a headless Ubuntu host can actually start it. Initial interactive ChatGPT login still requires a separately authenticated temporary display path; remote access remains outside these units and must use a separately authenticated proxy/tunnel boundary.\n\nBob now includes a read-only runtime preflight entry point at `python -m bob.preflight`. It fails closed when either credential-bearing Python service is configured on a non-loopback host, then delegates provider identity checks to the existing `BobRuntime.qualify_workspace(...)` path for selected or all registered workspaces. The report exposes qualification/capability metadata but never credential values.
+Bob now has deployment templates for `bob-api.service` and `chatgpt-bridge.service` under `deploy/systemd/`. Both force loopback binding independently of the runtime env file, run as a dedicated unprivileged `bob` identity, use `/etc/bob/bob.env`, and apply basic systemd hardening. The browser bridge gets an explicit writable profile scope at `/var/lib/bob` and launches its headed Chromium inside an ephemeral Xvfb display (`xvfb-run -a`), so a headless Ubuntu host can actually start it. Initial interactive ChatGPT login still requires a separately authenticated temporary display path; remote access remains outside these units and must use a separately authenticated proxy/tunnel boundary.
+
+Bob now includes a read-only runtime preflight entry point at `python -m bob.preflight`. It fails closed when either credential-bearing Python service is configured on a non-loopback host, then delegates provider identity checks to the existing `BobRuntime.qualify_workspace(...)` path for selected or all registered workspaces. The report exposes qualification/capability metadata but never credential values.
 
 Bob is now the canonical product identity across root identity, governance schemas, workspace schema, operator routes and documentation. The historical foundation branch name `feat/builder-foundation-architecture` is intentionally unchanged.
 
@@ -205,13 +207,13 @@ finished = 2026-09-22T20:11:17.345Z
 
 The job cloned the public repository, checked out the exact pinned commit, asserted `git rev-parse HEAD` matched that SHA before testing, installed the pinned requirements and ran `python -m unittest discover -s tests -v`. The unittest log ended with `Ran 29 tests` and `OK`.
 
-The runtime-preflight and systemd-contract isolated checks remain useful narrow evidence, but the HF current-implementation run supersedes them as the main execution-suite evidence. Any later documentation-only reconciliation commit must not be misrepresented as having been independently re-executed; the executable implementation tree remains the tested one unless code/runtime files change.
+The runtime-preflight and systemd-contract isolated checks remain useful narrow evidence, but the HF current-implementation run supersedes them as the main execution-suite evidence.\n\nPost-HF runtime packaging changed after the 29/29 application-suite run. The exact proposed deployment tranche was checked independently in the interactive sandbox: `tests/test_runtime_deploy.py` = **6/6 PASS**, `bash -n deploy/install_runtime.sh` = PASS, `py_compile` for the doctor/test = PASS, and `systemd-analyze verify` parsed both unit files; its only diagnostic was the expected absent `/opt/bob/venv/bin/python` because the sandbox is not an installed Bob host. This is deployment-tranche evidence, not a new full-suite run. Any later documentation-only reconciliation commit must not be misrepresented as having been independently re-executed; the executable implementation tree remains the tested one unless code/runtime files change.
 
 ## ACTIVE_WORK
 
-`BOB_CORE_V1_RUNTIME_CREDENTIAL_INSTALL_AND_QUALIFICATION`
+`BOB_CORE_V1_OFFLINE_RUNTIME_CLOSURE`
 
-The implementation is current-suite green and the least-privilege credential contract is now explicit in `docs/BOB_RUNTIME_CREDENTIALS.md`. The next coherent work requires installing actual secret values on the persistent runtime and proving read-only identity qualification before any Bob-mediated write canary.
+The application implementation remains 29/29 verified at the last executable application commit. Runtime packaging has advanced after that verification: the deployment tranche is isolated-green and syntax-verified, but live host execution remains intentionally unavailable. Continue closing every remaining non-live dependency; reserve only credential, provider, browser-session, tunnel and real write-canary qualification for the future host.
 
 ## NEXT_INTENDED_WORK
 
@@ -225,7 +227,8 @@ The implementation is current-suite green and the least-privilege credential con
 
 ## OPEN_FINDINGS
 
-- The connected HF account is independently verified as `Reallothesecond` / `6a986fdd2e846637191b1c5e`, and no HF jobs are currently running. A fresh `cpu-basic` job is the available qualified path for the full current-head suite, but it was not dispatched because new compute is a material-spend effect requiring explicit operator authority.\n- Browser Copy-button selectors must be live-qualified against the current ChatGPT UI.
+- The connected HF account is independently verified as `Reallothesecond` / `6a986fdd2e846637191b1c5e`, and no HF jobs are currently running. A fresh `cpu-basic` job is the available qualified path for the full current-head suite, but it was not dispatched because new compute is a material-spend effect requiring explicit operator authority.
+- Browser Copy-button selectors must be live-qualified against the current ChatGPT UI.
 - DigitalOcean runtime and home-egress tunnel are designed but not provisioned. The local bridge is now loopback-only by default; remote exposure still requires authenticated transport.
 - SL Cloudflare account ID remains runtime-bound and is verified through its canonical R2 bucket. AB binds its canonical account ID directly but must verify the `autoblog-canary` Worker remotely before Cloudflare identity is trusted.
 - The current UI is functional scaffolding, not final product design; it now includes explicit read-only workspace qualification.
@@ -234,7 +237,7 @@ The implementation is current-suite green and the least-privilege credential con
 
 ## FIRST_ACTION
 
-Continue `BOB_CORE_V1_RUNTIME_CREDENTIAL_INSTALL_AND_QUALIFICATION` from actual branch state. Do not rebuild the protocol or adapters from chat memory.
+Continue `BOB_CORE_V1_OFFLINE_RUNTIME_CLOSURE` from actual branch state. Do not rebuild the protocol or adapters from chat memory.
 
 ## HARD_BLOCKERS
 
