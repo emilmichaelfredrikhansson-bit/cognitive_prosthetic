@@ -55,9 +55,53 @@ No component is globally smart.
 - providers own external state;
 - the operator owns material approvals.
 
-The inherited ChatGPT browser bridge is a replaceable cognition transport. **Canonical large-project cognition is nevertheless stateless: one cognition question -> one fresh ChatGPT conversation, with Bob carrying all continuity. The current same-conversation V1 READ/RESULT loop is a temporary transport implementation until Context Compiler continuation exists.** **V1 response capture is canonically the visible ChatGPT Copy action -> clipboard; DOM scraping is legacy-only, while Windows UI Automation is deferred unless real-world robustness requires it.** **Bob V1 runs as Local Companion on the operator's own PC using the operator's existing ChatGPT account/subscription but a separate Bob-managed Chromium profile. All Bob cognition is confined to one dedicated private ChatGPT Project named `Bob`, with Project-only memory as the V1 isolation setting.** Bob API and bridge remain loopback-only, the Bob Project/ChatGPT tab lives in the background, and the Bob UI is brought to the foreground in the same managed browser. DigitalOcean/persistent remote cognition is deferred to V2.
+The inherited ChatGPT browser bridge is a replaceable cognition transport. **Canonical large-project cognition is stateless: one cognition question -> one fresh ChatGPT conversation, with Bob carrying all continuity. Bob now has an executable stateless module path (`/bob/module-turn`) that recompiles the complete bounded module problem after Bob-owned READ/effect results and calls fresh `/cognition` each round. The ordinary `/bob/turn` path remains legacy/stateful until module selection and context compilation become the default orchestration path.** **V1 response capture is canonically the visible ChatGPT Copy action -> clipboard; DOM scraping is legacy-only, while Windows UI Automation is deferred unless real-world robustness requires it.** **Bob V1 runs as Local Companion on the operator's own PC using the operator's existing ChatGPT account/subscription but a separate Bob-managed Chromium profile. All Bob cognition is confined to one dedicated private ChatGPT Project named `Bob`, with Project-only memory as the V1 isolation setting.** Bob API and bridge remain loopback-only, the Bob Project/ChatGPT tab lives in the background, and the Bob UI is brought to the foreground in the same managed browser. DigitalOcean/persistent remote cognition is deferred to V2.
 
 ## LAST_COMPLETED
+
+`BOB_MODULE_GRAPH_CONTEXT_COMPILER_V1`
+
+The first executable vertical slice of Bob's module/stateless architecture is now implemented.
+
+Repo-native durable state:
+- `.bob/module_graph.json` uses `BOB_MODULE_GRAPH_V1`;
+- Bob's workspace points to that graph through `context.module_graph`;
+- graph identity is bound to workspace code + stable GitHub repository ID;
+- module paths have single ownership inside the graph;
+- producer/consumer references are validated.
+
+Module footprint:
+- `bob/module_graph.py` reads every manifest-owned source/test/contract path from current GitHub reality;
+- `BOB_TOKEN_ESTIMATE_V1` deterministically measures `ceil(UTF-8 bytes / 3)` per file and sums the module;
+- this is a versioned conservative V1 measurement proxy, **not** a claim to use ChatGPT's exact tokenizer;
+- the active hard rule is <=15,000 tokens under the active canonical measurement contract.
+
+Context compilation:
+- `bob/context_compiler.py` emits `BOB_COMPILED_CONTEXT_V1`;
+- packets contain repository/ref identity, module summary/footprint, direct-neighbor summaries, source pointers, the original bounded problem, hard invariants and durable continuation results;
+- cognition is explicitly instructed that connected GitHub is implementation truth and Bob summaries are navigation/compression.
+
+Stateless runtime:
+- `POST /bob/module-turn` starts bounded module work;
+- `POST /bob/module-graph` exposes measured graph/module status;
+- `BobRuntime._drive_module(...)` uses only `bridge.cognition(...)`, never legacy `send(...)`;
+- after every Bob-owned READ result, Bob recompiles the original problem + current graph/reality + durable results and opens another fresh cognition request;
+- after an approved effect, the effect receipt is likewise folded into a newly compiled fresh request;
+- >15k modules enter `ARCHITECTURE_REPAIR` mode and cannot claim `BOB.DONE` while still oversized.
+
+Bob's initial graph intentionally has `coverage=PARTIAL`. Current measured footprint evidence using the exact V1 measurement rule on current branch content:
+
+```text
+BOB_PROTOCOL              3,236   compliant
+BOB_MODULE_COGNITION     12,706   compliant
+BOB_RUNTIME_ORCHESTRATION 18,411  NON-COMPLIANT / MIGRATION_REQUIRED
+```
+
+The oversized runtime node is inherited/legacy architecture and is now explicitly marked `MIGRATION_REQUIRED`; it is the natural first self-hosting decomposition target.
+
+Important current boundary: this tranche does **not** make every Bob chat stateless. Ordinary `/bob/turn` remains stateful, graph coverage is partial, product-vision bootstrap/durable work distillation are not implemented, and an architecture repair that writes GitHub still remains subject to Bob's existing approval authority. No authority was expanded.
+
+Current-head execution tests have not yet been run in this development session because the available local container cannot resolve github.com and no material-spend remote job was dispatched. New contract tests declare fresh READ continuation, fresh post-approval continuation, oversize-DONE rejection, module status measurement, route exposure and workspace graph binding.
 
 `BOB_MODULE_STATELESS_COGNITION_CANON`
 
@@ -98,7 +142,7 @@ There is no mandatory second-stage reviewer. A separate review/meta cognition re
 
 Bob carries continuity and structural routing; GitHub carries implementation truth; ChatGPT may inspect that truth directly. Operator-owned product/vision/end-goal tradeoffs must still be surfaced rather than silently resolved as local engineering choices.
 
-This tranche adds policy/runtime primitives and canon. It does **not** yet implement the durable module graph, Context Compiler, product-vision bootstrap, automatic >15k repair routing, source-pointer compilation, or production replacement of the current stateful driver.
+That earlier canon tranche has now been partially realized by `BOB_MODULE_GRAPH_CONTEXT_COMPILER_V1` above. The remaining gaps are default module routing for ordinary Bob chat, full graph coverage, product-vision bootstrap, durable work-result distillation, and live end-to-end qualification.
 
 `BOB_RECURSIVE_CHUNKING_AND_CONTEXT_CANON`
 
@@ -106,7 +150,7 @@ Bob now has a canonical large-project cognition architecture in `docs/BOB_CHUNKI
 
 Foundational rule: **no chat owns the project**. Bob owns durable project/work state; ChatGPT threads own bounded cognition work. Large projects are represented as a recursive semantic graph of project/domain/workstream/work-unit nodes plus explicit dependency/interface/contract edges.
 
-A future **Context Compiler** compiles the smallest sufficient context packet for each cognition task from current durable truth: workspace/work-node identity, scope, relevant node summaries/contracts, dependencies, exact relevant files/reality, blockers, authority, provenance/freshness and exit criteria. For new Bob-designed modules, the 15k hard module cap is supplied to architecture cognition before boundaries are chosen, so mature module size is constrained from inception rather than repaired only after growth.
+The first **Context Compiler V1** now compiles module-scoped source-grounded packets; the broader project/workstream compiler remains incomplete. Its target contract is to compile the smallest sufficient context packet for each cognition task from current durable truth: workspace/work-node identity, scope, relevant node summaries/contracts, dependencies, exact relevant files/reality, blockers, authority, provenance/freshness and exit criteria. For new Bob-designed modules, the 15k hard module cap is supplied to architecture cognition before boundaries are chosen, so mature module size is constrained from inception rather than repaired only after growth.
 
 Cross-cutting changes become explicit parent workstreams with bounded child tasks. Parallel child outcomes converge through bounded Fusion using durable results/contracts/conflicts/evidence rather than entire child transcripts. Completed cognition is distilled back into durable node state, implementation, evidence and follow-up work.
 
@@ -114,7 +158,7 @@ Chunking is semantic rather than arbitrary file/token slicing, and chunking/cont
 
 A clarified ownership rule now also applies: **Bob carries the global project structure so cognition does not have to.** The durable graph, contracts, dependencies, statuses and provenance live in Bob; each ChatGPT thread receives only the relevant structural slice. Cognition is used when semantic judgment is needed to create or revise that structure, after which Bob persists and carries the result forward. This is deliberate cognitive offloading, not a fixed deterministic task tree.
 
-This tranche is canon/documentation only. It does not change current effect authority or the active Local Companion live-qualification sequence.
+The original recursive chunking tranche was canon/documentation only; the module graph/compiler vertical slice is now executable as described above. Effect authority remains unchanged.
 
 `BOB_PRODUCT_PRINCIPLES_AND_SELF_HOSTING_CANON`
 
