@@ -597,6 +597,14 @@ class BobRuntime:
                     raise ProtocolError(
                         "stateless module cognition must stage one effect per fresh request"
                     )
+                self._validate_module_effect(
+                    workspace,
+                    graph,
+                    module,
+                    effects[0],
+                    ref,
+                    architecture_repair=repair,
+                )
                 state = {
                     "kind": "module",
                     "module_id": module.module_id,
@@ -670,6 +678,44 @@ class BobRuntime:
         raise ProtocolError(
             f"stateless module loop exceeded {self.MAX_TOOL_ROUNDS} rounds"
         )
+
+    def _validate_module_effect(
+        self,
+        workspace: Workspace,
+        graph: ModuleGraph,
+        module: Any,
+        message: BobMessage,
+        ref: str,
+        *,
+        architecture_repair: bool,
+    ) -> None:
+        """Keep normal module writes inside manifest ownership and one working ref."""
+        tool = message.tool or ""
+        if tool == "github.create_branch":
+            raise ProtocolError(
+                "stateless module work requires an existing working ref; "
+                "create the branch first, then rerun module_turn with that ref"
+            )
+
+        if tool in {
+            "github.create_file",
+            "github.replace_file",
+            "github.delete_file",
+        }:
+            branch = str(message.args.get("branch") or "")
+            if branch != ref:
+                raise AuthorityError(
+                    f"module effect branch must equal working ref: {branch!r} != {ref!r}"
+                )
+            path = str(message.args.get("path") or "")
+            if not architecture_repair and path not in module.owned_paths:
+                raise AuthorityError(
+                    f"module {module.module_id} does not own effect path: {path}"
+                )
+
+        # Architecture repair intentionally has broader path scope because a valid
+        # split may need to create new files and rewrite the graph. Workspace
+        # authority + normal approval/read-back boundaries still apply.
 
     def _drive(self, workspace: Workspace, prompt: str) -> dict[str, Any]:
         visible: list[str] = []
