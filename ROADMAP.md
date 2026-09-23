@@ -80,6 +80,23 @@ Exit criteria:
 - [ ] provider dispatch and verification are visibly distinct;
 - [ ] V1 ordinary work is usable without DigitalOcean.
 
+## Phase 3.5 — Large-project cognition foundation
+
+Goal: make project continuity independent of any single ChatGPT thread before Bob is asked to operate on truly large projects.
+
+Exit criteria:
+- [x] canonical recursive chunking/context architecture defined;
+- [ ] durable semantic project/work graph schema implemented;
+- [ ] canonical node contract implemented (ownership, interfaces, dependencies, invariants, state, verification/evidence);
+- [ ] Context Compiler produces bounded cognition packets from current project truth;
+- [ ] oversized work decomposes semantically instead of silently truncating critical context;
+- [ ] completed work distills back into durable node state/evidence;
+- [ ] explicit cross-cutting workstreams coordinate multi-domain changes;
+- [ ] bounded Fusion integrates child outcomes without replaying full transcripts;
+- [ ] WAITING work can resume from durable state after external events;
+- [ ] at least one real large workstream survives deliberate cognition-thread replacement without loss of continuity;
+- [ ] chunking/context strategy can record evidence for future recursive improvement.
+
 ## Phase 4 — Product parity and hardening
 
 Goal: make local Bob feel like a first-class ChatGPT workspace.
@@ -122,9 +139,6 @@ Exit criteria:
 
 ## Later
 
-- event-driven work resumption when external dependencies resolve;
-- durable goal/dependency graph beneath the conversational surface;
-- bounded cognition forks/review/fusion where they outperform one long thread;
 - safe self-hosting: Bob uses Bob to improve Bob, while external authority and rollback remain preserved;
 - reusable cross-project playbooks without cross-project private-context leakage;
 - repair loops driven by deterministic test evidence;
