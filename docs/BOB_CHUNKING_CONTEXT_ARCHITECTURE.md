@@ -12,6 +12,52 @@ A ChatGPT thread is a replaceable cognition workspace, not the canonical memory 
 
 Bob must be able to discard a cognition thread, open a fresh one, reconstruct the relevant work context from durable project truth, and continue without requiring the old conversation transcript.
 
+## Cognition owns semantic structure
+
+The project graph is **not** a rigid deterministic decomposition imposed by Bob Core.
+
+Semantic cognition owns decisions such as:
+
+- what the meaningful domains are;
+- where workstream boundaries belong;
+- which concepts should be coupled or separated;
+- which shared contracts exist;
+- when a node should split, merge, be superseded or be reorganized;
+- which dependencies matter;
+- which cross-cutting workstream best represents a change;
+- when the existing project structure itself has become wrong.
+
+Bob Core owns the mechanics around that structure:
+
+- durable persistence;
+- schema validation;
+- stable identities;
+- provenance;
+- freshness;
+- bounded context compilation;
+- graph traversal;
+- authority boundaries;
+- deterministic effects;
+- verification and read-back.
+
+The canonical division is therefore:
+
+```text
+ChatGPT cognition
+→ understands the project
+→ proposes/maintains semantic structure
+
+Bob
+→ persists that structure
+→ validates its mechanical integrity
+→ compiles bounded context from it
+→ verifies reality against it
+```
+
+Bob must not confuse deterministic durability with semantic ownership.
+
+A fixed orchestration engine that permanently decides the project's decomposition would recreate one of the limitations Bob is intended to overcome.
+
 ## Design objective
 
 Project size should scale primarily through **more well-bounded nodes and contracts**, not through larger prompts.
