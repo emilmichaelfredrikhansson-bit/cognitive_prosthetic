@@ -9,7 +9,7 @@ It is being built from the `CodeMongerrr/cognitive_prosthetic` fork as a thin co
 - **Hugging Face** — portable compute, tests and ML jobs
 - **Supabase** — runtime, database and durable project state
 - **Cloudflare** — responsive web interface and project hosting/runtime surfaces
-- **DigitalOcean** — narrow persistent runtime for the authenticated ChatGPT browser bridge
+- **Local PC (V1)** — loopback-only Bob runtime plus a managed authenticated ChatGPT browser session\n- **DigitalOcean (V2)** — optional persistent remote cognition runtime for mobile/always-on use
 
 The aim is not to recreate those systems. The aim is to connect them into one operator-facing development workflow usable from PC and mobile.
 
@@ -32,7 +32,7 @@ GitHub Actions are not the default development compute layer. Existing qualified
 
 Bob Core V1 is implemented on `feat/bob-core-v1`: the workspace registry, closed-loop Bob protocol, approval-bound effects, GitHub/Supabase/HF/Cloudflare adapters, manual LLM relay, and a responsive UI scaffold all exist.
 
-The active work is runtime wiring and live qualification. Repository/runtime truth in `CURRENT_WORK.md` is authoritative.
+The active runtime target is Bob V1 Local Companion on the operator's own PC. DigitalOcean/mobile persistence is V2. Repository/runtime truth in `CURRENT_WORK.md` is authoritative.
 
 Start here:
 
