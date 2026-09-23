@@ -22,7 +22,7 @@ from profile_config import (
 )
 
 LOGIN_TIMEOUT_SECONDS = 120
-CHATGPT_TARGET_URL = os.environ.get("CHATGPT_TARGET_URL", "https://chatgpt.com/").strip() or "https://chatgpt.com/"
+CHATGPT_TARGET_URL = (os.environ.get("BOB_CHATGPT_PROJECT_URL") or os.environ.get("CHATGPT_TARGET_URL") or "https://chatgpt.com/").strip()
 
 
 def resolve_profile_path(argv):
