@@ -145,6 +145,18 @@ The Bob project should use **Project-only memory** when the account offers it. B
 
 The same-account model means normal human ChatGPT use can continue in parallel, but subscription/account usage limits are shared rather than multiplied.
 
+## ChatGPT response capture
+
+Bob V1 treats ChatGPT's **visible Copy control followed by clipboard read** as the canonical assistant-response capture path.
+
+Priority order:
+
+1. **V1 canonical:** activate the visible Copy action for the latest assistant response and read the browser clipboard.
+2. **Future robustness option:** Windows UI Automation/accessibility, but only if live experience shows that the Copy path is insufficiently reliable.
+3. **Legacy compatibility only:** direct DOM/text extraction from ChatGPT's page structure.
+
+The bridge must not silently fall back from Copy to DOM scraping during normal V1 operation. A failed canonical capture is a transport failure to surface and diagnose, not permission to reinterpret page internals. DOM extraction may exist behind an explicit compatibility mode while legacy support is useful.
+
 ## ChatGPT transport and runtime evolution
 
 Direct GitHub/Supabase/HF/Cloudflare operations remain independent provider adapters.
