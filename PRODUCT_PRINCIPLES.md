@@ -241,7 +241,19 @@ Self-modification therefore remains subject to the same or stricter root-of-trus
 
 Recursive development is especially valuable because Bob's target problem is itself long-lived software development. Bob should become one of Bob's most demanding real-world users.
 
-## 14. No chat owns the project
+## 14. Bob is structural working memory for cognition
+
+Large-project structure must not consume a single ChatGPT thread's working memory.
+
+Bob carries the durable global map: domains, workstreams, dependencies, contracts, status, waiting conditions and evidence references. Cognition receives only the relevant structural slice for the current problem.
+
+When the structure itself needs to change, cognition may reason about and propose that semantic restructuring; Bob then persists and carries the updated map.
+
+So the intended relationship is:
+
+> **Bob remembers the structure. Cognition thinks with the relevant part of it.**
+
+## 15. No chat owns the project
 
 Bob must not rely on one ChatGPT conversation to carry a large project.
 
