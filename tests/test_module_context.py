@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 
 from bob.driver import BobRuntime
-from bob.errors import ConfigurationError, ProtocolError
+from bob.errors import AuthorityError, ConfigurationError, ProtocolError
 from bob.module_graph import ModuleGraph, estimate_tokens
 
 
@@ -160,6 +160,34 @@ class StatelessModuleRuntimeTests(unittest.TestCase):
             self.assertEqual(bridge.stateful_prompts, [])
             self.assertEqual(github.files["m.py"], "print(2)\n")
             self.assertIn("BOB.RESULT", bridge.cognition_prompts[1])
+
+    def test_normal_module_effect_cannot_escape_manifest_scope(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            make_workspace(tmp)
+            bridge = FreshBridge([
+                '```bob\n{"type":"BOB.EFFECT","id":"e1","tool":"github.replace_file","args":{"path":"extra.txt","content":"changed","branch":"dev","expected_sha":"sha-extra.txt"}}\n```'
+            ])
+            runtime = BobRuntime(workspace_dir=tmp, bridge=bridge)
+            runtime.adapters = {"github": FakeGitHub()}
+
+            with self.assertRaises(AuthorityError) as ctx:
+                runtime.module_turn("X", "M", "Change unrelated file", ref="dev")
+
+            self.assertIn("does not own effect path", str(ctx.exception))
+
+    def test_normal_module_effect_must_stay_on_working_ref(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            make_workspace(tmp)
+            bridge = FreshBridge([
+                '```bob\n{"type":"BOB.EFFECT","id":"e1","tool":"github.replace_file","args":{"path":"m.py","content":"print(3)\\\\n","branch":"other","expected_sha":"sha-m.py"}}\n```'
+            ])
+            runtime = BobRuntime(workspace_dir=tmp, bridge=bridge)
+            runtime.adapters = {"github": FakeGitHub()}
+
+            with self.assertRaises(AuthorityError) as ctx:
+                runtime.module_turn("X", "M", "Change wrong branch", ref="dev")
+
+            self.assertIn("must equal working ref", str(ctx.exception))
 
     def test_oversized_module_cannot_claim_done(self):
         with tempfile.TemporaryDirectory() as tmp:
