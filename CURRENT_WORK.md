@@ -52,9 +52,19 @@ No component is globally smart.
 - providers own external state;
 - the operator owns material approvals.
 
-The inherited ChatGPT browser bridge is a replaceable cognition transport. **Bob V1 now runs as Local Companion on the operator's own PC**: Bob API and bridge remain loopback-only, ChatGPT lives in a background tab of a dedicated persistent managed Chromium profile, and Bob is brought to the foreground in the same browser. DigitalOcean/persistent remote cognition is deferred to V2 and remains a narrow transport option rather than a general-purpose Bob compute core.
+The inherited ChatGPT browser bridge is a replaceable cognition transport. **Bob V1 runs as Local Companion on the operator's own PC using the operator's existing ChatGPT account/subscription but a separate Bob-managed Chromium profile. All Bob cognition is confined to one dedicated private ChatGPT Project named `Bob`, with Project-only memory as the V1 isolation setting.** Bob API and bridge remain loopback-only, the Bob Project/ChatGPT tab lives in the background, and the Bob UI is brought to the foreground in the same managed browser. DigitalOcean/persistent remote cognition is deferred to V2.
 
 ## LAST_COMPLETED
+
+`BOB_CHATGPT_PROJECT_ISOLATION_V1`
+
+Bob's ChatGPT-side product boundary is now canonical: use the operator's **same ChatGPT account/Plus subscription**, but through a separate persistent Bob browser profile and one dedicated private ChatGPT Project named **Bob**. The project is expected to use **Project-only memory** so Bob cognition stays separated from ordinary personal chats while still allowing Bob's own project chats to share context.
+
+Normal Local Companion runtime now requires an explicit `BOB_CHATGPT_PROJECT_URL` (legacy `CHATGPT_TARGET_URL` remains compatibility-only). The bridge rejects an empty target, the ChatGPT home page, and non-ChatGPT hosts; every Bob New Chat navigates back to the configured project target before creating another cognition thread. The runtime no longer treats the generic ChatGPT home page as an acceptable cognition target.
+
+The operator may keep using normal ChatGPT in another browser/session at the same time. Bob does not receive authority to inspect or reuse unrelated personal chats or projects. Subscription/account usage limits remain shared because the account is shared.
+
+Two additional Local Companion tests declare the dedicated-project boundary. No provider authority changed and no external provider effect was performed.
 
 `BOB_LOCAL_COMPANION_V1_FOUNDATION`
 
@@ -217,7 +227,7 @@ This external reconciliation proves the bindings are still real; it does **not**
 
 The runtime-preflight tranche adds **5 isolated unittest methods**. The exact proposed `bob/preflight.py` + `tests/test_preflight.py` content was executed in the interactive sandbox before commit: **5/5 PASS**, and both files passed `py_compile`. This is narrow evidence for the new preflight logic only; it does not substitute for a full branch-suite run.
 
-The branch now declares **56 unittest methods**: the previous 51 plus 5 Local Companion tests in `tests/test_local_companion.py`.
+The branch now declares **58 unittest methods**: the previous 51 plus 7 Local Companion tests in `tests/test_local_companion.py`.
 
 Current implementation verification is now executable and current:
 
@@ -250,17 +260,19 @@ The code/config/documentation foundation for Local Companion is landed. The next
 ## NEXT_INTENDED_WORK
 
 1. On the operator PC, check out the current `feat/bob-core-v1` head and run `setup_bob.bat`.
-2. Configure machine-local `.env.local` and set the exact Bob-enabled `CHATGPT_TARGET_URL` when available.
-3. Run `first_run_bob.bat`, authenticate ChatGPT once, and verify Bob opens in the foreground with ChatGPT retained in the background tab.
-4. Qualify one ordinary Bob chat turn, then a real `BOB.READ -> BOB.RESULT -> cognition` loop.
-5. Qualify approval and reject from the local UI, then perform one approved Bob-repository branch/PR canary with read-back evidence.
-6. Only after Local Companion is useful in daily work, resume V2 DigitalOcean/mobile design.
-7. Continue frontend parity in parallel only where it improves the local product; do not fake conversation history, uploads or authority.
+2. In the operator's normal ChatGPT account, create/open the private project `Bob`, set its Memory to **Project-only memory**, and copy its exact project URL.
+3. Put that URL in machine-local `.env.local` as `BOB_CHATGPT_PROJECT_URL=...`.
+4. Run `first_run_bob.bat`, authenticate the Bob browser profile with the **same ChatGPT account**, and verify Bob opens in the foreground while the dedicated Bob Project remains the background cognition surface.
+5. Qualify one ordinary Bob chat turn, then a real `BOB.READ -> BOB.RESULT -> cognition` loop.
+6. Verify a second Bob New Chat is created inside the same Bob Project and never on the ChatGPT home page/personal history.
+7. Qualify approval and reject from the local UI, then perform one approved Bob-repository branch/PR canary with read-back evidence.
+8. Only after Local Companion is useful in daily work, resume V2 DigitalOcean/mobile design.
+9. Continue frontend parity in parallel only where it improves the local product; do not fake conversation history, uploads or authority.
 
 ## OPEN_FINDINGS
 
 - The current interactive development environment cannot run the real local managed browser against the operator's authenticated ChatGPT account. Live Copy-button selectors, clipboard capture, background-tab behavior and exact ChatGPT Project targeting therefore remain operator-PC qualification items.
-- The five Local Companion unittest methods are declared on the branch, but the full current-head Python suite has not been rerun after this tranche. No paid/remote compute was dispatched.
+- Seven Local Companion unittest methods are declared on the branch, including the dedicated ChatGPT Project boundary. The full current-head Python suite has not been rerun after this tranche. No paid/remote compute was dispatched.
 - The connected HF account was previously verified as `Reallothesecond` / `6a986fdd2e846637191b1c5e`; a fresh HF suite remains a material-spend effect and is not necessary before the first local canary.
 - True resumable Bob conversation history remains blocked until Bob can persist and reopen the exact underlying ChatGPT thread identity/URL. Do not substitute localStorage history.
 - Bob effect approvals remain in process memory. Restart persistence is later hardening; current approvals are still bound to workspace authority + staged GitHub state and fail closed on drift.
@@ -269,7 +281,7 @@ The code/config/documentation foundation for Local Companion is landed. The next
 
 ## FIRST_ACTION
 
-Run the Local Companion live canary on the operator's Windows PC from the current branch: `setup_bob.bat` -> `first_run_bob.bat` -> verify foreground Bob/background ChatGPT -> one read-only chat loop. Do not move to DigitalOcean unless V1 has first been proven useful locally.
+Run the Local Companion live canary on the operator's Windows PC from the current branch: `setup_bob.bat` -> create/configure private ChatGPT Project `Bob` with Project-only memory -> set `BOB_CHATGPT_PROJECT_URL` -> `first_run_bob.bat` -> verify foreground Bob/background Bob Project -> one read-only chat loop. Do not move to DigitalOcean unless V1 has first been proven useful locally.
 
 ## HARD_BLOCKERS
 
