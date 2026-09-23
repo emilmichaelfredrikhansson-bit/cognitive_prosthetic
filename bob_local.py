@@ -72,10 +72,17 @@ def build_env(env_file: Path) -> dict[str, str]:
     return env
 
 
-def wait_json(url: str, timeout: float, ready_key: str | None = None) -> dict:
+def wait_json(
+    process: subprocess.Popen,
+    url: str,
+    timeout: float,
+    ready_key: str | None = None,
+) -> dict:
     deadline = time.time() + timeout
     last_error: Exception | None = None
     while time.time() < deadline:
+        if process.poll() is not None:
+            raise RuntimeError(f"Local Bob process exited with code {process.returncode} while waiting for {url}")
         try:
             response = requests.get(url, timeout=2)
             payload = response.json()
@@ -149,14 +156,14 @@ def main() -> int:
             cwd=ROOT,
             env=env,
         )
-        wait_json(BOB_HEALTH, 20)
+        wait_json(bob_api, BOB_HEALTH, 20)
 
         bridge = subprocess.Popen(
             [sys.executable, str(ROOT / "chatgpt_api_server.py")],
             cwd=ROOT,
             env=env,
         )
-        wait_json(BRIDGE_HEALTH, 90, ready_key="ready")
+        wait_json(bridge, BRIDGE_HEALTH, 90, ready_key="ready")
 
         if not args.no_open_ui:
             response = requests.post(
