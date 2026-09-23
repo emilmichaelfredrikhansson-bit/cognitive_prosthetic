@@ -9,6 +9,7 @@ from dataclasses import dataclass
 # context a model may technically accept. They are learnable parameters:
 # future evidence may justify changing the numbers, but callers must not
 # silently exceed the hard limit.
+DEFAULT_MODULE_HARD_CAP_TOKENS = 15_000
 DEFAULT_COMPILED_CONTEXT_TARGET_TOKENS = 20_000
 DEFAULT_COMPILED_CONTEXT_HARD_LIMIT_TOKENS = 25_000
 
@@ -17,11 +18,14 @@ DEFAULT_COMPILED_CONTEXT_HARD_LIMIT_TOKENS = 25_000
 class CognitionPolicy:
     """Bounded-context policy for one stateless cognition request."""
 
+    module_hard_cap_tokens: int = DEFAULT_MODULE_HARD_CAP_TOKENS
     target_tokens: int = DEFAULT_COMPILED_CONTEXT_TARGET_TOKENS
     hard_limit_tokens: int = DEFAULT_COMPILED_CONTEXT_HARD_LIMIT_TOKENS
     fresh_chat_per_request: bool = True
 
     def __post_init__(self) -> None:
+        if self.module_hard_cap_tokens <= 0:
+            raise ValueError("module_hard_cap_tokens must be positive")
         if self.target_tokens <= 0:
             raise ValueError("target_tokens must be positive")
         if self.hard_limit_tokens < self.target_tokens:
@@ -54,14 +58,14 @@ class CognitionPolicy:
                 f"{compiled_input_tokens} > {self.hard_limit_tokens} tokens"
             )
 
-    def require_module_design_fit(self, compiled_input_tokens: int) -> None:
-        """Require a new module design to fit inside the target, not merely the ceiling."""
-        if compiled_input_tokens < 0:
-            raise ValueError("compiled_input_tokens must be >= 0")
-        if compiled_input_tokens > self.target_tokens:
+    def require_module_size(self, module_tokens: int) -> None:
+        """Fail closed when a module itself exceeds the canonical 15k hard cap."""
+        if module_tokens < 0:
+            raise ValueError("module_tokens must be >= 0")
+        if module_tokens > self.module_hard_cap_tokens:
             raise ValueError(
-                "module cognition envelope exceeds design target: "
-                f"{compiled_input_tokens} > {self.target_tokens} tokens"
+                "module exceeds hard cap: "
+                f"{module_tokens} > {self.module_hard_cap_tokens} tokens"
             )
 
 
