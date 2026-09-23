@@ -11,7 +11,8 @@ Before privileged Bob repository effects:
 3. verify `governance/project-identity.json`;
 4. read `CURRENT_WORK.md`;
 5. read `PRODUCT_PRINCIPLES.md` when product behavior, UX, cognition orchestration or Bob self-development is in scope;
-6. inspect only the additional implementation/canon relevant to the active work.
+6. read `docs/BOB_CHUNKING_CONTEXT_ARCHITECTURE.md` for large/cross-cutting work, context management or work decomposition;
+7. inspect only the additional implementation/canon relevant to the active work.
 
 Before effects on a target workspace, perform the equivalent identity verification for that workspace.
 
@@ -72,6 +73,9 @@ verify identity
 - Do not build a permanent execution server merely to execute code that existing infrastructure can run on demand.
 - Prefer self-hosting: where safe and useful, use Bob's own bounded workflow to inspect, improve and verify Bob itself.
 - Recursive self-development never expands authority. A modified Bob must remain inside pre-existing root-of-trust, approval and effect boundaries until humans/canon explicitly change them.
+- No chat owns a large project. Durable project/work state must live outside any single cognition thread.
+- Decompose substantial work semantically and give each cognition task bounded compiled context; do not dump the whole repository/history into a model merely because it is available.
+- Cross-cutting changes must name affected contracts/nodes and integrate through explicit coordination/Fusion rather than implicit transcript memory.
 
 ## Verification
 
