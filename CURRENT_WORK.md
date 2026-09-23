@@ -233,7 +233,8 @@ The non-live Bob V1 runtime surface is now closed: exact-SHA install, immutable 
 
 - The connected HF account is independently verified as `Reallothesecond` / `6a986fdd2e846637191b1c5e`, and no HF jobs are currently running. A fresh `cpu-basic` job is the available qualified path for the full current-head suite, but it was not dispatched because new compute is a material-spend effect requiring explicit operator authority.
 - Browser Copy-button selectors must be live-qualified against the current ChatGPT UI.
-- No persistent host is currently available to this session, so install/credential/browser/tunnel behavior remains live-unqualified by design. The non-live package and runbooks are complete.\n- Home-network egress remains optional and router-dependent; its concrete implementation is deferred until actual router/network capabilities are available.
+- No persistent host is currently available to this session, so install/credential/browser/tunnel behavior remains live-unqualified by design. The non-live package and runbooks are complete.
+- Home-network egress remains optional and router-dependent; its concrete implementation is deferred until actual router/network capabilities are available.
 - SL Cloudflare account ID remains runtime-bound and is verified through its canonical R2 bucket. AB binds its canonical account ID directly but must verify the `autoblog-canary` Worker remotely before Cloudflare identity is trusted.
 - The current UI is functional scaffolding, not final product design; it now includes explicit read-only workspace qualification.
 - Bob effect approvals currently live in process memory; persistence/resume is a later hardening item. In-memory approvals are nevertheless bound to workspace authority + staged GitHub state and fail closed on drift.
