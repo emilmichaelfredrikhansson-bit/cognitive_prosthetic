@@ -23,6 +23,11 @@ class LocalServerSurfaceTests(unittest.TestCase):
         )
         self.assertNotIn("Access-Control-Allow-Origin", response.headers)
 
+    def test_stateless_module_routes_are_exposed(self):
+        rules = {rule.rule for rule in bob_api_server.app.url_map.iter_rules()}
+        self.assertIn("/bob/module-turn", rules)
+        self.assertIn("/bob/module-graph", rules)
+
     def test_loopback_defaults_are_documented_runtime_defaults(self):
         with patch.dict(os.environ, {}, clear=True):
             self.assertEqual(os.environ.get("BOB_HOST", "127.0.0.1"), "127.0.0.1")
