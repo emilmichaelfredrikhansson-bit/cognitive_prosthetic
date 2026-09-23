@@ -251,6 +251,8 @@ The project-search/settings/inbox tranche changes executable frontend and Python
 
 The Local Companion tranche was then reconciled directly from the current branch through the GitHub connector. The branch declares exactly **56** unittest methods, including **5** Local Companion tests. Connector-fetched `bob_local.py`, `chatgpt_api_server.py`, the three Windows batch launchers, `.env.local.example`, README and V1 plan contain no committed secret-like tokens, no V1 `0.0.0.0` bind configuration, and no accidental literal escaped-newline serialization. Isolated copies of the committed Local Companion loopback helper logic and companion-URL validator compiled and passed smoke checks for localhost/IPv4/IPv6 loopback plus rejection of public/wildcard targets. This is targeted helper evidence, not a full current-head suite or a live Playwright/ChatGPT qualification.
 
+The dedicated ChatGPT Project isolation tranche was then reconciled from current branch state. The branch now declares exactly **58** unittest methods, including **7** Local Companion tests. The new runtime contract requires `BOB_CHATGPT_PROJECT_URL`, rejects an empty target, the generic ChatGPT home page and non-ChatGPT hosts, while preserving a separate Bob-managed browser profile on the same account. Connector inspection found no wildcard V1 bind configuration and no committed secret-like tokens in the touched runtime/config files. Project-only memory remains a live operator-side ChatGPT setting to verify during the Windows canary; Bob cannot truthfully claim that account setting from repository code alone.
+
 ## ACTIVE_WORK
 
 `BOB_LOCAL_COMPANION_V1_LIVE_QUALIFICATION`
