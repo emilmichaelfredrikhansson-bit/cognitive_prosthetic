@@ -128,14 +128,13 @@ Bob should not divide work primarily by arbitrary line count, file count or tran
 
 For Bob-designed software, the default cognitive atom is a **module**: a bounded input -> responsibility -> output transformation connected to neighboring modules through explicit contracts/adapters.
 
-A module must be designed to fit **before implementation** together with its immediate contract neighborhood inside the canonical cognition envelope defined in `docs/BOB_MODULE_COGNITION_ARCHITECTURE.md`.
+Every Bob-designed module is subject to the canonical **15,000-token hard module cap** defined in `docs/BOB_MODULE_COGNITION_ARCHITECTURE.md`.
 
-The initial envelope is:
+This cap is deterministic and lifecycle-wide, not merely a pre-implementation estimate. A module may not cross it as implementation grows.
 
-- target: 20,000 compiled input tokens;
-- hard ceiling: 25,000 compiled input tokens.
+If a proposed change would exceed the cap, Bob must reject that module shape and route a fresh architecture-cognition problem that reorganizes responsibilities/contracts until all affected modules are compliant. This is backend orchestration; the operator is involved only when the reorganization creates a genuine product/vision decision.
 
-If a proposed module cannot fit at design time, its architecture is not ready for implementation. Bob should return to flow/module design rather than knowingly build an oversized module and plan to split it later for cognitive reasons.
+The surrounding compiled cognition packet retains a separate 20,000-token target and 25,000-token hard ceiling.
 
 
 ## Shared contracts
@@ -200,7 +199,7 @@ Conceptually:
 8. send the packet to a fresh cognition thread
 ```
 
-If the packet exceeds the hard cognition ceiling, Bob must fail closed. For a not-yet-built module this means return to architecture/module design before implementation; critical context must never be silently dropped.
+If the packet exceeds the hard cognition ceiling, Bob must fail closed and route a bounded architecture/context problem rather than silently dropping critical context. Separately, no individual Bob module may exceed its 15k hard cap.
 
 ## Bounded cognition packets
 
