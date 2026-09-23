@@ -268,7 +268,8 @@ V1 is complete when:
 - GitHub Actions are not required as the coding engine;
 - project identity and authority boundaries fail closed;
 - ChatGPT transport is replaceable;
-- existing HF/Supabase/Cloudflare infrastructure remains intact and separately authoritative;\n- the normal V1 product can run on the operator PC without DigitalOcean.
+- existing HF/Supabase/Cloudflare infrastructure remains intact and separately authoritative;
+- the normal V1 product can run on the operator PC without DigitalOcean.
 
 ## First implementation slice
 
