@@ -135,18 +135,26 @@ def browser_worker():
                 pass
         return
 
-    # Check if chat interface is ready
+    # Check if the authenticated chat interface is actually usable.
     try:
-        textarea = find_textarea(page, timeout=10)
-        if textarea:
-            is_ready = True
-            logging.info("✅ Chat interface ready!")
-        else:
-            logging.warning("⚠️  Could not find textarea, but continuing...")
-            is_ready = True  # Try anyway
-    except Exception as e:
-        logging.warning(f"⚠️  Initial check failed: {e}, but continuing...")
+        textarea = find_textarea(page, timeout=12)
+        if not textarea:
+            startup_error = (
+                "ChatGPT chat input was not found. The session may need login "
+                "or the ChatGPT UI selectors may have changed."
+            )
+            logging.error(f"❌ {startup_error}")
+            browser_context.close()
+            playwright.stop()
+            return
         is_ready = True
+        logging.info("✅ Chat interface ready!")
+    except Exception as e:
+        startup_error = f"ChatGPT readiness check failed: {e}"
+        logging.error(f"❌ {startup_error}")
+        browser_context.close()
+        playwright.stop()
+        return
 
     # Process tasks from queue
     while True:
