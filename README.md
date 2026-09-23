@@ -14,6 +14,16 @@ It is being built from the `CodeMongerrr/cognitive_prosthetic` fork as a thin co
 
 The aim is not to recreate those systems. The aim is to connect them into one operator-facing development workflow usable from PC and mobile.
 
+## Product principle
+
+Bob should feel no harder to use than a good ordinary ChatGPT conversation.
+
+The operator expresses goals, constraints and approvals in normal language. Bob absorbs the complexity of state reconstruction, integrations, work decomposition, testing, waiting, resumption and verification. Technical detail and evidence remain available, but should be progressively disclosed instead of dominating the default conversation.
+
+The long-term performance target is intentionally demanding: **drive projects in the class of Signal Lab or larger with substantially less continuity, tooling and coordination friction than ordinary single-chat development.**
+
+Bob is also designed to become **self-hosting**: Bob can use Bob's own bounded workflow to improve Bob. This is recursive capability improvement, never recursive authority expansion. See `PRODUCT_PRINCIPLES.md`.
+
 ## Target development loop
 
 ```text
@@ -39,10 +49,11 @@ Start here:
 
 1. `PROJECT_IDENTITY.md`
 2. `CURRENT_WORK.md`
-3. `AGENTS.md`
-4. `ARCHITECTURE.md`
-5. `ROADMAP.md`
-6. `docs/BOB_V1_PLAN.md`
+3. `PRODUCT_PRINCIPLES.md`
+4. `AGENTS.md`
+5. `ARCHITECTURE.md`
+6. `ROADMAP.md`
+7. `docs/BOB_V1_PLAN.md`
 
 ## V1 scope
 
