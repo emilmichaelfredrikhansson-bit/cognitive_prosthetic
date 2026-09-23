@@ -16,6 +16,7 @@ class Workspace:
     github_repository_id: int
     default_branch: str
     entry_documents: tuple[str, ...]
+    module_graph_path: str
     providers: dict[str, Any]
     effects: dict[str, bool]
 
@@ -45,6 +46,7 @@ class Workspace:
             github_repository_id=repo_id,
             default_branch=str(github.get("default_branch") or "main"),
             entry_documents=tuple(context.get("entry_documents") or ()),
+            module_graph_path=str(context.get("module_graph") or ".bob/module_graph.json"),
             providers=dict(data.get("providers") or {}),
             effects={str(k): bool(v) for k, v in (data.get("effects") or {}).items()},
         )
@@ -59,6 +61,7 @@ class Workspace:
                 "default_branch": self.default_branch,
             },
             "entry_documents": list(self.entry_documents),
+            "module_graph": self.module_graph_path,
             "providers": self.providers,
             "effects": self.effects,
         }
