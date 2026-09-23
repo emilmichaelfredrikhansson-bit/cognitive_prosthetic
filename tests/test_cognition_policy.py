@@ -1,4 +1,7 @@
 import unittest
+from unittest.mock import Mock, patch
+
+from bob.driver import ChatGPTBridge
 
 from bob.cognition_policy import (
     DEFAULT_COGNITION_POLICY,
@@ -31,6 +34,23 @@ class CognitionPolicyTests(unittest.TestCase):
     def test_fresh_chat_is_invariant_not_optional_tuning(self):
         with self.assertRaises(ValueError):
             CognitionPolicy(fresh_chat_per_request=False)
+
+    @patch("bob.driver.requests.post")
+    def test_bridge_has_atomic_fresh_cognition_primitive(self, post):
+        response = Mock()
+        response.json.return_value = {"success": True, "response": "solution"}
+        response.raise_for_status.return_value = None
+        post.return_value = response
+
+        bridge = ChatGPTBridge(base_url="http://127.0.0.1:5001")
+        result = bridge.cognition("bounded problem")
+
+        self.assertEqual(result, "solution")
+        post.assert_called_once_with(
+            "http://127.0.0.1:5001/cognition",
+            json={"prompt": "bounded problem"},
+            timeout=220,
+        )
 
 
 if __name__ == "__main__":
