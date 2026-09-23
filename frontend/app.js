@@ -21,6 +21,17 @@ const realityChecksEl = document.querySelector("#realityChecks");
 const authorityListEl = document.querySelector("#authorityList");
 const providerListEl = document.querySelector("#providerList");
 const contextDocsEl = document.querySelector("#contextDocs");
+const settingsListEl = document.querySelector("#settingsList");
+const projectSearchEl = document.querySelector("#projectSearch");
+const projectSearchDialogEl = document.querySelector("#projectSearchDialog");
+const projectSearchCloseEl = document.querySelector("#projectSearchClose");
+const projectSearchFormEl = document.querySelector("#projectSearchForm");
+const projectSearchInputEl = document.querySelector("#projectSearchInput");
+const projectSearchTitleEl = document.querySelector("#projectSearchTitle");
+const projectSearchMetaEl = document.querySelector("#projectSearchMeta");
+const projectSearchResultsEl = document.querySelector("#projectSearchResults");
+const approvalInboxEl = document.querySelector("#approvalInbox");
+const approvalCountEl = document.querySelector("#approvalCount");
 const chatEl = document.querySelector("#chat");
 const emptyStateEl = document.querySelector("#emptyState");
 const pendingEl = document.querySelector("#pending");
@@ -180,6 +191,32 @@ function renderWorkspaceInspector(workspace) {
   inspectorTitleEl.textContent = workspace.name;
   projectNameEl.textContent = workspace.name;
   projectMetaEl.textContent = workspace.github?.repository || workspace.code;
+  projectSearchTitleEl.textContent = `Search ${workspace.name}`;
+
+  settingsListEl.innerHTML = "";
+  const settings = [
+    ["Project code", workspace.code],
+    ["Repository", workspace.github?.repository || "Not configured"],
+    ["Repository ID", workspace.github?.repository_id ? String(workspace.github.repository_id) : "Not configured"],
+    ["Default branch", workspace.github?.default_branch || "main"],
+  ];
+  for (const [label, value] of settings) {
+    const row = createElement("div", "settings-item");
+    const copy = createElement("span", "item-copy");
+    copy.append(createElement("strong", null, label), createElement("span", null, value));
+    row.appendChild(copy);
+    settingsListEl.appendChild(row);
+  }
+  const instructionsPath = (workspace.entry_documents || []).find((path) => /CHATGPT.*PROJECT.*INSTRUCTIONS/i.test(path));
+  if (instructionsPath) {
+    const row = createElement("button", "settings-item settings-button");
+    row.type = "button";
+    const copy = createElement("span", "item-copy");
+    copy.append(createElement("strong", null, "ChatGPT Project instructions"), createElement("span", null, instructionsPath));
+    row.append(copy, createElement("span", "context-open", "Open"));
+    row.addEventListener("click", () => openDocument(instructionsPath));
+    settingsListEl.appendChild(row);
+  }
 
   authorityListEl.innerHTML = "";
   const effects = workspace.effects || {};
@@ -302,6 +339,8 @@ function renderPending(items = []) {
   state.pending = items;
   pendingEl.innerHTML = "";
   pendingEl.classList.toggle("hidden", items.length === 0);
+  approvalCountEl.textContent = String(items.length);
+  approvalInboxEl.classList.toggle("hidden", items.length === 0);
 
   for (const item of items) {
     const card = createElement("article", "approval");
@@ -456,6 +495,79 @@ async function verifyWorkspace() {
   }
 }
 
+function openProjectSearch() {
+  if (!state.selectedCode) return;
+  closeSidebar();
+  projectSearchResultsEl.innerHTML = "";
+  projectSearchMetaEl.textContent = "Searches only configured entry documents through bounded Bob reads.";
+  projectSearchDialogEl.showModal();
+  window.setTimeout(() => projectSearchInputEl.focus(), 0);
+}
+
+function renderProjectSearchResults(payload) {
+  projectSearchResultsEl.innerHTML = "";
+  const reads = payload.reads || [];
+  const passed = reads.filter((item) => item.status === "PASS").length;
+  const failed = reads.filter((item) => item.status === "FAIL").length;
+  const suffix = payload.truncated ? " · limited results" : "";
+  projectSearchMetaEl.textContent = `${payload.total_matches || 0} match${payload.total_matches === 1 ? "" : "es"} · ${passed} READ PASS${failed ? ` · ${failed} READ FAIL` : ""}${suffix}`;
+
+  if (!(payload.results || []).length) {
+    projectSearchResultsEl.appendChild(createElement("p", "search-empty", "No matches in configured project context."));
+  } else {
+    for (const result of payload.results) {
+      const button = createElement("button", "search-result");
+      button.type = "button";
+      const head = createElement("span", "search-result-head");
+      head.append(
+        createElement("strong", null, result.path),
+        createElement("span", null, `Line ${result.line}`),
+      );
+      button.append(head, createElement("span", "search-snippet", result.snippet || ""));
+      button.addEventListener("click", () => {
+        projectSearchDialogEl.close();
+        openDocument(result.path);
+      });
+      projectSearchResultsEl.appendChild(button);
+    }
+  }
+
+  for (const read of reads.filter((item) => item.status === "FAIL")) {
+    const failure = createElement("div", "search-read-failure");
+    failure.append(
+      createElement("strong", null, `READ FAIL · ${read.path}`),
+      createElement("span", null, read.error || "Project context read failed"),
+    );
+    projectSearchResultsEl.appendChild(failure);
+  }
+}
+
+async function searchProjectContext(query) {
+  const value = String(query || "").trim();
+  if (!state.selectedCode || value.length < 2) {
+    projectSearchMetaEl.textContent = "Type at least 2 characters. Search is limited to configured entry documents.";
+    return;
+  }
+  const submit = projectSearchFormEl.querySelector("button[type=submit]");
+  submit.disabled = true;
+  projectSearchInputEl.disabled = true;
+  projectSearchMetaEl.textContent = "Reading configured project context…";
+  projectSearchResultsEl.innerHTML = "";
+  try {
+    const payload = await json("/bob/project-search", {
+      method: "POST",
+      body: JSON.stringify({workspace: state.selectedCode, query: value, limit: 20}),
+    });
+    renderProjectSearchResults(payload);
+  } catch (error) {
+    projectSearchMetaEl.textContent = error.message;
+  } finally {
+    submit.disabled = false;
+    projectSearchInputEl.disabled = false;
+    projectSearchInputEl.focus();
+  }
+}
+
 async function openDocument(path) {
   if (!state.selectedCode || !path) return;
   documentTitleEl.textContent = path.split("/").pop();
@@ -556,6 +668,19 @@ for (const starter of document.querySelectorAll(".starter")) {
 }
 
 verifyWorkspaceEl.addEventListener("click", verifyWorkspace);
+projectSearchEl.addEventListener("click", openProjectSearch);
+projectSearchFormEl.addEventListener("submit", (event) => {
+  event.preventDefault();
+  searchProjectContext(projectSearchInputEl.value);
+});
+projectSearchCloseEl.addEventListener("click", () => projectSearchDialogEl.close());
+projectSearchDialogEl.addEventListener("click", (event) => {
+  if (event.target === projectSearchDialogEl) projectSearchDialogEl.close();
+});
+approvalInboxEl.addEventListener("click", () => {
+  pendingEl.scrollIntoView({behavior: "smooth", block: "center"});
+  pendingEl.querySelector("button")?.focus({preventScroll: true});
+});
 newChatEl.addEventListener("click", newChat);
 sidebarFilterEl.addEventListener("input", () => renderProjects(sidebarFilterEl.value));
 inspectorToggleEl.addEventListener("click", () => {
@@ -578,9 +703,7 @@ window.addEventListener("resize", syncScrim);
 document.addEventListener("keydown", (event) => {
   if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
     event.preventDefault();
-    openSidebar();
-    sidebarFilterEl.focus();
-    sidebarFilterEl.select();
+    if (!projectSearchDialogEl.open) openProjectSearch();
   }
   if (event.key === "Escape") {
     closeSidebar();
