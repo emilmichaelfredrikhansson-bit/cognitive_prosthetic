@@ -87,13 +87,15 @@ Goal: make project continuity independent of any single ChatGPT thread and make 
 Exit criteria:
 - [x] canonical recursive chunking/context architecture defined;
 - [x] module-first stateless cognition architecture defined;
-- [x] initial cognition policy codified: 20k target / 25k hard ceiling;
+- [x] cognition policy codified: 15k absolute module cap / 20k context target / 25k context hard ceiling;
 - [x] fresh-chat bridge primitive exists for one stateless cognition request;
+- [x] architecture cognition canon requires the 15k cap to shape module boundaries before implementation;
 - [ ] durable semantic project/module graph schema implemented;
 - [ ] canonical module contract implemented (purpose, input/output, contracts, adapters, invariants, state, verification/evidence);
+- [ ] deterministic module footprint measurement wired to the module graph/manifests;
+- [ ] automatic >15k repair route invokes fresh architecture cognition and rechecks compliance without operator interruption;
 - [ ] product-vision/mission bootstrap persists operator intent and success criteria;
 - [ ] Context Compiler produces bounded cognition packets from current project truth;
-- [ ] module cognition-fit gate enforces <=20k compiled tokens before implementation begins;
 - [ ] every cognition question uses a fresh ChatGPT conversation in the production orchestration path;
 - [ ] tool/reality continuation recompiles the full relevant problem into a fresh cognition request;
 - [ ] technical answers trigger a separate bounded consequence/Steward pass;
