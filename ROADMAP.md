@@ -98,14 +98,15 @@ Exit criteria:
 - [ ] Context Compiler produces bounded cognition packets from current project truth;
 - [ ] every cognition question uses a fresh ChatGPT conversation in the production orchestration path;
 - [ ] tool/reality continuation recompiles the full relevant problem into a fresh cognition request;
-- [ ] technical answers trigger a separate bounded consequence/Steward pass;
-- [ ] Steward routes consequence as NONE / STRUCTURAL / OPERATOR;
+- [ ] Context Compiler includes exact source pointers so fresh cognition can re-ground directly in connected GitHub reality;
+- [ ] ordinary cognition checks relevant module/contract/product impact before completion;
+- [ ] optional fresh review/meta cognition can be routed for difficult or cross-cutting work without becoming a mandatory stage;
 - [ ] completed work distills back into durable module/system/product state and evidence;
 - [ ] explicit cross-cutting workstreams coordinate multi-domain changes;
 - [ ] bounded Fusion integrates child outcomes without replaying full transcripts;
 - [ ] WAITING work resumes through a fresh compiled cognition request after external events;
 - [ ] at least one real large workstream survives deliberate replacement of every cognition thread without loss of continuity;
-- [ ] module/context/consequence strategy records evidence for recursive improvement.
+- [ ] module/context/source-grounding/review strategy records evidence for recursive improvement.
 
 ## Phase 4 — Product parity and hardening
 
