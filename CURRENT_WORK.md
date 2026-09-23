@@ -52,9 +52,17 @@ No component is globally smart.
 - providers own external state;
 - the operator owns material approvals.
 
-The inherited ChatGPT browser bridge is a replaceable cognition transport. **Bob V1 runs as Local Companion on the operator's own PC using the operator's existing ChatGPT account/subscription but a separate Bob-managed Chromium profile. All Bob cognition is confined to one dedicated private ChatGPT Project named `Bob`, with Project-only memory as the V1 isolation setting.** Bob API and bridge remain loopback-only, the Bob Project/ChatGPT tab lives in the background, and the Bob UI is brought to the foreground in the same managed browser. DigitalOcean/persistent remote cognition is deferred to V2.
+The inherited ChatGPT browser bridge is a replaceable cognition transport. **V1 response capture is canonically the visible ChatGPT Copy action -> clipboard; DOM scraping is legacy-only, while Windows UI Automation is deferred unless real-world robustness requires it.** **Bob V1 runs as Local Companion on the operator's own PC using the operator's existing ChatGPT account/subscription but a separate Bob-managed Chromium profile. All Bob cognition is confined to one dedicated private ChatGPT Project named `Bob`, with Project-only memory as the V1 isolation setting.** Bob API and bridge remain loopback-only, the Bob Project/ChatGPT tab lives in the background, and the Bob UI is brought to the foreground in the same managed browser. DigitalOcean/persistent remote cognition is deferred to V2.
 
 ## LAST_COMPLETED
+
+`BOB_CHATGPT_CAPTURE_V1`
+
+Bob V1's canonical response-capture path is now **ChatGPT's visible Copy action -> browser clipboard**. This is the normal product path and the path to qualify on the operator PC. Direct DOM/text scraping from ChatGPT remains an explicit `legacy_dom` compatibility escape hatch only; it is not a preferred architecture and must not silently become the default again.
+
+Windows UI Automation/accessibility is deferred as a future robustness option only if the Copy->clipboard path proves unreliable in real use. It is not required for V1 and should not displace a working Copy path merely for architectural purity.
+
+This direction matches the current implementation: `CHATGPT_CAPTURE_MODE=copy` is the default, `capture_response(...)` locates ChatGPT's visible Copy control, activates it and reads the resulting clipboard text. No provider authority changed.
 
 `BOB_CHATGPT_PROJECT_ISOLATION_V1`
 
@@ -273,7 +281,7 @@ The code/config/documentation foundation for Local Companion is landed. The next
 
 ## OPEN_FINDINGS
 
-- The current interactive development environment cannot run the real local managed browser against the operator's authenticated ChatGPT account. Live Copy-button selectors, clipboard capture, background-tab behavior and exact ChatGPT Project targeting therefore remain operator-PC qualification items.
+- The current interactive development environment cannot run the real local managed browser against the operator's authenticated ChatGPT account. The canonical Copy-button -> clipboard capture, background-tab behavior and exact ChatGPT Project targeting therefore remain operator-PC qualification items. Windows UI Automation is not a V1 blocker.
 - Seven Local Companion unittest methods are declared on the branch, including the dedicated ChatGPT Project boundary. The full current-head Python suite has not been rerun after this tranche. No paid/remote compute was dispatched.
 - The connected HF account was previously verified as `Reallothesecond` / `6a986fdd2e846637191b1c5e`; a fresh HF suite remains a material-spend effect and is not necessary before the first local canary.
 - True resumable Bob conversation history remains blocked until Bob can persist and reopen the exact underlying ChatGPT thread identity/URL. Do not substitute localStorage history.
