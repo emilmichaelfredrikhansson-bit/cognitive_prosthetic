@@ -239,6 +239,8 @@ Post-HF runtime packaging changed after the 29/29 application-suite run. The cur
 
 The project-search/settings/inbox tranche changes executable frontend and Python code after those earlier checks. In this interactive session, the connector-fetched current `frontend/app.js` parsed successfully in V8; the 11 current frontend contract groups were re-evaluated against the fetched HTML/JS/CSS and passed **11/11**; duplicate HTML IDs were absent and CSS/dialog/form structural balances were clean. The exact new bounded project-search algorithm plus empty-query fail-closed behavior was exercised in an isolated sandbox smoke harness: **2/2 PASS**; the new API route block also compiled as valid Python syntax. This is targeted tranche evidence only. The full current-head Python suite has **not** been rerun, and no HF/GitHub Actions compute was dispatched.
 
+The Local Companion tranche was then reconciled directly from the current branch through the GitHub connector. The branch declares exactly **56** unittest methods, including **5** Local Companion tests. Connector-fetched `bob_local.py`, `chatgpt_api_server.py`, the three Windows batch launchers, `.env.local.example`, README and V1 plan contain no committed secret-like tokens, no V1 `0.0.0.0` bind configuration, and no accidental literal escaped-newline serialization. Isolated copies of the committed Local Companion loopback helper logic and companion-URL validator compiled and passed smoke checks for localhost/IPv4/IPv6 loopback plus rejection of public/wildcard targets. This is targeted helper evidence, not a full current-head suite or a live Playwright/ChatGPT qualification.
+
 ## ACTIVE_WORK
 
 `BOB_LOCAL_COMPANION_V1_LIVE_QUALIFICATION`
