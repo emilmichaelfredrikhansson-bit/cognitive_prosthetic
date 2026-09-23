@@ -66,7 +66,7 @@ The compiled-context envelope remains 20k tokens target / 25k hard ceiling for t
 
 Each cognition question runs in a fresh ChatGPT conversation. The browser bridge exposes a dedicated `POST /cognition` primitive that atomically returns to the Bob ChatGPT Project and sends one question in a fresh conversation. The existing stateful `/chat` continuation remains temporarily for the current V1 closed-loop runtime until the Context Compiler can recompile durable context between every READ/effect continuation.
 
-Technical answers feed a separate bounded consequence/Steward cognition pass before structural/product implications are accepted.
+Fresh cognition may re-ground directly in the connected GitHub repository and is responsible for checking material structural/product implications before completion. Separate review/meta cognition is optional for difficult cases, not a mandatory Steward stage.
 
 ## Large-project cognition architecture
 
