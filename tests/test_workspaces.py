@@ -22,6 +22,7 @@ class WorkspaceTests(unittest.TestCase):
             }))
             workspace = WorkspaceRegistry(tmp).get("X")
             self.assertEqual(workspace.github_repository_id, 123)
+            self.assertEqual(workspace.module_graph_path, ".bob/module_graph.json")
             self.assertTrue(workspace.effects["write_branch"])
 
     def test_requires_stable_repo_id(self):
@@ -41,6 +42,7 @@ class WorkspaceTests(unittest.TestCase):
         ab = registry.get("AB")
 
         self.assertEqual(bob.github_repository_id, 1374229539)
+        self.assertEqual(bob.module_graph_path, ".bob/module_graph.json")
         self.assertEqual(sl.github_repository_id, 1306946195)
         self.assertEqual(ab.github_repository_id, 1347272122)
         self.assertEqual(
