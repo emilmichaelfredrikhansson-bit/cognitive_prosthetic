@@ -66,10 +66,27 @@ def build_env(env_file: Path) -> dict[str, str]:
     env.setdefault("CHATGPT_BRIDGE_PORT", "5001")
     env.setdefault("CHATGPT_BRIDGE_URL", "http://127.0.0.1:5001")
     env.setdefault("BOB_COMPANION_UI_URL", "http://127.0.0.1:5002/")
-    env.setdefault("CHATGPT_TARGET_URL", "https://chatgpt.com/")
+    env.setdefault("BOB_CHATGPT_PROJECT_NAME", "Bob")
+    env.setdefault("BOB_CHATGPT_PROJECT_URL", "")
+    env.setdefault("CHATGPT_TARGET_URL", "")
     env.setdefault("CHATGPT_CAPTURE_MODE", "copy")
     assert_local_only(env)
     return env
+
+
+def configured_project_url(env: dict[str, str]) -> str:
+    return (env.get("BOB_CHATGPT_PROJECT_URL") or env.get("CHATGPT_TARGET_URL") or "").strip()
+
+
+def assert_project_bound(env: dict[str, str]) -> None:
+    value = configured_project_url(env)
+    parts = urlsplit(value)
+    if not value:
+        raise RuntimeError("Set BOB_CHATGPT_PROJECT_URL to the dedicated Bob ChatGPT Project before normal startup")
+    if parts.scheme != "https" or (parts.hostname or "").lower() not in {"chatgpt.com", "www.chatgpt.com"}:
+        raise RuntimeError("BOB_CHATGPT_PROJECT_URL must be an https://chatgpt.com/ URL")
+    if parts.path in {"", "/"}:
+        raise RuntimeError("Bob must target a dedicated ChatGPT Project URL, not the ChatGPT home page")
 
 
 def wait_json(
@@ -134,6 +151,14 @@ def main() -> int:
 
     if args.login:
         run_login(env)
+        if not configured_project_url(env):
+            print("")
+            print("ChatGPT login saved.")
+            print("Create/open your private ChatGPT project 'Bob', set it to Project-only memory,")
+            print("paste its exact URL into BOB_CHATGPT_PROJECT_URL in .env.local, then run start_bob.bat.")
+            return 0
+
+    assert_project_bound(env)
 
     profile_override = env.get("CHATGPT_PROFILE_PATH", "").strip()
     if profile_override:
