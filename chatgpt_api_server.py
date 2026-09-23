@@ -19,7 +19,9 @@ from profile_config import load_profile_path
 
 app = Flask(__name__)
 
-CHATGPT_TARGET_URL = os.environ.get("CHATGPT_TARGET_URL", "https://chatgpt.com/").strip()
+BOB_CHATGPT_PROJECT_NAME = os.environ.get("BOB_CHATGPT_PROJECT_NAME", "Bob").strip() or "Bob"
+BOB_CHATGPT_PROJECT_URL = os.environ.get("BOB_CHATGPT_PROJECT_URL", "").strip()
+CHATGPT_TARGET_URL = (BOB_CHATGPT_PROJECT_URL or os.environ.get("CHATGPT_TARGET_URL", "")).strip()
 CHATGPT_CAPTURE_MODE = os.environ.get("CHATGPT_CAPTURE_MODE", "copy").strip().lower()
 BOB_COMPANION_UI_URL = os.environ.get("BOB_COMPANION_UI_URL", "http://127.0.0.1:5002/").strip()
 if CHATGPT_CAPTURE_MODE not in {"copy", "legacy_dom"}:
@@ -35,6 +37,19 @@ result_queue = queue.Queue()
 is_ready = False
 startup_error = None
 browser_thread = None
+
+def validate_chatgpt_project_url(url):
+    """Require an explicit non-root ChatGPT target for Bob cognition."""
+    value = str(url or "").strip()
+    if not value:
+        raise ValueError("BOB_CHATGPT_PROJECT_URL must be configured for normal Bob runtime")
+    parts = urlsplit(value)
+    if parts.scheme != "https" or (parts.hostname or "").lower() not in {"chatgpt.com", "www.chatgpt.com"}:
+        raise ValueError("Bob ChatGPT project URL must be an https://chatgpt.com/ URL")
+    if parts.path in {"", "/"}:
+        raise ValueError("Bob must target a dedicated ChatGPT Project URL, not the ChatGPT home page")
+    return value
+
 
 def validate_companion_ui_url(url):
     """Return a local companion URL or fail closed for non-loopback targets."""
@@ -109,8 +124,9 @@ def browser_worker():
 
         page = browser_context.pages[0] if browser_context.pages else browser_context.new_page()
 
-        logging.info(f"🌐 Navigating to ChatGPT target: {CHATGPT_TARGET_URL}")
-        page.goto(CHATGPT_TARGET_URL, wait_until="domcontentloaded", timeout=30000)
+        project_url = validate_chatgpt_project_url(CHATGPT_TARGET_URL)
+        logging.info(f"🌐 Navigating to dedicated ChatGPT project: {BOB_CHATGPT_PROJECT_NAME}")
+        page.goto(project_url, wait_until="domcontentloaded", timeout=30000)
         time.sleep(3)
 
         origin_parts = urlsplit(page.url)
@@ -357,7 +373,7 @@ def start_new_chat(page):
     """Start a new chat"""
     try:
         logging.info("🔄 Starting new chat...")
-        page.goto(CHATGPT_TARGET_URL, wait_until="domcontentloaded")
+        page.goto(validate_chatgpt_project_url(CHATGPT_TARGET_URL), wait_until="domcontentloaded")
         time.sleep(3)
 
         textarea = find_textarea(page, timeout=10)
@@ -453,7 +469,8 @@ def status():
         "server": "running",
         "browser_ready": is_ready,
         "profile_path": load_profile_path(),
-        "target_url": CHATGPT_TARGET_URL,
+        "project_name": BOB_CHATGPT_PROJECT_NAME,
+        "project_url_configured": bool(CHATGPT_TARGET_URL),
         "capture_mode": CHATGPT_CAPTURE_MODE,
         "companion_ui_url": BOB_COMPANION_UI_URL,
         "endpoints": {
