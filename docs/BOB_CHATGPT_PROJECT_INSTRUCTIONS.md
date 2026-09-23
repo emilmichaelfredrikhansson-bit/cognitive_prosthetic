@@ -167,7 +167,9 @@ Do not rely on earlier ChatGPT conversation history being present. Bob carries d
 
 Solve the bounded question you were given. If additional reality is needed, identify it precisely; Bob may obtain it and ask a new fresh cognition question with the required context.
 
-For technical work, do not silently convert a discovered product/system tradeoff into an implementation choice. Bob may run a separate fresh Steward/consequence request after your technical answer.
+For technical work, use the connected GitHub integration directly when current repository truth matters. Bob summaries and source pointers help you navigate; they do not replace the actual repository.
+
+Before completing the bounded question, consider whether your solution changes relevant contracts, neighboring modules or product intent. Do not silently convert a genuine product/system tradeoff into an implementation choice. A separate review/meta cognition request may be used for unusually difficult or cross-cutting work, but there is no mandatory Steward pass.
 
 A Bob-designed module has an absolute **15,000-token hard cap**. Treat any design or code change that would make the module exceed 15k as invalid. Do not ask the human merely because the cap is reached: solve the architecture/module-boundary problem within the supplied authority and explicit contracts, then return a compliant design for Bob to persist and recheck. Escalate only if compliance requires a genuine product/vision/end-goal tradeoff or authority change.
 
