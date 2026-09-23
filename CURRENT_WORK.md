@@ -56,9 +56,11 @@ The inherited ChatGPT browser bridge is now a replaceable cognition transport. T
 
 ## LAST_COMPLETED
 
-`BOB_OFFLINE_RUNTIME_DEPLOYMENT_PACKAGE`
+`BOB_OFFLINE_RUNTIME_CLOSURE_V1`
 
-Bob is now offline-deploy-ready. `deploy/install_runtime.sh` installs an exact Git SHA into an immutable release directory, prepares the venv/Playwright/Xvfb runtime, installs and enables (but deliberately does not start) the loopback-only services, and creates a root-owned empty credential file. `deploy/runtime_doctor.py` verifies local host prerequisites without exposing secrets and can fail closed on missing credentials/profile when those are required. During this work a real serialization defect was found in the committed ChatGPT bridge unit: it contained literal `\\n` sequences. The unit is now a real multiline systemd file, and tests explicitly reject literal escaped newlines.\n\nThe persistent runtime credential floor remains staged least-privilege: read-only provider qualification first, then a bounded GitHub write credential only for the approved branch/PR canary. Supabase/Cloudflare/HF write or spend credentials are not required by the current workspaces. Current live Supabase project responses were re-read and contain the expected organization ID directly, so no account-wide project-list permission is required for the normal qualification path.
+Bob is now offline-deploy-ready. `deploy/install_runtime.sh` installs an exact Git SHA into an immutable release directory, prepares the venv/Playwright/Xvfb runtime, installs and enables (but deliberately does not start) the loopback-only services, and creates a root-owned empty credential file. `deploy/runtime_doctor.py` verifies local host prerequisites without exposing secrets and can fail closed on missing credentials/profile when those are required. During this work a real serialization defect was found in the committed ChatGPT bridge unit: it contained literal `\\n` sequences. The unit is now a real multiline systemd file, and tests explicitly reject literal escaped newlines.
+
+The persistent runtime credential floor remains staged least-privilege: read-only provider qualification first, then a bounded GitHub write credential only for the approved branch/PR canary. Supabase/Cloudflare/HF write or spend credentials are not required by the current workspaces. Current live Supabase project responses were re-read and contain the expected organization ID directly, so no account-wide project-list permission is required for the normal qualification path.
 
 `BOB_PERSISTENT_RUNTIME_SYSTEMD_CONTRACT`
 
@@ -191,7 +193,7 @@ This external reconciliation proves the bindings are still real; it does **not**
 
 The runtime-preflight tranche adds **5 isolated unittest methods**. The exact proposed `bob/preflight.py` + `tests/test_preflight.py` content was executed in the interactive sandbox before commit: **5/5 PASS**, and both files passed `py_compile`. This is narrow evidence for the new preflight logic only; it does not substitute for a full branch-suite run.
 
-The branch declares **29 unittest methods** across protocol/workspace/driver/Cloudflare/server-surface/runtime-preflight/systemd-contract tests.
+The branch now declares **37 unittest methods**: the previously HF-verified 29 application/systemd tests plus 8 deployment-package tests.
 
 Current implementation verification is now executable and current:
 
@@ -207,13 +209,15 @@ finished = 2026-09-22T20:11:17.345Z
 
 The job cloned the public repository, checked out the exact pinned commit, asserted `git rev-parse HEAD` matched that SHA before testing, installed the pinned requirements and ran `python -m unittest discover -s tests -v`. The unittest log ended with `Ran 29 tests` and `OK`.
 
-The runtime-preflight and systemd-contract isolated checks remain useful narrow evidence, but the HF current-implementation run supersedes them as the main execution-suite evidence.\n\nPost-HF runtime packaging changed after the 29/29 application-suite run. The exact proposed deployment tranche was checked independently in the interactive sandbox: `tests/test_runtime_deploy.py` = **6/6 PASS**, `bash -n deploy/install_runtime.sh` = PASS, `py_compile` for the doctor/test = PASS, and `systemd-analyze verify` parsed both unit files; its only diagnostic was the expected absent `/opt/bob/venv/bin/python` because the sandbox is not an installed Bob host. This is deployment-tranche evidence, not a new full-suite run. Any later documentation-only reconciliation commit must not be misrepresented as having been independently re-executed; the executable implementation tree remains the tested one unless code/runtime files change.
+The runtime-preflight and systemd-contract isolated checks remain useful narrow evidence, but the HF current-implementation run supersedes them as the main execution-suite evidence.
+
+Post-HF runtime packaging changed after the 29/29 application-suite run. The current deployment tranche was checked independently in the interactive sandbox: `tests/test_runtime_deploy.py` = **8/8 PASS**, `bash -n deploy/install_runtime.sh` = PASS, `py_compile` for the doctor/test = PASS, and `systemd-analyze verify` parsed both unit files; its only diagnostic was the expected absent `/opt/bob/venv/bin/python` because the sandbox is not an installed Bob host. This is deployment-tranche evidence, not a new full-suite run. Any later documentation-only reconciliation commit must not be misrepresented as having been independently re-executed; the executable implementation tree remains the tested one unless code/runtime files change.
 
 ## ACTIVE_WORK
 
-`BOB_CORE_V1_OFFLINE_RUNTIME_CLOSURE`
+`BOB_CORE_V1_LIVE_RUNTIME_QUALIFICATION_BLOCKED`
 
-The application implementation remains 29/29 verified at the last executable application commit. Runtime packaging has advanced after that verification: the deployment tranche is isolated-green and syntax-verified, but live host execution remains intentionally unavailable. Continue closing every remaining non-live dependency; reserve only credential, provider, browser-session, tunnel and real write-canary qualification for the future host.
+The non-live Bob V1 runtime surface is now closed: exact-SHA install, immutable releases, local doctor, explicit live acceptance runner, opt-in rollback restart, systemd/Xvfb packaging, staged credentials, browser-login runbook, Cloudflare Access/Tunnel boundary and failure drills are all specified. What remains is intentionally empirical: install on a real host, add secrets, authenticate ChatGPT, live-qualify providers/transport, then perform one approved GitHub canary.
 
 ## NEXT_INTENDED_WORK
 
@@ -229,7 +233,7 @@ The application implementation remains 29/29 verified at the last executable app
 
 - The connected HF account is independently verified as `Reallothesecond` / `6a986fdd2e846637191b1c5e`, and no HF jobs are currently running. A fresh `cpu-basic` job is the available qualified path for the full current-head suite, but it was not dispatched because new compute is a material-spend effect requiring explicit operator authority.
 - Browser Copy-button selectors must be live-qualified against the current ChatGPT UI.
-- DigitalOcean runtime and home-egress tunnel are designed but not provisioned. The local bridge is now loopback-only by default; remote exposure still requires authenticated transport.
+- No persistent host is currently available to this session, so install/credential/browser/tunnel behavior remains live-unqualified by design. The non-live package and runbooks are complete.\n- Home-network egress remains optional and router-dependent; its concrete implementation is deferred until actual router/network capabilities are available.
 - SL Cloudflare account ID remains runtime-bound and is verified through its canonical R2 bucket. AB binds its canonical account ID directly but must verify the `autoblog-canary` Worker remotely before Cloudflare identity is trusted.
 - The current UI is functional scaffolding, not final product design; it now includes explicit read-only workspace qualification.
 - Bob effect approvals currently live in process memory; persistence/resume is a later hardening item. In-memory approvals are nevertheless bound to workspace authority + staged GitHub state and fail closed on drift.
@@ -237,7 +241,7 @@ The application implementation remains 29/29 verified at the last executable app
 
 ## FIRST_ACTION
 
-Continue `BOB_CORE_V1_OFFLINE_RUNTIME_CLOSURE` from actual branch state. Do not rebuild the protocol or adapters from chat memory.
+Runtime implementation is blocked only on live infrastructure/credentials. On the next non-live development turn, do not invent more runtime machinery unless a concrete gap is found. When host access returns, continue `BOB_CORE_V1_LIVE_RUNTIME_QUALIFICATION_BLOCKED` from this handoff. Do not rebuild the protocol or adapters from chat memory.
 
 ## HARD_BLOCKERS
 

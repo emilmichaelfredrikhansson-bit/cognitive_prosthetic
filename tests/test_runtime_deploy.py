@@ -7,6 +7,8 @@ ROOT = Path(__file__).resolve().parents[1]
 BOB_UNIT = (ROOT / "deploy/systemd/bob-api.service").read_text()
 BRIDGE_UNIT = (ROOT / "deploy/systemd/chatgpt-bridge.service").read_text()
 INSTALLER = (ROOT / "deploy/install_runtime.sh").read_text()
+ROLLBACK = (ROOT / "deploy/rollback_release.sh").read_text()
+ACCEPTANCE = (ROOT / "deploy/runtime_acceptance.py").read_text()
 
 spec = importlib.util.spec_from_file_location("runtime_doctor", ROOT / "deploy/runtime_doctor.py")
 runtime_doctor = importlib.util.module_from_spec(spec)
@@ -27,6 +29,7 @@ class RuntimeDeployTests(unittest.TestCase):
 
     def test_installer_requires_exact_commit_and_never_starts_services(self):
         self.assertIn("BOB_RELEASE_SHA must be a full 40-character Git commit SHA", INSTALLER)
+        self.assertIn("does not match requested BOB_RELEASE_SHA", INSTALLER)
         self.assertIn("systemctl enable bob-api.service chatgpt-bridge.service", INSTALLER)
         self.assertNotIn("systemctl start ", INSTALLER)
         self.assertNotIn("systemctl restart ", INSTALLER)
@@ -88,6 +91,18 @@ class RuntimeDeployTests(unittest.TestCase):
             failed = {item["name"] for item in result["checks"] if item["status"] == "FAIL"}
             self.assertIn("bob_host-loopback", failed)
             self.assertIn("credential:GITHUB_TOKEN", failed)
+
+    def test_rollback_requires_exact_installed_release_and_restart_is_opt_in(self):
+        self.assertIn("release not installed", ROLLBACK)
+        self.assertIn("BOB_RESTART_AFTER_ROLLBACK:-0", ROLLBACK)
+        self.assertNotIn("BOB_RESTART_AFTER_ROLLBACK:-1", ROLLBACK)
+
+    def test_acceptance_is_offline_by_default_and_live_is_explicit(self):
+        self.assertIn('parser.add_argument("--live", action="store_true"', ACCEPTANCE)
+        self.assertIn("SKIPPED: rerun with --live on the installed host", ACCEPTANCE)
+        self.assertIn("provider-preflight", ACCEPTANCE)
+        self.assertIn("http://127.0.0.1:5002/bob/health", ACCEPTANCE)
+        self.assertIn("http://127.0.0.1:5001/health", ACCEPTANCE)
 
 
 if __name__ == "__main__":

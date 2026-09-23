@@ -15,6 +15,11 @@ RUNTIME_GROUP="${BOB_RUNTIME_GROUP:-bob}"
 SYSTEMD_DIR="${BOB_SYSTEMD_DIR:-/etc/systemd/system}"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 
+if command -v apt-get >/dev/null; then
+  export DEBIAN_FRONTEND=noninteractive
+  apt-get update -qq
+  apt-get install -y -qq git python3-venv xvfb xauth >/dev/null
+fi
 command -v "$PYTHON_BIN" >/dev/null
 command -v git >/dev/null
 command -v xvfb-run >/dev/null
@@ -32,13 +37,19 @@ install -d -m 0700 -o "$RUNTIME_USER" -g "$RUNTIME_GROUP" "$STATE_DIR/chatgpt-pr
 install -d -m 0755 -o root -g root "$ENV_DIR"
 
 if [[ -d "$ROOT_DIR/.git" ]]; then
-  RELEASE_SHA="${BOB_RELEASE_SHA:-$(git -C "$ROOT_DIR" rev-parse HEAD)}"
+  SOURCE_SHA="$(git -C "$ROOT_DIR" rev-parse HEAD)"
+  RELEASE_SHA="${BOB_RELEASE_SHA:-$SOURCE_SHA}"
 else
+  SOURCE_SHA=""
   RELEASE_SHA="${BOB_RELEASE_SHA:-}"
 fi
 if [[ -z "$RELEASE_SHA" || ! "$RELEASE_SHA" =~ ^[0-9a-fA-F]{40}$ ]]; then
   echo "BOB_RELEASE_SHA must be a full 40-character Git commit SHA" >&2
   exit 3
+fi
+if [[ -n "$SOURCE_SHA" && "$SOURCE_SHA" != "$RELEASE_SHA" ]]; then
+  echo "checkout SHA $SOURCE_SHA does not match requested BOB_RELEASE_SHA $RELEASE_SHA" >&2
+  exit 4
 fi
 
 RELEASE_DIR="$APP_ROOT/releases/$RELEASE_SHA"
@@ -50,6 +61,7 @@ if [[ ! -d "$RELEASE_DIR" ]]; then
     --exclude=default_profile \
     --exclude='*_profile' \
     --exclude='*.env' \
+    --exclude=profile_config.txt \
     -cf - . | tar -C "$RELEASE_DIR" -xf -
   chown -R root:root "$RELEASE_DIR"
   chmod -R go-w "$RELEASE_DIR"
