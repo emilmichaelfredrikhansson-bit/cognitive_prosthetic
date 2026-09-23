@@ -45,6 +45,27 @@ Bob carries global structure
 → Bob persists the revised global structure
 ```
 
+## Module-first stateless cognition
+
+Bob's concrete large-project programming model is defined in `docs/BOB_MODULE_COGNITION_ARCHITECTURE.md`.
+
+For Bob-designed systems:
+
+```text
+input contract
+→ cognitively bounded module
+→ output contract / adapter
+→ next module
+```
+
+A module is a pre-implementation cognitive atom, not a component Bob intentionally allows to grow until it must later be split for context reasons.
+
+The initial compiled-context envelope is 20k tokens target / 25k hard ceiling for the whole question world.
+
+Each cognition question runs in a fresh ChatGPT conversation. The browser bridge exposes a dedicated `POST /cognition` primitive that atomically returns to the Bob ChatGPT Project and sends one question in a fresh conversation. The existing stateful `/chat` continuation remains temporarily for the current V1 closed-loop runtime until the Context Compiler can recompile durable context between every READ/effect continuation.
+
+Technical answers feed a separate bounded consequence/Steward cognition pass before structural/product implications are accepted.
+
 ## Large-project cognition architecture
 
 Bob's large-project architecture is governed by `docs/BOB_CHUNKING_CONTEXT_ARCHITECTURE.md`.
