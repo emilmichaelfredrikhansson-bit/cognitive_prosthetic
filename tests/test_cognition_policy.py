@@ -5,6 +5,7 @@ from bob.driver import ChatGPTBridge
 
 from bob.cognition_policy import (
     DEFAULT_COGNITION_POLICY,
+    DEFAULT_MODULE_HARD_CAP_TOKENS,
     DEFAULT_COMPILED_CONTEXT_HARD_LIMIT_TOKENS,
     DEFAULT_COMPILED_CONTEXT_TARGET_TOKENS,
     CognitionPolicy,
@@ -13,6 +14,7 @@ from bob.cognition_policy import (
 
 class CognitionPolicyTests(unittest.TestCase):
     def test_canonical_defaults_preserve_headroom(self):
+        self.assertEqual(DEFAULT_MODULE_HARD_CAP_TOKENS, 15_000)
         self.assertEqual(DEFAULT_COMPILED_CONTEXT_TARGET_TOKENS, 20_000)
         self.assertEqual(DEFAULT_COMPILED_CONTEXT_HARD_LIMIT_TOKENS, 25_000)
         self.assertTrue(DEFAULT_COGNITION_POLICY.fresh_chat_per_request)
@@ -31,11 +33,11 @@ class CognitionPolicyTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             policy.require_fit(25_001)
 
-    def test_new_module_design_must_fit_target_not_only_ceiling(self):
+    def test_module_size_has_absolute_15k_cap(self):
         policy = CognitionPolicy()
-        policy.require_module_design_fit(20_000)
+        policy.require_module_size(15_000)
         with self.assertRaises(ValueError):
-            policy.require_module_design_fit(20_001)
+            policy.require_module_size(15_001)
 
     def test_fresh_chat_is_invariant_not_optional_tuning(self):
         with self.assertRaises(ValueError):
