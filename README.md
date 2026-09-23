@@ -24,6 +24,23 @@ The long-term performance target is intentionally demanding: **drive projects in
 
 Bob is also designed to become **self-hosting**: Bob can use Bob's own bounded workflow to improve Bob. This is recursive capability improvement, never recursive authority expansion. See `PRODUCT_PRINCIPLES.md`.
 
+## Module-first cognition
+
+For Bob-designed software, the default development atom is a cognitively bounded module:
+
+```text
+input
+→ bounded transformation
+→ output contract / adapter
+→ next module
+```
+
+New modules should fit, together with their direct contract neighborhood and relevant mission/invariants, inside the initial compiled-input envelope: **20k tokens target / 25k hard ceiling**.
+
+Canonical cognition is stateless: **one cognition question = one fresh ChatGPT conversation**. Bob carries project continuity and runs a separate consequence/Steward check after material technical answers.
+
+See `docs/BOB_MODULE_COGNITION_ARCHITECTURE.md`.
+
 ## Large-project cognition
 
 Bob is designed around a hard constraint: **no ChatGPT thread owns the project**.
