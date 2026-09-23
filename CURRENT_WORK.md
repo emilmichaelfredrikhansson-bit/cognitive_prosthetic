@@ -85,18 +85,20 @@ The ChatGPT bridge now exposes `POST /cognition`, which atomically starts a fres
 Canonical large-project cadence is now:
 
 ```text
-technical problem
+Bob durable structure + source pointers
 -> fresh cognition
--> technical answer
-
-technical answer + relevant mission/system/decision state
--> fresh consequence/Steward cognition
--> NONE / STRUCTURAL / OPERATOR
+-> direct GitHub re-grounding when implementation truth matters
+-> solve bounded problem
+-> check relevant contract/module/product impact
+-> Bob verifies/persists
+-> next fresh cognition
 ```
 
-Bob carries all continuity and structure between requests. Operator-owned product/vision/end-goal tradeoffs must be surfaced rather than silently resolved as local engineering choices.
+There is no mandatory Steward role. A separate review/meta cognition request is optional for difficult, cross-cutting, security or integration work.
 
-This tranche adds policy/runtime primitives and canon. It does **not** yet implement the durable module graph, Context Compiler, product-vision bootstrap, automatic Steward routing or production replacement of the current stateful driver.
+Bob carries continuity and structural routing; GitHub carries implementation truth; ChatGPT may inspect that truth directly. Operator-owned product/vision/end-goal tradeoffs must still be surfaced rather than silently resolved as local engineering choices.
+
+This tranche adds policy/runtime primitives and canon. It does **not** yet implement the durable module graph, Context Compiler, product-vision bootstrap, automatic >15k repair routing, source-pointer compilation, or production replacement of the current stateful driver.
 
 `BOB_RECURSIVE_CHUNKING_AND_CONTEXT_CANON`
 
