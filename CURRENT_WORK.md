@@ -93,8 +93,8 @@ Bob's initial graph intentionally has `coverage=PARTIAL`. Current measured footp
 
 ```text
 BOB_PROTOCOL              3,236   compliant
-BOB_MODULE_COGNITION     13,178   compliant
-BOB_RUNTIME_ORCHESTRATION 18,464  NON-COMPLIANT / MIGRATION_REQUIRED
+BOB_MODULE_COGNITION     13,667   compliant
+BOB_RUNTIME_ORCHESTRATION 19,040  NON-COMPLIANT / MIGRATION_REQUIRED
 ```
 
 The oversized runtime node is inherited/legacy architecture and is now explicitly marked `MIGRATION_REQUIRED`; it is the natural first self-hosting decomposition target.
@@ -375,39 +375,58 @@ The project-search/settings/inbox tranche changes executable frontend and Python
 
 The Local Companion tranche was then reconciled directly from the current branch through the GitHub connector. The branch declares exactly **56** unittest methods, including **5** Local Companion tests. Connector-fetched `bob_local.py`, `chatgpt_api_server.py`, the three Windows batch launchers, `.env.local.example`, README and V1 plan contain no committed secret-like tokens, no V1 `0.0.0.0` bind configuration, and no accidental literal escaped-newline serialization. Isolated copies of the committed Local Companion loopback helper logic and companion-URL validator compiled and passed smoke checks for localhost/IPv4/IPv6 loopback plus rejection of public/wildcard targets. This is targeted helper evidence, not a full current-head suite or a live Playwright/ChatGPT qualification.
 
-The dedicated ChatGPT Project isolation tranche was then reconciled from current branch state. The branch now declares exactly **58** unittest methods, including **7** Local Companion tests. The new runtime contract requires `BOB_CHATGPT_PROJECT_URL`, rejects an empty target, the generic ChatGPT home page and non-ChatGPT hosts, while preserving a separate Bob-managed browser profile on the same account. Connector inspection found no wildcard V1 bind configuration and no committed secret-like tokens in the touched runtime/config files. Project-only memory remains a live operator-side ChatGPT setting to verify during the Windows canary; Bob cannot truthfully claim that account setting from repository code alone.
+The dedicated ChatGPT Project isolation tranche was then reconciled from its branch state at that time. Since then the module/stateless vertical slice has expanded the current branch to exactly **74** declared unittest methods, including **8** module-context tests and **4** server-surface tests. The new runtime contract requires `BOB_CHATGPT_PROJECT_URL`, rejects an empty target, the generic ChatGPT home page and non-ChatGPT hosts, while preserving a separate Bob-managed browser profile on the same account. Connector inspection found no wildcard V1 bind configuration and no committed secret-like tokens in the touched runtime/config files. Project-only memory remains a live operator-side ChatGPT setting to verify during the Windows canary; Bob cannot truthfully claim that account setting from repository code alone.
 
 ## ACTIVE_WORK
 
-`BOB_LOCAL_COMPANION_V1_LIVE_QUALIFICATION`
+`BOB_MODULE_STATELESS_VERTICAL_QUALIFICATION`
 
-The code/config/documentation foundation for Local Companion is landed. The next meaningful work is no longer remote host provisioning; it is live qualification on the operator's Windows PC where a real authenticated ChatGPT session can exist.
+The first executable module graph + Context Compiler + fresh-cognition continuation path is landed. The immediate goal is to qualify that path on current head and then use Bob's own oversized legacy runtime node as the first self-hosting architecture-repair canary.
+
+Current deterministic graph evidence under `BOB_TOKEN_ESTIMATE_V1`:
+
+```text
+BOB_PROTOCOL               3,236   compliant
+BOB_MODULE_COGNITION      13,667   compliant
+BOB_RUNTIME_ORCHESTRATION 19,040   MIGRATION_REQUIRED
+```
+
+The branch declares **74** unittest methods. Connector-level static reconciliation confirms:
+- `.bob/module_graph.json` parses as `BOB_MODULE_GRAPH_V1` and binds repository ID `1374229539`;
+- the stateless module loop calls `bridge.cognition(...)` and does not call legacy `bridge.send(...)`;
+- READ results are added to durable continuation and the full module problem is recompiled;
+- approved module effects resume through fresh cognition;
+- normal module writes are bound to manifest-owned paths and the selected working ref;
+- `/bob/module-turn` and `/bob/module-graph` are exposed;
+- Context Compiler instructs direct GitHub source grounding.
+
+This is structural/static evidence only. The current-head Python suite has not been executed in this interactive environment because its container cannot resolve github.com, and no material-spend remote compute job was dispatched.
 
 ## NEXT_INTENDED_WORK
 
-1. On the operator PC, check out the current `feat/bob-core-v1` head and run `setup_bob.bat`.
-2. In the operator's normal ChatGPT account, create/open the private project `Bob`, set its Memory to **Project-only memory**, and copy its exact project URL.
-3. Put that URL in machine-local `.env.local` as `BOB_CHATGPT_PROJECT_URL=...`.
-4. Run `first_run_bob.bat`, authenticate the Bob browser profile with the **same ChatGPT account**, and verify Bob opens in the foreground while the dedicated Bob Project remains the background cognition surface.
-5. Qualify one ordinary Bob chat turn, then a real `BOB.READ -> BOB.RESULT -> cognition` loop.
-6. Verify a second Bob New Chat is created inside the same Bob Project and never on the ChatGPT home page/personal history.
-7. Qualify approval and reject from the local UI, then perform one approved Bob-repository branch/PR canary with read-back evidence.
-8. Only after Local Companion is useful in daily work, resume V2 DigitalOcean/mobile design.
-9. Continue frontend parity in parallel only where it improves the local product; do not fake conversation history, uploads or authority.
+1. On the operator PC, pull the current `feat/bob-core-v1` head and run `python -m unittest discover -s tests -v`.
+2. Start Local Companion against the dedicated Bob ChatGPT Project and qualify `POST /bob/module-graph` on ref `feat/bob-core-v1`.
+3. Run one bounded `POST /bob/module-turn` on a compliant module and force at least one Bob-owned READ continuation; verify a second fresh ChatGPT conversation receives the recompiled original problem + result.
+4. Qualify one approval-bound module effect on the same working ref; verify post-approval continuation also uses a fresh cognition request and re-reads current GitHub reality.
+5. Use `BOB_RUNTIME_ORCHESTRATION` (currently 19,040 measured tokens) as the first >15k self-hosting architecture-repair canary. The cognition side should propose/deploy a compliant decomposition while Bob repeatedly re-measures the graph. Existing GitHub effect approvals remain in force.
+6. After that canary passes, make module selection/Context Compiler routing the default behind ordinary Bob chat so the operator no longer chooses `module-turn` explicitly.
+7. Then add durable product-vision/bootstrap and result-distillation state, followed by reusable module-template extraction from genuinely generic verified modules.
+8. DigitalOcean/mobile persistence remains V2 and is not a prerequisite.
 
 ## OPEN_FINDINGS
 
-- The current interactive development environment cannot run the real local managed browser against the operator's authenticated ChatGPT account. The canonical Copy-button -> clipboard capture, background-tab behavior and exact ChatGPT Project targeting therefore remain operator-PC qualification items. Windows UI Automation is not a V1 blocker.
-- Seven Local Companion unittest methods are declared on the branch, including the dedicated ChatGPT Project boundary. The full current-head Python suite has not been rerun after this tranche. No paid/remote compute was dispatched.
-- The connected HF account was previously verified as `Reallothesecond` / `6a986fdd2e846637191b1c5e`; a fresh HF suite remains a material-spend effect and is not necessary before the first local canary.
-- True resumable Bob conversation history remains blocked until Bob can persist and reopen the exact underlying ChatGPT thread identity/URL. Do not substitute localStorage history.
-- Bob effect approvals remain in process memory. Restart persistence is later hardening; current approvals are still bound to workspace authority + staged GitHub state and fail closed on drift.
-- One Bob runtime assumes one active ChatGPT browser conversation at a time. Multi-session concurrency is intentionally not part of V1.
-- The V2 systemd/Xvfb/remote-host package remains preserved as future infrastructure; it is not required to test or use V1 locally.
+- The module graph currently has explicit `coverage=PARTIAL`; it is not yet a complete semantic map of Bob.
+- `BOB_TOKEN_ESTIMATE_V1` is deterministic `ceil(UTF-8 bytes / 3)`, not ChatGPT's exact tokenizer. The schema is versioned so the measurement contract can later be upgraded without silently changing historical receipts.
+- Normal module effects are intentionally limited to one effect per fresh cognition request, manifest-owned paths and the selected working ref. Architecture-repair mode has broader path scope because splitting an oversized module may require new files plus graph rewrites; existing workspace authority, approval and read-back verification still apply.
+- The ordinary `/bob/turn` path is still stateful. Statelessness is currently executable through `/bob/module-turn`, not yet automatic for every operator message.
+- New/planned modules whose declared files do not yet exist do not yet have a dedicated bootstrap path; the current vertical slice targets existing modules.
+- The current interactive development environment cannot run the real managed browser against the operator's authenticated ChatGPT account. Copy->clipboard, exact Bob Project targeting and direct connected-GitHub behavior remain live Local Companion qualification items even though the operator has confirmed the same ChatGPT account has GitHub access.
+- Bob effect approvals remain in process memory. Restart persistence is later hardening; current approvals remain bound to workspace authority + staged GitHub state and fail closed on drift.
+- V2 systemd/Xvfb/remote-host material remains preserved but is not required for V1.
 
 ## FIRST_ACTION
 
-Run the Local Companion live canary on the operator's Windows PC from the current branch: `setup_bob.bat` -> create/configure private ChatGPT Project `Bob` with Project-only memory -> set `BOB_CHATGPT_PROJECT_URL` -> `first_run_bob.bat` -> verify foreground Bob/background Bob Project -> one read-only chat loop. Do not move to DigitalOcean unless V1 has first been proven useful locally.
+Qualify the current stateless module vertical slice on the operator PC: current-head unittest suite -> Local Companion -> `/bob/module-graph` on `feat/bob-core-v1` -> one READ-continuation `/bob/module-turn` -> one approval-continuation `/bob/module-turn`. Then use the measured 19,040-token runtime node as the first architecture-repair canary.
 
 ## HARD_BLOCKERS
 
