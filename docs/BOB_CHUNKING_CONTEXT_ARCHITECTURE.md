@@ -453,6 +453,6 @@ Again, capability may compound; authority does not.
 
 > **4. One cognition question uses one fresh ChatGPT conversation; Bob carries continuity between questions.**
 
-> **5. A technical answer is followed by bounded consequence evaluation against product/system intent before it can silently reshape the larger project.**
+> **5. Fresh cognition re-grounds in source truth when needed and checks material contract/module/product impact before completion; a separate review stage is optional, not mandatory.**
 
 These are foundational Bob architecture, not optional optimizations to add only after context limits become painful.
