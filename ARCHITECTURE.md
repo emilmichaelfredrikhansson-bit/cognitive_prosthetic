@@ -60,7 +60,9 @@ input contract
 
 A module is a pre-implementation cognitive atom, not a component Bob intentionally allows to grow until it must later be split for context reasons.
 
-The initial compiled-context envelope is 20k tokens target / 25k hard ceiling for the whole question world.
+Every Bob module has an absolute 15k-token hard cap. Bob detects violations deterministically; fresh architecture cognition performs the semantic reorganization needed to restore compliant module boundaries. Module-cap repair is backend work and reaches the operator only when it creates a real product/vision tradeoff.
+
+The compiled-context envelope remains 20k tokens target / 25k hard ceiling for the whole question world.
 
 Each cognition question runs in a fresh ChatGPT conversation. The browser bridge exposes a dedicated `POST /cognition` primitive that atomically returns to the Bob ChatGPT Project and sends one question in a fresh conversation. The existing stateful `/chat` continuation remains temporarily for the current V1 closed-loop runtime until the Context Compiler can recompile durable context between every READ/effect continuation.
 
