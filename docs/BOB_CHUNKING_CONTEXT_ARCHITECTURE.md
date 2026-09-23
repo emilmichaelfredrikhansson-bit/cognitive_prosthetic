@@ -2,6 +2,8 @@
 
 This document defines the canonical large-project cognition architecture for Bob.
 
+The concrete module/cognition specialization is canonicalized in `docs/BOB_MODULE_COGNITION_ARCHITECTURE.md`.
+
 It exists because ChatGPT conversations are bounded cognition surfaces. Bob must be able to drive projects far larger and longer-lived than any one model conversation can hold.
 
 ## Fundamental rule
@@ -120,22 +122,21 @@ These fields describe the node's role and boundary, not an exhaustive history.
 
 Node canon should stay concise. Large transcripts, raw logs and complete file bodies belong in referenced evidence/reality sources, not inside the node summary.
 
-## Semantic chunking, not arbitrary size chunking
+## Module-first semantic chunking
 
-Bob should not divide work primarily by line count, file count or token count.
+Bob should not divide work primarily by arbitrary line count, file count or transcript length.
 
-A good chunk has:
+For Bob-designed software, the default cognitive atom is a **module**: a bounded input -> responsibility -> output transformation connected to neighboring modules through explicit contracts/adapters.
 
-- one coherent responsibility;
-- a clear ownership boundary;
-- explicit interfaces to neighboring chunks;
-- bounded dependencies;
-- a concrete outcome;
-- verifiable exit criteria.
+A module must be designed to fit **before implementation** together with its immediate contract neighborhood inside the canonical cognition envelope defined in `docs/BOB_MODULE_COGNITION_ARCHITECTURE.md`.
 
-Context/token limits are constraints on compilation, not the definition of architecture.
+The initial envelope is:
 
-If a work unit cannot be described with a stable responsibility and boundary, Bob should consider whether the underlying software/project structure is too entangled.
+- target: 20,000 compiled input tokens;
+- hard ceiling: 25,000 compiled input tokens.
+
+If a proposed module cannot fit at design time, its architecture is not ready for implementation. Bob should return to flow/module design rather than knowingly build an oversized module and plan to split it later for cognitive reasons.
+
 
 ## Shared contracts
 
@@ -196,10 +197,10 @@ Conceptually:
 5. select exact files/excerpts required for the task
 6. include current blockers, authority and exit criteria
 7. fit the packet to a bounded cognition budget
-8. send the packet to a fresh or existing cognition thread
+8. send the packet to a fresh cognition thread
 ```
 
-If the packet is still too large, Bob should decompose the work node further rather than silently dropping critical context.
+If the packet exceeds the hard cognition ceiling, Bob must fail closed. For a not-yet-built module this means return to architecture/module design before implementation; critical context must never be silently dropped.
 
 ## Bounded cognition packets
 
@@ -215,25 +216,23 @@ Context should be:
 - provenance-aware;
 - bounded.
 
-The exact budget may evolve with future models. The architectural rule does not depend on a fixed token number.
+The current engineering target is 20k tokens with a 25k hard ceiling for the whole compiled input world. These numbers may evolve from evidence; the bounded-context rule itself does not.
 
-## Disposable cognition threads
+## Stateless cognition threads
 
-A cognition thread may be useful, but it is not durable state.
+The canonical large-project rule is:
 
-Bob should assume any thread can eventually be lost because of:
+> **One cognition question = one fresh ChatGPT conversation.**
 
-- context length;
-- model/runtime changes;
-- browser/session failure;
-- deliberate replacement;
-- project evolution.
+A cognition thread is a disposable reasoning process, not durable state and not a resource Bob tries to extend.
+
+Anything required by the next question must be recompiled from Bob's durable canon/state/evidence. A fresh thread must never depend on having seen the previous transcript.
 
 Therefore:
 
 > **Anything required to continue the project later must leave the chat and become durable canon, state, evidence or a resumable work record.**
 
-Conversation summaries may assist transition, but they do not outrank current repository/provider truth.
+Conversation artifacts may remain for audit/debugging, but they do not outrank current repository/provider truth and are not the continuity mechanism.
 
 ## Work completion and distillation
 
@@ -339,9 +338,7 @@ WAITING_FOR:
 - scheduled external event
 ```
 
-When the dependency resolves, Bob should compile a fresh context packet and resume the correct work node.
-
-The old cognition thread may be reused when still healthy, but correctness must not depend on it.
+When the dependency resolves, Bob should compile a fresh context packet and ask the next bounded question in a new cognition thread.
 
 ## Canonical status model
 
@@ -447,12 +444,16 @@ better chunking/context compilation
 
 Again, capability may compound; authority does not.
 
-## Three non-negotiable rules
+## Five non-negotiable rules
 
 > **1. No chat owns the project. Bob owns durable project state.**
 
 > **2. Every substantial cognition task receives a bounded compiled context rather than the whole project.**
 
-> **3. Every chunk has explicit contracts/boundaries to the rest of the system, and cross-cutting changes are coordinated explicitly.**
+> **3. Every module/chunk has explicit contracts/boundaries to the rest of the system, and cross-cutting changes are coordinated explicitly.**
+
+> **4. One cognition question uses one fresh ChatGPT conversation; Bob carries continuity between questions.**
+
+> **5. A technical answer is followed by bounded consequence evaluation against product/system intent before it can silently reshape the larger project.**
 
 These are foundational Bob architecture, not optional optimizations to add only after context limits become painful.
