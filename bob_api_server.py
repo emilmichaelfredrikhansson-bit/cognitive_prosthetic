@@ -76,6 +76,13 @@ def approve():
     return jsonify({"success": True, **result})
 
 
+@app.post("/bob/reject")
+def reject():
+    data = request.get_json(force=True) or {}
+    result = runtime.reject(str(data["pending_id"]))
+    return jsonify({"success": True, **result})
+
+
 @app.post("/bob/read")
 def direct_read():
     data = request.get_json(force=True) or {}

@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 
 from bob.driver import BobRuntime
-from bob.errors import AuthorityError
+from bob.errors import AuthorityError, ProtocolError
 
 
 class FakeBridge:
@@ -23,6 +23,7 @@ class FakeBridge:
 class FakeGitHub:
     def __init__(self):
         self.branch_sha = "branch-abc"
+        self.effects = []
 
     def capabilities(self):
         return ["github.read_file", "github.create_file"]
@@ -40,6 +41,7 @@ class FakeGitHub:
         return {"path": args["path"], "sha": "abc", "content": "hello"}
 
     def effect(self, workspace, tool, args):
+        self.effects.append((tool, dict(args)))
         return {"commit_sha": "def", "verified": True}
 
 
@@ -118,6 +120,27 @@ class DriverTests(unittest.TestCase):
             second = runtime.approve(pending_id)
             self.assertEqual(second["status"], "COMPLETE")
             self.assertEqual(second["visible_messages"], ["Applied and verified."])
+
+
+    def test_reject_consumes_pending_without_executing_effect(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            make_workspace(tmp)
+            runtime = BobRuntime(workspace_dir=tmp, bridge=FakeBridge([]))
+            github = FakeGitHub()
+            runtime.adapters = {"github": github}
+
+            effect = runtime.relay_model_response(
+                "X",
+                '```bob\n{"type":"BOB.EFFECT","id":"e-reject","tool":"github.create_file","args":{"path":"x.txt","content":"x","branch":"bob/test"}}\n```'
+            )
+            pending_id = effect["pending"][0]["pending_id"]
+
+            rejected = runtime.reject(pending_id)
+
+            self.assertEqual(rejected["status"], "REJECTED")
+            self.assertEqual(github.effects, [])
+            with self.assertRaises(ProtocolError):
+                runtime.relay_approve(pending_id)
 
 
     def test_workspace_qualification_requires_every_configured_adapter(self):

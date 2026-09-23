@@ -3,36 +3,112 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light" />
   <title>Bob</title>
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <main class="shell">
-    <header>
-      <div>
-        <h1>Bob</h1>
-        <p>ChatGPT ↔ project reality</p>
+  <div id="app" class="app-shell">
+    <aside id="sidebar" class="sidebar" aria-label="Bob navigation">
+      <div class="sidebar-head">
+        <div class="brand" aria-label="Bob home">
+          <span class="brand-mark">B</span><span>Bob</span>
+        </div>
+        <button id="sidebarClose" class="icon-button mobile-only" type="button" aria-label="Close sidebar">×</button>
       </div>
-      <span id="health" class="pill">connecting</span>
-    </header>
 
-    <section class="toolbar">
-      <select id="workspace"></select>
-      <button id="verifyWorkspace" class="secondary">Verify workspace</button>
-      <button id="newChat" class="secondary">New chat</button>
+      <button id="newChat" class="new-chat" type="button"><span class="plus">＋</span><span>New chat</span></button>
+
+      <label class="sidebar-search" for="sidebarFilter">
+        <span aria-hidden="true">⌕</span>
+        <input id="sidebarFilter" type="search" autocomplete="off" placeholder="Search projects" />
+        <kbd>⌘K</kbd>
+      </label>
+
+      <nav class="sidebar-nav">
+        <div class="section-heading">Projects</div>
+        <div id="projectList" class="project-list"></div>
+
+        <div class="section-heading recent-heading">Recent</div>
+        <button class="recent-item active" type="button" aria-current="page">
+          <span class="recent-icon">◌</span><span class="truncate">Current conversation</span>
+        </button>
+        <p class="sidebar-note">Conversation history will become persistent when the live browser runtime can reopen exact ChatGPT threads.</p>
+      </nav>
+
+      <div class="sidebar-foot">
+        <div class="runtime-mini">
+          <span id="healthDot" class="status-dot"></span>
+          <div><strong id="healthLabel">Connecting</strong><span id="healthDetail">Bob runtime</span></div>
+        </div>
+      </div>
+    </aside>
+
+    <section class="main-column">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button id="sidebarOpen" class="icon-button mobile-only" type="button" aria-label="Open sidebar">☰</button>
+          <div class="project-heading"><strong id="projectName">Bob</strong><span id="projectMeta">Select a project</span></div>
+        </div>
+        <div class="topbar-actions">
+          <button id="verifyWorkspace" class="topbar-button" type="button">Verify</button>
+          <button id="inspectorToggle" class="topbar-button" type="button" aria-expanded="false" aria-controls="inspector">Project</button>
+        </div>
+      </header>
+
+      <div id="qualificationBanner" class="qualification-banner hidden" role="status"></div>
+
+      <main id="chat" class="chat" aria-live="polite" aria-label="Conversation">
+        <section id="emptyState" class="empty-state">
+          <div class="bob-orb" aria-hidden="true">B</div>
+          <h1>What are we working on?</h1>
+          <p>Talk normally. Bob keeps project reality, permissions and approvals attached to the conversation.</p>
+          <div class="starter-grid">
+            <button class="starter" type="button" data-prompt="Read CURRENT_WORK and tell me what matters right now.">
+              <strong>Continue current work</strong><span>Read the project handoff and pick up from reality.</span>
+            </button>
+            <button class="starter" type="button" data-prompt="Check the current project reality and tell me if anything is out of sync.">
+              <strong>Check project reality</strong><span>Compare the selected workspace with its external bindings.</span>
+            </button>
+            <button class="starter" type="button" data-prompt="Review the current architecture and suggest the next bounded improvement.">
+              <strong>Review architecture</strong><span>Find a coherent next improvement without expanding authority.</span>
+            </button>
+          </div>
+        </section>
+      </main>
+
+      <section id="pending" class="pending hidden" aria-label="Pending approvals"></section>
+
+      <footer class="composer-wrap">
+        <form id="composer" class="composer">
+          <textarea id="message" rows="1" placeholder="Message Bob" aria-label="Message Bob"></textarea>
+          <div class="composer-bottom">
+            <span class="composer-hint">External effects require Bob approval.</span>
+            <button id="sendButton" class="send-button" type="submit" aria-label="Send message">↑</button>
+          </div>
+        </form>
+        <p class="disclaimer">Bob can reason freely; external reality only changes after verified effects.</p>
+      </footer>
     </section>
 
-    <section id="qualification" class="qualification hidden"></section>
+    <aside id="inspector" class="inspector" aria-label="Project details">
+      <div class="inspector-head">
+        <div><span class="eyebrow">Project</span><h2 id="inspectorTitle">No project selected</h2></div>
+        <button id="inspectorClose" class="icon-button" type="button" aria-label="Close project details">×</button>
+      </div>
+      <div class="inspector-scroll">
+        <section class="inspector-section">
+          <div class="section-row"><h3>Reality</h3><span id="realityBadge" class="mini-badge neutral">Not checked</span></div>
+          <div id="realityChecks" class="status-list"><p class="muted">Verify this workspace to read external identities.</p></div>
+        </section>
+        <section class="inspector-section"><h3>Authority</h3><div id="authorityList" class="authority-list"></div></section>
+        <section class="inspector-section"><h3>Providers</h3><div id="providerList" class="provider-list"></div></section>
+        <section class="inspector-section"><h3>Project context</h3><div id="contextDocs" class="context-list"></div></section>
+      </div>
+    </aside>
 
-    <section id="chat" class="chat"></section>
-
-    <section id="pending" class="pending hidden"></section>
-
-    <form id="composer">
-      <textarea id="message" rows="4" placeholder="Talk to ChatGPT through Bob…"></textarea>
-      <button type="submit">Send</button>
-    </form>
-  </main>
+    <div id="scrim" class="scrim hidden"></div>
+  </div>
   <script src="./app.js"></script>
 </body>
 </html>

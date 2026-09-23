@@ -204,6 +204,18 @@ class BobRuntime:
             )
         return self._drive(workspace, feedback)
 
+    def reject(self, pending_id: str) -> dict[str, Any]:
+        """Discard one staged effect without executing it."""
+        pending = self.pending.pop(pending_id, None)
+        if pending is None:
+            raise ProtocolError("unknown or already-consumed pending approval")
+        return {
+            "status": "REJECTED",
+            "request_id": pending.message.id,
+            "tool": pending.message.tool,
+            "pending": [],
+        }
+
     def direct_read(self, workspace_code: str, tool: str, args: dict[str, Any]) -> Any:
         workspace = self.registry.get(workspace_code)
         msg = BobMessage("BOB.READ", "direct", tool, args, {})

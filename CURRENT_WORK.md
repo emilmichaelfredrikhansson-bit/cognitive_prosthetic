@@ -56,6 +56,12 @@ The inherited ChatGPT browser bridge is now a replaceable cognition transport. T
 
 ## LAST_COMPLETED
 
+`BOB_CHATGPT_LIKE_FRONTEND_V1`
+
+Bob now has a ChatGPT-like application shell rather than the earlier form-style cockpit. Workspaces render as Projects in a persistent sidebar; the main surface is a familiar chat/composer; a responsive Project inspector exposes Reality, Authority, Providers and context documents; qualification is rendered as human-readable provider status instead of raw JSON; and pending effects are first-class approval cards with diff/summary plus explicit Approve and Reject actions. The Reject path now consumes the staged pending effect server-side without executing it.
+
+The frontend deliberately does **not** fake persistent conversation history. Recent currently represents only the active UI conversation; true history/resume remains blocked until the browser/runtime can persist and reopen the exact underlying ChatGPT thread.
+
 `BOB_OFFLINE_RUNTIME_CLOSURE_V1`
 
 Bob is now offline-deploy-ready. `deploy/install_runtime.sh` installs an exact Git SHA into an immutable release directory, prepares the venv/Playwright/Xvfb runtime, installs and enables (but deliberately does not start) the loopback-only services, and creates a root-owned empty credential file. `deploy/runtime_doctor.py` verifies local host prerequisites without exposing secrets and can fail closed on missing credentials/profile when those are required. During this work a real serialization defect was found in the committed ChatGPT bridge unit: it contained literal `\\n` sequences. The unit is now a real multiline systemd file, and tests explicitly reject literal escaped newlines.
@@ -193,7 +199,7 @@ This external reconciliation proves the bindings are still real; it does **not**
 
 The runtime-preflight tranche adds **5 isolated unittest methods**. The exact proposed `bob/preflight.py` + `tests/test_preflight.py` content was executed in the interactive sandbox before commit: **5/5 PASS**, and both files passed `py_compile`. This is narrow evidence for the new preflight logic only; it does not substitute for a full branch-suite run.
 
-The branch now declares **37 unittest methods**: the previously HF-verified 29 application/systemd tests plus 8 deployment-package tests.
+The branch now declares **43 unittest methods**: the previously declared 37 plus 5 frontend-shell contract tests and 1 reject-path driver test.
 
 Current implementation verification is now executable and current:
 
@@ -211,23 +217,21 @@ The job cloned the public repository, checked out the exact pinned commit, asser
 
 The runtime-preflight and systemd-contract isolated checks remain useful narrow evidence, but the HF current-implementation run supersedes them as the main execution-suite evidence.
 
-Post-HF runtime packaging changed after the 29/29 application-suite run. The current deployment tranche was checked independently in the interactive sandbox: `tests/test_runtime_deploy.py` = **8/8 PASS**, `bash -n deploy/install_runtime.sh` = PASS, `py_compile` for the doctor/test = PASS, and `systemd-analyze verify` parsed both unit files; its only diagnostic was the expected absent `/opt/bob/venv/bin/python` because the sandbox is not an installed Bob host. This is deployment-tranche evidence, not a new full-suite run. Any later documentation-only reconciliation commit must not be misrepresented as having been independently re-executed; the executable implementation tree remains the tested one unless code/runtime files change.
+Post-HF runtime packaging changed after the 29/29 application-suite run. The current deployment tranche was checked independently in the interactive sandbox: `tests/test_runtime_deploy.py` = **8/8 PASS**, `bash -n deploy/install_runtime.sh` = PASS, `py_compile` for the doctor/test = PASS, and `systemd-analyze verify` parsed both unit files; its only diagnostic was the expected absent `/opt/bob/venv/bin/python` because the sandbox is not an installed Bob host. This is deployment-tranche evidence, not a new full-suite run. The new frontend shell was separately checked before commit: `tests/test_frontend_shell.py` = **5/5 PASS**, `node --check frontend/app.js` = PASS and HTML parser validation = PASS. The new Reject backend path is covered by a declared driver test but the full current-head Python suite has not been rerun after that backend change. Any later documentation-only reconciliation commit must not be misrepresented as having been independently re-executed; the executable implementation tree remains the tested one unless code/runtime files change.
 
 ## ACTIVE_WORK
 
-`BOB_CORE_V1_LIVE_RUNTIME_QUALIFICATION_BLOCKED`
+`BOB_FRONTEND_CHATGPT_PARITY_V1`
 
-The non-live Bob V1 runtime surface is now closed: exact-SHA install, immutable releases, local doctor, explicit live acceptance runner, opt-in rollback restart, systemd/Xvfb packaging, staged credentials, browser-login runbook, Cloudflare Access/Tunnel boundary and failure drills are all specified. What remains is intentionally empirical: install on a real host, add secrets, authenticate ChatGPT, live-qualify providers/transport, then perform one approved GitHub canary.
+The live runtime qualification remains blocked on host access, so the active parallel workstream is now frontend/product parity. V1 shell parity is landed; continue making Bob feel like a first-class ChatGPT workspace while keeping Bob-specific reality, authority and approvals visible and truthful.
 
 ## NEXT_INTENDED_WORK
 
-1. Install the credential values defined by `docs/BOB_RUNTIME_CREDENTIALS.md` into `/etc/bob/bob.env` on the selected persistent runtime; do not commit or expose them.
-2. Run `python -m bob.preflight --pretty` on the persistent runtime against Bob + SL + AB; require live Cloudflare identity-anchor read-back.
-3. Qualify one approved Bob-repo branch/PR write end to end through the Bob approval boundary.
-4. Qualify the persistent DigitalOcean browser runtime and authenticated temporary login/bootstrap path without making the host a general-purpose executor.
-5. Install the Bob ChatGPT Project instructions and bind `CHATGPT_TARGET_URL`.
-6. Put remote/mobile access behind an authenticated Cloudflare/tunnel boundary while keeping the Python services loopback-only.
-7. Only after these are green, consider enabling any project-specific production effect classes.
+1. Continue frontend parity from the new shell: project files/context management, project-scoped search and settings/appearance where they can be truthful without new runtime authority.
+2. Design true conversation persistence/resume only after the browser bridge can record and reopen exact ChatGPT thread URLs; do not fake server history with localStorage.
+3. Live-qualify the visual shell, approval/reject flow and responsive mobile behavior when the persistent browser/runtime becomes available.
+4. Resume the already-prepared live runtime sequence when host access returns: exact-SHA install, credentials/profile, live acceptance, Cloudflare Access/Tunnel, then one approved Bob GitHub canary.
+5. Keep production mutation, spend and deploy classes blocked unless separately authorized and qualified.
 
 ## OPEN_FINDINGS
 
@@ -236,13 +240,13 @@ The non-live Bob V1 runtime surface is now closed: exact-SHA install, immutable 
 - No persistent host is currently available to this session, so install/credential/browser/tunnel behavior remains live-unqualified by design. The non-live package and runbooks are complete.
 - Home-network egress remains optional and router-dependent; its concrete implementation is deferred until actual router/network capabilities are available.
 - SL Cloudflare account ID remains runtime-bound and is verified through its canonical R2 bucket. AB binds its canonical account ID directly but must verify the `autoblog-canary` Worker remotely before Cloudflare identity is trusted.
-- The current UI is functional scaffolding, not final product design; it now includes explicit read-only workspace qualification.
+- The new UI shell is intentionally ChatGPT-like and includes Projects, responsive chat, readable qualification, authority/provider/context inspection and approval/reject cards. True persistent conversation history, project search/files and final visual qualification remain future frontend work.
 - Bob effect approvals currently live in process memory; persistence/resume is a later hardening item. In-memory approvals are nevertheless bound to workspace authority + staged GitHub state and fail closed on drift.
 - One Bob runtime currently assumes one active ChatGPT browser conversation at a time; multi-session concurrency is intentionally not yet implemented.
 
 ## FIRST_ACTION
 
-Runtime implementation is blocked only on live infrastructure/credentials. On the next non-live development turn, do not invent more runtime machinery unless a concrete gap is found. When host access returns, continue `BOB_CORE_V1_LIVE_RUNTIME_QUALIFICATION_BLOCKED` from this handoff. Do not rebuild the protocol or adapters from chat memory.
+Continue `BOB_FRONTEND_CHATGPT_PARITY_V1` from the current frontend shell while live runtime access is unavailable. Do not fake conversation persistence or broaden provider authority to achieve UI parity. When host access returns, resume the already-prepared live runtime qualification sequence from this handoff.
 
 ## HARD_BLOCKERS
 
