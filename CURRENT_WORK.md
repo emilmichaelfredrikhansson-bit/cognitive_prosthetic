@@ -52,9 +52,17 @@ No component is globally smart.
 - providers own external state;
 - the operator owns material approvals.
 
-The inherited ChatGPT browser bridge is now a replaceable cognition transport. The intended persistent runtime remains DigitalOcean with optional secure home-network egress; that runtime is not a general-purpose Bob compute core.
+The inherited ChatGPT browser bridge is a replaceable cognition transport. **Bob V1 now runs as Local Companion on the operator's own PC**: Bob API and bridge remain loopback-only, ChatGPT lives in a background tab of a dedicated persistent managed Chromium profile, and Bob is brought to the foreground in the same browser. DigitalOcean/persistent remote cognition is deferred to V2 and remains a narrow transport option rather than a general-purpose Bob compute core.
 
 ## LAST_COMPLETED
+
+`BOB_LOCAL_COMPANION_V1_FOUNDATION`
+
+Bob V1 has been pivoted from remote-first to local-first. `bob_local.py` now starts the loopback Bob API and ChatGPT bridge as child processes, health-gates both, fails fast if either exits, and asks the bridge to open/focus the loopback Bob UI in the same managed Chromium context. The ChatGPT target remains a background tab used for cognition. `setup_bob.bat`, `first_run_bob.bat`, `start_bob.bat` and `.env.local.example` provide the Windows setup/first-run/normal-start path. `.env.local` is gitignored.
+
+The bridge exposes loopback-only `POST /show-ui` and rejects non-loopback companion URLs. Startup now fails closed if the authenticated ChatGPT chat input cannot actually be found instead of reporting a false-ready state. `manual_login.py` uses the configured `CHATGPT_TARGET_URL`. Five new unittest methods declare the Local Companion configuration/safety contract.
+
+Architecture, roadmap, V1 plan, README and remote-runtime docs now state that Local Companion is V1 and DigitalOcean is V2. No provider authority was expanded, no secrets were added, no HF/GitHub Actions compute was dispatched, and no Cloudflare/SL/AB production effect was performed.
 
 `BOB_PROJECT_SEARCH_SETTINGS_INBOX_V1`
 
@@ -209,7 +217,7 @@ This external reconciliation proves the bindings are still real; it does **not**
 
 The runtime-preflight tranche adds **5 isolated unittest methods**. The exact proposed `bob/preflight.py` + `tests/test_preflight.py` content was executed in the interactive sandbox before commit: **5/5 PASS**, and both files passed `py_compile`. This is narrow evidence for the new preflight logic only; it does not substitute for a full branch-suite run.
 
-The branch now declares **51 unittest methods**: the previously declared 46 plus 3 frontend-shell contract tests and 2 project-search driver tests.
+The branch now declares **56 unittest methods**: the previous 51 plus 5 Local Companion tests in `tests/test_local_companion.py`.
 
 Current implementation verification is now executable and current:
 
@@ -233,32 +241,33 @@ The project-search/settings/inbox tranche changes executable frontend and Python
 
 ## ACTIVE_WORK
 
-`BOB_FRONTEND_CHATGPT_PARITY_V1`
+`BOB_LOCAL_COMPANION_V1_LIVE_QUALIFICATION`
 
-The live runtime qualification remains blocked on host access, so the active parallel workstream is now frontend/product parity. V1 shell parity is landed; continue making Bob feel like a first-class ChatGPT workspace while keeping Bob-specific reality, authority and approvals visible and truthful.
+The code/config/documentation foundation for Local Companion is landed. The next meaningful work is no longer remote host provisioning; it is live qualification on the operator's Windows PC where a real authenticated ChatGPT session can exist.
 
 ## NEXT_INTENDED_WORK
 
-1. Continue frontend parity from the new shell: approvals/activity, project health/drift indicators, keyboard/mobile polish and truthful file/attachment affordances where backend support exists. Project search, context viewing, appearance and read-only settings are now landed.
-2. Design true conversation persistence/resume only after the browser bridge can record and reopen exact ChatGPT thread URLs; do not fake server history with localStorage.
-3. Live-qualify the visual shell, approval/reject flow and responsive mobile behavior when the persistent browser/runtime becomes available.
-4. Resume the already-prepared live runtime sequence when host access returns: exact-SHA install, credentials/profile, live acceptance, Cloudflare Access/Tunnel, then one approved Bob GitHub canary.
-5. Keep production mutation, spend and deploy classes blocked unless separately authorized and qualified.
+1. On the operator PC, check out the current `feat/bob-core-v1` head and run `setup_bob.bat`.
+2. Configure machine-local `.env.local` and set the exact Bob-enabled `CHATGPT_TARGET_URL` when available.
+3. Run `first_run_bob.bat`, authenticate ChatGPT once, and verify Bob opens in the foreground with ChatGPT retained in the background tab.
+4. Qualify one ordinary Bob chat turn, then a real `BOB.READ -> BOB.RESULT -> cognition` loop.
+5. Qualify approval and reject from the local UI, then perform one approved Bob-repository branch/PR canary with read-back evidence.
+6. Only after Local Companion is useful in daily work, resume V2 DigitalOcean/mobile design.
+7. Continue frontend parity in parallel only where it improves the local product; do not fake conversation history, uploads or authority.
 
 ## OPEN_FINDINGS
 
-- The connected HF account is independently verified as `Reallothesecond` / `6a986fdd2e846637191b1c5e`, and no HF jobs are currently running. A fresh `cpu-basic` job is the available qualified path for the full current-head suite, but it was not dispatched because new compute is a material-spend effect requiring explicit operator authority.
-- Browser Copy-button selectors must be live-qualified against the current ChatGPT UI.
-- No persistent host is currently available to this session, so install/credential/browser/tunnel behavior remains live-unqualified by design. The non-live package and runbooks are complete.
-- Home-network egress remains optional and router-dependent; its concrete implementation is deferred until actual router/network capabilities are available.
-- SL Cloudflare account ID remains runtime-bound and is verified through its canonical R2 bucket. AB binds its canonical account ID directly but must verify the `autoblog-canary` Worker remotely before Cloudflare identity is trusted.
-- The UI shell is intentionally ChatGPT-like and now includes Projects, responsive chat, bounded project search, readable qualification, read-only project identity/instructions, authority/provider/context inspection, context-file viewing and approval/reject inbox/cards. True persistent conversation history, real upload/persistence, and live-host visual qualification remain future frontend work.
-- Bob effect approvals currently live in process memory; persistence/resume is a later hardening item. In-memory approvals are nevertheless bound to workspace authority + staged GitHub state and fail closed on drift.
-- One Bob runtime currently assumes one active ChatGPT browser conversation at a time; multi-session concurrency is intentionally not yet implemented.
+- The current interactive development environment cannot run the real local managed browser against the operator's authenticated ChatGPT account. Live Copy-button selectors, clipboard capture, background-tab behavior and exact ChatGPT Project targeting therefore remain operator-PC qualification items.
+- The five Local Companion unittest methods are declared on the branch, but the full current-head Python suite has not been rerun after this tranche. No paid/remote compute was dispatched.
+- The connected HF account was previously verified as `Reallothesecond` / `6a986fdd2e846637191b1c5e`; a fresh HF suite remains a material-spend effect and is not necessary before the first local canary.
+- True resumable Bob conversation history remains blocked until Bob can persist and reopen the exact underlying ChatGPT thread identity/URL. Do not substitute localStorage history.
+- Bob effect approvals remain in process memory. Restart persistence is later hardening; current approvals are still bound to workspace authority + staged GitHub state and fail closed on drift.
+- One Bob runtime assumes one active ChatGPT browser conversation at a time. Multi-session concurrency is intentionally not part of V1.
+- The V2 systemd/Xvfb/remote-host package remains preserved as future infrastructure; it is not required to test or use V1 locally.
 
 ## FIRST_ACTION
 
-Continue `BOB_FRONTEND_CHATGPT_PARITY_V1` from the current search/settings/inbox shell while live runtime access is unavailable. Prefer truthful project health/activity and keyboard/mobile polish next; do not fake conversation persistence, uploads or provider authority. When host access returns, resume the already-prepared live runtime qualification sequence from this handoff.
+Run the Local Companion live canary on the operator's Windows PC from the current branch: `setup_bob.bat` -> `first_run_bob.bat` -> verify foreground Bob/background ChatGPT -> one read-only chat loop. Do not move to DigitalOcean unless V1 has first been proven useful locally.
 
 ## HARD_BLOCKERS
 
