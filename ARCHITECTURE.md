@@ -64,7 +64,7 @@ Every Bob module has an absolute 15k-token hard cap. Bob detects violations dete
 
 The compiled-context envelope remains 20k tokens target / 25k hard ceiling for the whole question world.
 
-Each cognition question runs in a fresh ChatGPT conversation. The browser bridge exposes a dedicated `POST /cognition` primitive that atomically returns to the Bob ChatGPT Project and sends one question in a fresh conversation. The existing stateful `/chat` continuation remains temporarily for the current V1 closed-loop runtime until the Context Compiler can recompile durable context between every READ/effect continuation.
+Each canonical cognition question runs in a fresh ChatGPT conversation. The browser bridge exposes a dedicated `POST /cognition` primitive. The first executable stateless path is now `POST /bob/module-turn`: `BOB_MODULE_GRAPH_V1` + `BOB_COMPILED_CONTEXT_V1` reconstruct the bounded module problem after every Bob-owned READ or approved effect result and invoke a fresh `/cognition` request. The ordinary `/bob/turn` route still uses the legacy stateful `/chat` continuation until module selection/context compilation becomes the default orchestration path.
 
 Fresh cognition may re-ground directly in the connected GitHub repository and is responsible for checking material structural/product implications before completion. Separate review/meta cognition is optional for difficult cases, not a mandatory stage.
 
