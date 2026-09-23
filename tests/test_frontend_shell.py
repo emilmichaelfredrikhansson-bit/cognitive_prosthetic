@@ -54,6 +54,24 @@ class FrontendShellTests(unittest.TestCase):
         self.assertIn("function renderActivity", JS)
         self.assertIn("Checked project reality", JS)
 
+    def test_project_search_uses_bounded_bob_backend_not_demo_index(self):
+        self.assertIn('id="projectSearchDialog"', HTML)
+        self.assertIn("/bob/project-search", JS)
+        self.assertIn("configured entry documents", HTML)
+        self.assertNotIn('localStorage.setItem("bob.search', JS)
+
+    def test_project_settings_show_read_only_identity_and_instructions_surface(self):
+        self.assertIn('id="settingsList"', HTML)
+        self.assertIn("Project settings", HTML)
+        self.assertIn("Repository ID", JS)
+        self.assertIn("ChatGPT Project instructions", JS)
+
+    def test_approval_inbox_is_first_class_without_changing_authority(self):
+        self.assertIn('id="approvalInbox"', HTML)
+        self.assertIn('id="approvalCount"', HTML)
+        self.assertIn("approvalInboxEl.classList.toggle", JS)
+        self.assertIn("/bob/approve", JS)
+
     def test_mobile_shell_has_sidebar_and_inspector_drawers(self):
         self.assertIn("@media (max-width: 760px)", CSS)
         self.assertIn(".app-shell.sidebar-open .sidebar", CSS)
