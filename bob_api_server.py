@@ -94,6 +94,17 @@ def direct_read():
     return jsonify({"success": True, "result": result})
 
 
+@app.post("/bob/project-search")
+def project_search():
+    data = request.get_json(force=True) or {}
+    result = runtime.search_project_context(
+        str(data["workspace"]),
+        str(data.get("query") or ""),
+        data.get("limit", 20),
+    )
+    return jsonify({"success": True, **result})
+
+
 @app.post("/bob/relay/start")
 def relay_start():
     data = request.get_json(force=True) or {}
