@@ -24,9 +24,10 @@
       ],
       "invariants": [
         "External effects remain approval-bound and verified.",
-        "Workspace identity/authority remains fail-closed."
+        "Workspace identity/authority remains fail-closed.",
+        "Legacy oversize must be decomposed before this module can be considered compliant."
       ],
-      "status": "WORKING"
+      "status": "MIGRATION_REQUIRED"
     },
     {
       "id": "BOB_PROTOCOL",
