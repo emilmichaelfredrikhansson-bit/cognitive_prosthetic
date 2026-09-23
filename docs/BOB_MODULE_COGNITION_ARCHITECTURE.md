@@ -283,6 +283,8 @@ The current V1 substrate is repo-native:
 
 `POST /bob/module-graph` exposes measured module status for inspection. The graph may initially have `coverage=PARTIAL`; partial coverage is explicit and must not be misrepresented as a complete project graph.
 
+For normal `MODULE_WORK`, GitHub file effects are constrained to paths owned by the target module manifest and to the selected working ref. Creating/switching branches is outside a module turn in V1. `ARCHITECTURE_REPAIR` deliberately has broader path scope because a valid split may require creating new files and rewriting the module graph; workspace authority, explicit approval and read-back verification still apply.
+
 ### Optional review/meta cognition
 
 Bob does **not** require a persistent or mandatory separate meta-cognition stage.
