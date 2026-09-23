@@ -54,5 +54,15 @@ class CognitionPolicy:
                 f"{compiled_input_tokens} > {self.hard_limit_tokens} tokens"
             )
 
+    def require_module_design_fit(self, compiled_input_tokens: int) -> None:
+        """Require a new module design to fit inside the target, not merely the ceiling."""
+        if compiled_input_tokens < 0:
+            raise ValueError("compiled_input_tokens must be >= 0")
+        if compiled_input_tokens > self.target_tokens:
+            raise ValueError(
+                "module cognition envelope exceeds design target: "
+                f"{compiled_input_tokens} > {self.target_tokens} tokens"
+            )
+
 
 DEFAULT_COGNITION_POLICY = CognitionPolicy()
