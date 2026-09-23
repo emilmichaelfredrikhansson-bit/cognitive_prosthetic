@@ -1,6 +1,6 @@
-# Bob Persistent Runtime Credential Contract
+# Bob Remote Runtime Credential Contract — V2
 
-This document defines the least-privilege credential floor for the persistent Bob runtime.
+This document defines the least-privilege credential floor for the optional V2 persistent remote runtime. Bob V1 Local Companion keeps machine-local credentials in gitignored `.env.local`; the same least-privilege principles and workspace authority boundaries still apply.
 
 Secrets never belong in Git, browser JavaScript, Bob protocol messages, logs, or documentation. Runtime values live in `/etc/bob/bob.env`, owned by `root:root` with mode `0600`. systemd reads it when constructing the service environment; the unprivileged Bob process does not need write access to the credential file.
 
