@@ -40,7 +40,7 @@ That model requires:
 - Bob-held continuity between cognition requests;
 - direct GitHub re-grounding plus an impact check inside ordinary cognition, with separate review/meta cognition only when materially useful.
 
-The bridge therefore exposes a fresh `/cognition` primitive now. The existing stateful READ/RESULT driver is retained only until the Context Compiler can reconstruct each continuation self-containedly.
+The bridge exposes a fresh `/cognition` primitive. Bob now also has a first self-contained module path: `/bob/module-turn` loads `BOB_MODULE_GRAPH_V1`, compiles `BOB_COMPILED_CONTEXT_V1`, and reconstructs each READ/approved-effect continuation into a fresh cognition request. The ordinary `/bob/turn` driver remains stateful until module routing becomes the default path.
 
 ## Large-project continuity principle
 
@@ -48,7 +48,7 @@ Even in V1, Bob must not evolve toward a design where one ChatGPT thread becomes
 
 The canonical path for scaling is defined in `docs/BOB_CHUNKING_CONTEXT_ARCHITECTURE.md`: durable semantic project/work state, bounded compiled context per cognition task, explicit contracts/dependencies, distillation after work, and Fusion for cross-cutting convergence.
 
-The full project graph/Context Compiler may land after Local Companion qualification, but new V1 design decisions must not make that architecture harder to introduce.
+The repo-native module graph and Context Compiler V1 are now landed with explicit partial graph coverage. Full project/workstream coverage, default routing and durable result distillation remain later V1 work; new design decisions must not make that expansion harder.
 
 ## Design principles
 
