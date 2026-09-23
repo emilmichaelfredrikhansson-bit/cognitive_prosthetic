@@ -186,6 +186,11 @@ def browser_worker():
                 result = send_message(page, task['prompt'])
                 result_queue.put(result)
 
+            elif task_type == 'cognition_request':
+                fresh = start_new_chat(page)
+                result = send_message(page, task['prompt']) if fresh.get("success") else fresh
+                result_queue.put(result)
+
             elif task_type == 'new_chat':
                 result = start_new_chat(page)
                 result_queue.put(result)
@@ -411,6 +416,30 @@ def chat():
     except queue.Empty:
         return jsonify({"success": False, "error": "Request timed out"}), 504
 
+@app.route('/cognition', methods=['POST'])
+def cognition():
+    """Run one stateless cognition request in a fresh ChatGPT conversation."""
+    if not is_ready:
+        return jsonify({"success": False, "error": "Server not ready"}), 503
+
+    data = request.get_json()
+    if not data or 'prompt' not in data:
+        return jsonify({"success": False, "error": "Missing 'prompt' field"}), 400
+
+    prompt = data['prompt']
+    if not isinstance(prompt, str) or not prompt.strip():
+        return jsonify({"success": False, "error": "Prompt must be non-empty string"}), 400
+
+    task_queue.put({'type': 'cognition_request', 'prompt': prompt})
+    try:
+        result = result_queue.get(timeout=230)
+        if result.get('success'):
+            return jsonify(result), 200
+        return jsonify(result), 500
+    except queue.Empty:
+        return jsonify({"success": False, "error": "Request timed out"}), 504
+
+
 @app.route('/new-chat', methods=['POST'])
 def new_chat():
     """Start a new chat"""
@@ -474,7 +503,8 @@ def status():
         "capture_mode": CHATGPT_CAPTURE_MODE,
         "companion_ui_url": BOB_COMPANION_UI_URL,
         "endpoints": {
-            "chat": "POST /chat",
+            "chat": "POST /chat (legacy/stateful continuation)",
+            "cognition": "POST /cognition (fresh chat per request)",
             "new_chat": "POST /new-chat",
             "show_ui": "POST /show-ui",
             "health": "GET /health",
@@ -511,6 +541,7 @@ if __name__ == '__main__':
     print("="*60)
     print("\nEndpoints:")
     print("  POST http://localhost:5001/chat")
+    print("  POST http://localhost:5001/cognition")
     print("  POST http://localhost:5001/new-chat")
     print("  GET  http://localhost:5001/health")
     print("\nExample:")
