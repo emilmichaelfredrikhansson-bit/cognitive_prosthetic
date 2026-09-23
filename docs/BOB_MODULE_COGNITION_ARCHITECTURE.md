@@ -212,76 +212,62 @@ Bob must recompile the relevant problem/context for the next request. The new co
 
 This is why the current V1 stateful READ/RESULT loop cannot simply be switched to fresh chats without the Context Compiler. The dedicated fresh /cognition bridge primitive exists now, while full orchestration is gated on durable compiled continuation.
 
-## Technical answer + consequence answer
+## Source-grounded cognition and impact checking
 
-A technical solution is not globally complete until Bob has evaluated what it means for the project.
+A fresh ChatGPT cognition request is not limited to Bob's summaries.
 
-Canonical pattern:
+Because Bob cognition runs through the operator's connected ChatGPT account, cognition may re-ground directly in the selected GitHub repository whenever implementation truth matters.
 
-~~~text
-TECHNICAL QUESTION
-problem + module context
-→ fresh cognition
-→ technical answer
-
-CONSEQUENCE QUESTION
-technical answer + relevant mission/system/decision context
-→ fresh cognition
-→ NONE / STRUCTURAL / OPERATOR
-~~~
-
-The consequence pass asks whether the new technical reality changes:
-
-- feasibility;
-- architecture;
-- module contracts;
-- sequence/plan;
-- product behavior;
-- cost/latency/quality;
-- safety/risk;
-- scope;
-- an operator-owned tradeoff.
-
-Suggested classifications:
+Canonical responsibility split:
 
 ~~~text
-NONE
-No material global consequence. Continue.
+Bob
+→ carries mission, module graph, contracts, status, limits and source pointers
+→ selects the current bounded problem
 
-STRUCTURAL
-The durable graph/plan/contracts should change,
-but the change remains inside already established operator intent/authority.
+fresh ChatGPT cognition
+→ receives the bounded problem world
+→ inspects connected GitHub source/history/tests when semantic correctness requires it
+→ solves the technical problem
+→ checks whether the solution affects neighboring modules/contracts/product intent
+→ returns the solution or BOB.ASK only when a genuine operator decision is required
 
-OPERATOR
-A product/vision/end-goal/tradeoff decision belongs to the operator.
-Bob surfaces it in ordinary language before proceeding past that decision.
+Bob
+→ deterministically verifies/persists effects and durable state
+→ selects the next bounded problem
 ~~~
 
-## Steward cognition
+This direct source re-grounding is specifically intended to prevent summary-of-summary drift.
 
-"Steward" is a cognition role, not a persistent all-knowing chat.
+Bob summaries are routing/compression artifacts. They are not substitutes for repository truth when the code itself can answer the question.
 
-Bob can invoke fresh Steward cognition for consequence evaluation.
-
-Bob supplies a compressed global view such as:
+A cognition request should receive useful source pointers such as:
 
 ~~~text
-MISSION
-PRODUCT VISION / SUCCESS CRITERIA
-SYSTEM/MODULE MAP
-DECISION LEDGER
-CURRENT STRATEGIC STATE
-RELEVANT MODULE + CONTRACT NEIGHBORHOOD
-NEW TECHNICAL ANSWER / DISCOVERY
+repository identity
+branch / commit
+current module paths
+relevant contract paths
+neighbor module paths
+test/evidence paths
+decision/canon references
 ~~~
 
-The Steward receives enough global structure to understand consequence, not the whole implementation.
+ChatGPT may expand from those pointers through the connected GitHub integration as needed.
 
-If the first consequence pass identifies a wider possible impact, Bob expands only the implicated structural neighborhood and asks another fresh bounded question.
+### No mandatory Steward role
+
+Bob does **not** require a persistent or mandatory separate Steward/consequence cognition pass.
+
+Impact analysis belongs inside ordinary source-grounded cognition by default.
+
+A separate fresh review/meta cognition request remains available when it materially improves reliability—for example for a broad cross-cutting change, architecture dispute, security review or difficult integration failure—but it is an optional cognition pattern, not a permanent system role.
+
+If source-grounded cognition discovers a genuine operator-owned product/vision/end-goal tradeoff, it should surface that through Bob's normal human-decision boundary rather than silently deciding it.
 
 ## Product-vision bootstrap
 
-Before large autonomous implementation, the operator and Bob establish enough durable direction for consequence evaluation.
+Before large autonomous implementation, the operator and Bob establish enough durable direction for source-grounded cognition to recognize material product/system implications.
 
 The bootstrap should capture, at useful resolution:
 
@@ -334,7 +320,7 @@ MODULES / CONTRACTS
 IMPLEMENTATION / EVIDENCE
 ~~~
 
-Changes are distilled upward so Steward cognition can see the product/system state without loading every module implementation.
+Changes are distilled upward so fresh cognition can see the product/system state without loading every module implementation, while retaining source pointers for direct GitHub re-grounding.
 
 Summaries accelerate cognition but never replace source truth. Material decisions should re-ground from canonical contracts, repository/runtime reality and verification evidence when needed.
 
@@ -397,7 +383,7 @@ Useful signals may include:
 - rework rate;
 - missed constraints;
 - contract regressions;
-- consequence escalations missed/caught;
+- source-grounding/impact issues missed or caught;
 - context size;
 - verification failures;
 - operator interruptions;
@@ -409,8 +395,8 @@ Those observations may improve:
 - module archetypes;
 - contract design;
 - neighborhood selection;
-- Steward packets;
-- consequence routing;
+- source-pointer selection;
+- optional review/meta-cognition routing;
 - adapter patterns.
 
 Hard invariants such as the 15k module cap, fresh cognition, durable state and operator authority remain separate from learnable tuning parameters. Bob may collect evidence suggesting a future cap change, but only explicit canon/operator authority may change the cap.
@@ -429,4 +415,4 @@ Hard invariants such as the 15k module cap, fresh cognition, durable state and o
 >
 > **Bob carries all continuity and structure between questions.**
 >
-> **Every technical answer receives a separate consequence evaluation so local engineering cannot silently drift away from product intent.**
+> **Each fresh cognition request may re-ground directly in GitHub and must consider material local/system impact before completion; separate review cognition is optional, not mandatory.**
