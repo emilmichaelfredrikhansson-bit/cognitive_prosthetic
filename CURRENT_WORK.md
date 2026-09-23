@@ -65,16 +65,20 @@ Bob now has a canonical **module-first, stateless cognition architecture** in `d
 
 For Bob-designed software, a module is the pre-implementation cognitive atom: explicit input -> bounded responsibility -> explicit output, connected through contracts/adapters. Bob must not knowingly create a new module that is already too large for one fresh cognition request to understand with its immediate contract neighborhood.
 
-Initial compiled-input policy is codified in `bob/cognition_policy.py`:
+Cognition/module policy is codified in `bob/cognition_policy.py`:
 
 ```text
-new-module design gate = 20,000 tokens
-target = 20,000 tokens
-hard ceiling = 25,000 tokens
+module hard cap = 15,000 tokens
+compiled-context target = 20,000 tokens
+compiled-context hard ceiling = 25,000 tokens
 fresh chat per cognition request = required
 ```
 
-The limits apply to the whole compiled world: relevant mission/invariants + current module + summarized direct producer/consumer neighborhood + exact contracts/reality + current question. The numeric envelope is a learnable engineering parameter; bounded cognition and fresh requests are architectural invariants.
+The 15k cap is known to architecture cognition **before module boundaries are designed**. ChatGPT should therefore choose responsibilities/contracts so each module is expected to remain <=15k when mature, not merely while its initial scaffold is small. Bob later enforces the actual size deterministically.
+
+If implementation would push a module above 15k, that module shape is invalid. Bob should route a fresh architecture-cognition problem and recheck the resulting graph until all affected modules are compliant. This is backend work and should not interrupt the operator unless the reorganization creates a genuine product/vision/end-goal decision.
+
+The 20k/25k limits apply to the whole compiled cognition world: relevant mission/invariants + current module + summarized direct producer/consumer neighborhood + exact contracts/reality + current question.
 
 The ChatGPT bridge now exposes `POST /cognition`, which atomically starts a fresh conversation inside the configured Bob Project and sends one prompt. `ChatGPTBridge.cognition(...)` exposes that primitive to Bob Core. The current V1 `_drive` READ/RESULT loop remains intentionally stateful for now because the Context Compiler/durable continuation layer does not yet exist; switching it prematurely would make later fresh chats receive incomplete context.
 
@@ -100,7 +104,7 @@ Bob now has a canonical large-project cognition architecture in `docs/BOB_CHUNKI
 
 Foundational rule: **no chat owns the project**. Bob owns durable project/work state; ChatGPT threads own bounded cognition work. Large projects are represented as a recursive semantic graph of project/domain/workstream/work-unit nodes plus explicit dependency/interface/contract edges.
 
-A future **Context Compiler** compiles the smallest sufficient context packet for each cognition task from current durable truth: workspace/work-node identity, scope, relevant node summaries/contracts, dependencies, exact relevant files/reality, blockers, authority, provenance/freshness and exit criteria. For new Bob-designed modules, cognition-fit is a pre-implementation gate: the whole module neighborhood must fit the 20k design target before coding starts; Bob must not knowingly build an oversized module and plan to split it later for cognitive reasons.
+A future **Context Compiler** compiles the smallest sufficient context packet for each cognition task from current durable truth: workspace/work-node identity, scope, relevant node summaries/contracts, dependencies, exact relevant files/reality, blockers, authority, provenance/freshness and exit criteria. For new Bob-designed modules, the 15k hard module cap is supplied to architecture cognition before boundaries are chosen, so mature module size is constrained from inception rather than repaired only after growth.
 
 Cross-cutting changes become explicit parent workstreams with bounded child tasks. Parallel child outcomes converge through bounded Fusion using durable results/contracts/conflicts/evidence rather than entire child transcripts. Completed cognition is distilled back into durable node state, implementation, evidence and follow-up work.
 
