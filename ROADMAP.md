@@ -46,6 +46,9 @@ Exit criteria:
 - [x] dedicated persistent ChatGPT browser profile;
 - [x] same-account/dedicated-project cognition model canonicalized;
 - [x] normal runtime fails closed without an explicit Bob ChatGPT Project URL;
+- [x] visible ChatGPT Copy -> clipboard canonicalized as V1 response capture;
+- [x] direct DOM extraction retained only as explicit legacy compatibility mode;
+- [ ] evaluate Windows UI Automation only if live Copy capture proves materially unreliable;
 - [ ] private ChatGPT Project `Bob` created on the operator account with Project-only memory;
 - [x] one-time local login flow;
 - [x] Windows setup/first-run/start launchers;
