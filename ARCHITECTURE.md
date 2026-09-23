@@ -27,6 +27,20 @@ This creates recursive **capability improvement**, not recursive authority. Auth
 
 A self-hosted Bob change should be easier to independently verify and roll back than an equivalent ordinary project change, not harder.
 
+## Large-project cognition architecture
+
+Bob's large-project architecture is governed by `docs/BOB_CHUNKING_CONTEXT_ARCHITECTURE.md`.
+
+The core invariant is:
+
+> **No chat owns the project. Bob owns durable project state; chats own bounded work.**
+
+Bob maintains a semantic project/work graph and compiles a bounded context packet for each cognition task. Context packets contain the smallest sufficient combination of node canon, contracts, dependencies, exact relevant files/reality, blockers, authority and exit criteria.
+
+When work spans multiple domains, Bob coordinates explicit cross-cutting workstreams and bounded Fusion tasks instead of forcing one conversation to absorb the whole project.
+
+Completed cognition is distilled back into durable implementation/state/evidence. Old chat transcripts are never the only continuity mechanism.
+
 ## North-star system
 
 Bob is a thin development control plane over existing project infrastructure.
