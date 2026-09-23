@@ -82,20 +82,28 @@ Exit criteria:
 
 ## Phase 3.5 — Large-project cognition foundation
 
-Goal: make project continuity independent of any single ChatGPT thread before Bob is asked to operate on truly large projects.
+Goal: make project continuity independent of any single ChatGPT thread and make Bob-designed software composable from cognition-bounded modules.
 
 Exit criteria:
 - [x] canonical recursive chunking/context architecture defined;
-- [ ] durable semantic project/work graph schema implemented;
-- [ ] canonical node contract implemented (ownership, interfaces, dependencies, invariants, state, verification/evidence);
+- [x] module-first stateless cognition architecture defined;
+- [x] initial cognition policy codified: 20k target / 25k hard ceiling;
+- [x] fresh-chat bridge primitive exists for one stateless cognition request;
+- [ ] durable semantic project/module graph schema implemented;
+- [ ] canonical module contract implemented (purpose, input/output, contracts, adapters, invariants, state, verification/evidence);
+- [ ] product-vision/mission bootstrap persists operator intent and success criteria;
 - [ ] Context Compiler produces bounded cognition packets from current project truth;
-- [ ] oversized work decomposes semantically instead of silently truncating critical context;
-- [ ] completed work distills back into durable node state/evidence;
+- [ ] module cognition-fit gate runs before implementation begins;
+- [ ] every cognition question uses a fresh ChatGPT conversation in the production orchestration path;
+- [ ] tool/reality continuation recompiles the full relevant problem into a fresh cognition request;
+- [ ] technical answers trigger a separate bounded consequence/Steward pass;
+- [ ] Steward routes consequence as NONE / STRUCTURAL / OPERATOR;
+- [ ] completed work distills back into durable module/system/product state and evidence;
 - [ ] explicit cross-cutting workstreams coordinate multi-domain changes;
 - [ ] bounded Fusion integrates child outcomes without replaying full transcripts;
-- [ ] WAITING work can resume from durable state after external events;
-- [ ] at least one real large workstream survives deliberate cognition-thread replacement without loss of continuity;
-- [ ] chunking/context strategy can record evidence for future recursive improvement.
+- [ ] WAITING work resumes through a fresh compiled cognition request after external events;
+- [ ] at least one real large workstream survives deliberate replacement of every cognition thread without loss of continuity;
+- [ ] module/context/consequence strategy records evidence for recursive improvement.
 
 ## Phase 4 — Product parity and hardening
 
