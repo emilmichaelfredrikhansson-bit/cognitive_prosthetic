@@ -70,6 +70,8 @@ Cross-cutting changes become explicit parent workstreams with bounded child task
 
 Chunking is semantic rather than arbitrary file/token slicing, and chunking/context strategy itself is a recursively improvable Bob capability. Bob should eventually be able to replace cognition threads deliberately and continue from compiled durable context without loss of project continuity.
 
+A clarified ownership rule now also applies: **Bob carries the global project structure so cognition does not have to.** The durable graph, contracts, dependencies, statuses and provenance live in Bob; each ChatGPT thread receives only the relevant structural slice. Cognition is used when semantic judgment is needed to create or revise that structure, after which Bob persists and carries the result forward. This is deliberate cognitive offloading, not a fixed deterministic task tree.
+
 This tranche is canon/documentation only. It does not change current effect authority or the active Local Companion live-qualification sequence.
 
 `BOB_PRODUCT_PRINCIPLES_AND_SELF_HOSTING_CANON`
