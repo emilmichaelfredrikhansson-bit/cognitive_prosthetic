@@ -165,6 +165,27 @@ trusting Worker/Pages state or performing an effect.
 
 The vocabulary will grow only when a real project needs another semantic tool.
 
+## Large-work context envelope
+
+BOB Protocol V1 currently injects a workspace packet and verified tool results into a cognition conversation. For large-project orchestration, the canonical architecture additionally requires a **bounded compiled context envelope** around a coherent work node.
+
+This is an architecture contract, not a claim that the current runtime already implements the full Context Compiler.
+
+Conceptually the envelope carries:
+
+- work-node identity and goal;
+- explicit scope / ownership boundary;
+- relevant contracts and dependencies;
+- bounded current files/reality;
+- blockers and waiting conditions;
+- authority/effect constraints;
+- verification and exit criteria;
+- freshness/provenance references.
+
+The envelope must be derived from durable Bob project state, not from a transcript being treated as canonical memory.
+
+When the runtime implements this fully, protocol evolution should preserve the same principle: a cognition thread receives the smallest sufficient world for its work, not the whole project.
+
 ## Closed-loop rule
 
 Every dependent cognition step follows:
