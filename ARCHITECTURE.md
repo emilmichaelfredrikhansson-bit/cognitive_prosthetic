@@ -5,15 +5,15 @@
 Bob is a thin development control plane over existing project infrastructure.
 
 ```text
-Operator
+Operator PC
    ↕
-Cloudflare-hosted Bob UI
+Bob UI (V1: loopback)
    │
    ├──────────── ChatGPT cognition adapter
    │                │
-   │                └─ persistent authenticated browser bridge
-   │                     ├─ target runtime: DigitalOcean
-   │                     └─ secure tunnel via home network for home-IP egress
+   │                └─ managed persistent Chromium
+   │                     ├─ Bob tab: foreground
+   │                     └─ ChatGPT tab: background
    │
    ├──────────── GitHub adapter
    │                ├─ repo/context reads
@@ -30,6 +30,8 @@ Cloudflare-hosted Bob UI
    └──────────── Cloudflare adapter
                     └─ frontend / Worker / project hosting effects
 ```
+
+V1 deliberately runs on the operator's own computer. V2 may move the replaceable ChatGPT cognition transport to a persistent DigitalOcean host and add authenticated remote/mobile access without changing Bob Core authority semantics.
 
 Bob does not replace these systems. It gives them one operator-facing development surface.
 
@@ -106,9 +108,9 @@ Before cognition/effects rely on a selected workspace, Bob may run a read-only w
 - **Cloudflare:** deploy/inspect explicitly authorized frontend/Worker resources.
 - Additional providers are added only when a real project requires them.
 
-### 6. Cloudflare UI / API
+### 6. Bob Web UI / API
 
-The operator-facing product is a responsive web interface usable on PC and mobile.
+The operator-facing product is a responsive web interface. V1 is served directly from the loopback Bob API on the operator PC. V2 may place the same product behind an authenticated Cloudflare boundary for remote/mobile use.
 
 Core views:
 - project/workspace selector;
@@ -122,39 +124,35 @@ Core views:
 
 Secrets must not be exposed to browser JavaScript when a server-side Worker/API can hold them safely.
 
-The Python Bob API and ChatGPT browser bridge are **loopback-only by default** and do not grant cross-origin browser access. Remote/mobile reachability must be provided by an explicit authenticated reverse-proxy/tunnel boundary (the intended production boundary is Cloudflare Access/tunnel or an equivalent reviewed transport), not by binding the credential-bearing Python services directly to a public/LAN interface.
+The Python Bob API and ChatGPT browser bridge are **loopback-only** in V1 and do not grant cross-origin browser access. V1 intentionally has no public/LAN Bob endpoint. Any V2 remote/mobile reachability must be provided by an explicit authenticated reverse-proxy/tunnel boundary, not by binding the credential-bearing Python services directly to a public/LAN interface.
 
-## ChatGPT transport and device independence
+## ChatGPT transport and runtime evolution
 
-Direct GitHub/Supabase/HF/Cloudflare operations are server-side and therefore work from both PC and mobile.
+Direct GitHub/Supabase/HF/Cloudflare operations remain independent provider adapters.
 
-Subscription-backed ChatGPT cognition requires a live authenticated browser session somewhere. The target architecture is a **persistent remote cognition bridge**:
+### V1 — Local Companion
+
+Subscription-backed ChatGPT cognition uses a dedicated persistent browser profile on the operator PC:
 
 ```text
-PC or mobile
+Bob UI (foreground tab)
    ↓
-Cloudflare Bob UI/API
+Bob API 127.0.0.1:5002
    ↓
 CognitionAdapter
    ↓
-DigitalOcean browser bridge
+ChatGPT bridge 127.0.0.1:5001
    ↓
-encrypted tunnel
-   ↓
-home network / router
-   ↓
-normal home-IP egress
-   ↓
-ChatGPT
+ChatGPT (background tab in the same managed Chromium context)
 ```
 
-DigitalOcean is not a general-purpose Bob Core. Its narrow responsibility is to keep the authenticated ChatGPT browser/session available and expose the replaceable cognition transport.
+The local launcher starts both services, waits for health, then asks the bridge to bring the Bob tab to the front. The ChatGPT tab stays available for the cognition loop. Browser profile/session state is machine-local and is never repository authority.
 
-The home-network tunnel exists only to provide the selected network egress path. GitHub, HF, Supabase and Cloudflare integrations remain independent of it.
+### V2 — Persistent Remote
 
-A PC-local browser bridge remains useful as a development/canary fallback, but it is not the north-star device model.
+After V1 is proven useful, the same replaceable cognition transport may move to DigitalOcean so the operator PC no longer needs to remain online and mobile can use the same Bob product. Remote access must add an authenticated transport boundary and must not expand workspace authority.
 
-This makes Bob device-independent: PC and mobile use the same Cloudflare UI and the same remote cognition bridge.
+DigitalOcean remains a narrow browser/session runtime, not a second general-purpose Bob Core.
 
 ## State model
 
@@ -183,13 +181,13 @@ A model proposal becomes repository state only through the explicit change-set a
 ## Compute placement
 
 ```text
-ChatGPT      cognition
-GitHub       source/history/PR semantics
-HF           portable execution
-Supabase     DB/runtime/canonical project state
-Cloudflare   UI/edge hosting
-DigitalOcean persistent ChatGPT browser/session runtime
-Home tunnel   selected ChatGPT egress path
+ChatGPT       cognition
+Local PC V1   Bob UI/API + authenticated browser/session transport
+GitHub        source/history/PR semantics
+HF            portable execution
+Supabase      DB/runtime/canonical project state
+Cloudflare    project hosting/effects; optional V2 authenticated UI boundary
+DigitalOcean  optional V2 persistent ChatGPT browser/session runtime
 ```
 
 Use GitHub Actions only when GitHub-native execution semantics add material value.
