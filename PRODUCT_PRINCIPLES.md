@@ -241,6 +241,25 @@ Self-modification therefore remains subject to the same or stricter root-of-trus
 
 Recursive development is especially valuable because Bob's target problem is itself long-lived software development. Bob should become one of Bob's most demanding real-world users.
 
+## 14. No chat owns the project
+
+Bob must not rely on one ChatGPT conversation to carry a large project.
+
+The durable project belongs to Bob's canonical state and project graph. Individual cognition threads receive **bounded compiled context** for one coherent work unit.
+
+This enables Bob to replace, fork, resume or discard model conversations without losing the project.
+
+The canonical large-project architecture is defined in `docs/BOB_CHUNKING_CONTEXT_ARCHITECTURE.md`.
+
+Key rules:
+
+- chunk semantically, not merely by token/file count;
+- maintain explicit ownership, interfaces, dependencies and invariants;
+- compile the smallest sufficient context for each cognition task;
+- distill completed work back into durable state/evidence;
+- use explicit cross-cutting workstreams and Fusion when changes span chunks;
+- improve chunking/context strategy recursively from real evidence.
+
 ## Canonical summary
 
 > **Bob is a long-lived project work engine with a conversational interface.**
