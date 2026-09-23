@@ -28,6 +28,14 @@ This isolates Bob's working conversations without requiring a second subscriptio
 
 V1 uses the visible ChatGPT **Copy** action followed by clipboard read as the canonical response transport. Direct DOM extraction is retained only behind explicit `legacy_dom` compatibility mode and must not silently become the normal fallback. Windows UI Automation/accessibility is a deferred robustness option to investigate only if the canonical Copy path proves materially unreliable during live use.
 
+## Large-project continuity principle
+
+Even in V1, Bob must not evolve toward a design where one ChatGPT thread becomes the durable project brain.
+
+The canonical path for scaling is defined in `docs/BOB_CHUNKING_CONTEXT_ARCHITECTURE.md`: durable semantic project/work state, bounded compiled context per cognition task, explicit contracts/dependencies, distillation after work, and Fusion for cross-cutting convergence.
+
+The full project graph/Context Compiler may land after Local Companion qualification, but new V1 design decisions must not make that architecture harder to introduce.
+
 ## Design principles
 
 1. Repo-first current truth.
