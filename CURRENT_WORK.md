@@ -56,6 +56,12 @@ The inherited ChatGPT browser bridge is now a replaceable cognition transport. T
 
 ## LAST_COMPLETED
 
+`BOB_PROJECT_SEARCH_SETTINGS_INBOX_V1`
+
+Bob now has a real project-scoped search surface backed by a bounded server-side search over only the selected workspace's configured `entry_documents`. Each searched document is read through the existing `github.read_file` Bob READ path; PASS/FAIL is retained per document, results are snippet/line bounded, and no browser-side demo index or fake persistent search state is used. Ctrl/Cmd-K now opens this search instead of pretending to search conversation history.
+
+The Project inspector now exposes read-only project identity/default-branch settings plus a direct read-only ChatGPT Project instructions surface when that document is configured. Existing Providers and Authority sections remain distinct, preserving the access != authority boundary. Pending approvals also have a first-class topbar inbox/count that jumps to the existing approval cards without changing approval semantics.
+
 `BOB_CHATGPT_LIKE_PROJECT_SURFACES`
 
 The ChatGPT-like shell now includes truthful project-context file viewing through Bob's existing `github.read_file` path, local light/dark/system appearance, and collapsible READ activity so project-reality checks are visible without exposing protocol noise. The responsive inspector/scrim behavior was headlessly rendered at desktop and mobile widths; that visual pass caught and fixed a desktop scrim breakpoint bug plus mobile composer send-button alignment.
@@ -203,7 +209,7 @@ This external reconciliation proves the bindings are still real; it does **not**
 
 The runtime-preflight tranche adds **5 isolated unittest methods**. The exact proposed `bob/preflight.py` + `tests/test_preflight.py` content was executed in the interactive sandbox before commit: **5/5 PASS**, and both files passed `py_compile`. This is narrow evidence for the new preflight logic only; it does not substitute for a full branch-suite run.
 
-The branch now declares **46 unittest methods**: the previously declared 37 plus 8 frontend-shell contract tests and 1 reject-path driver test.
+The branch now declares **51 unittest methods**: the previously declared 46 plus 3 frontend-shell contract tests and 2 project-search driver tests.
 
 Current implementation verification is now executable and current:
 
@@ -223,6 +229,8 @@ The runtime-preflight and systemd-contract isolated checks remain useful narrow 
 
 Post-HF runtime packaging changed after the 29/29 application-suite run. The current deployment tranche was checked independently in the interactive sandbox: `tests/test_runtime_deploy.py` = **8/8 PASS**, `bash -n deploy/install_runtime.sh` = PASS, `py_compile` for the doctor/test = PASS, and `systemd-analyze verify` parsed both unit files; its only diagnostic was the expected absent `/opt/bob/venv/bin/python` because the sandbox is not an installed Bob host. This is deployment-tranche evidence, not a new full-suite run. The new frontend shell was separately checked before commit: `tests/test_frontend_shell.py` = **8/8 PASS**, `node --check frontend/app.js` = PASS and HTML parser validation = PASS. The new Reject backend path is covered by a declared driver test but the full current-head Python suite has not been rerun after that backend change. Any later documentation-only reconciliation commit must not be misrepresented as having been independently re-executed; the executable implementation tree remains the tested one unless code/runtime files change.
 
+The project-search/settings/inbox tranche changes executable frontend and Python code after those earlier checks. In this interactive session, the connector-fetched current `frontend/app.js` parsed successfully in V8; the 11 current frontend contract groups were re-evaluated against the fetched HTML/JS/CSS and passed **11/11**; duplicate HTML IDs were absent and CSS/dialog/form structural balances were clean. The exact new bounded project-search algorithm plus empty-query fail-closed behavior was exercised in an isolated sandbox smoke harness: **2/2 PASS**; the new API route block also compiled as valid Python syntax. This is targeted tranche evidence only. The full current-head Python suite has **not** been rerun, and no HF/GitHub Actions compute was dispatched.
+
 ## ACTIVE_WORK
 
 `BOB_FRONTEND_CHATGPT_PARITY_V1`
@@ -231,7 +239,7 @@ The live runtime qualification remains blocked on host access, so the active par
 
 ## NEXT_INTENDED_WORK
 
-1. Continue frontend parity from the new shell: project-scoped search and richer project settings where they can be truthful without new runtime authority; project context files and appearance are now landed.
+1. Continue frontend parity from the new shell: approvals/activity, project health/drift indicators, keyboard/mobile polish and truthful file/attachment affordances where backend support exists. Project search, context viewing, appearance and read-only settings are now landed.
 2. Design true conversation persistence/resume only after the browser bridge can record and reopen exact ChatGPT thread URLs; do not fake server history with localStorage.
 3. Live-qualify the visual shell, approval/reject flow and responsive mobile behavior when the persistent browser/runtime becomes available.
 4. Resume the already-prepared live runtime sequence when host access returns: exact-SHA install, credentials/profile, live acceptance, Cloudflare Access/Tunnel, then one approved Bob GitHub canary.
@@ -244,13 +252,13 @@ The live runtime qualification remains blocked on host access, so the active par
 - No persistent host is currently available to this session, so install/credential/browser/tunnel behavior remains live-unqualified by design. The non-live package and runbooks are complete.
 - Home-network egress remains optional and router-dependent; its concrete implementation is deferred until actual router/network capabilities are available.
 - SL Cloudflare account ID remains runtime-bound and is verified through its canonical R2 bucket. AB binds its canonical account ID directly but must verify the `autoblog-canary` Worker remotely before Cloudflare identity is trusted.
-- The new UI shell is intentionally ChatGPT-like and includes Projects, responsive chat, readable qualification, authority/provider/context inspection and approval/reject cards. True persistent conversation history, project search/files and final visual qualification remain future frontend work.
+- The UI shell is intentionally ChatGPT-like and now includes Projects, responsive chat, bounded project search, readable qualification, read-only project identity/instructions, authority/provider/context inspection, context-file viewing and approval/reject inbox/cards. True persistent conversation history, real upload/persistence, and live-host visual qualification remain future frontend work.
 - Bob effect approvals currently live in process memory; persistence/resume is a later hardening item. In-memory approvals are nevertheless bound to workspace authority + staged GitHub state and fail closed on drift.
 - One Bob runtime currently assumes one active ChatGPT browser conversation at a time; multi-session concurrency is intentionally not yet implemented.
 
 ## FIRST_ACTION
 
-Continue `BOB_FRONTEND_CHATGPT_PARITY_V1` from the current frontend shell while live runtime access is unavailable. Do not fake conversation persistence or broaden provider authority to achieve UI parity. When host access returns, resume the already-prepared live runtime qualification sequence from this handoff.
+Continue `BOB_FRONTEND_CHATGPT_PARITY_V1` from the current search/settings/inbox shell while live runtime access is unavailable. Prefer truthful project health/activity and keyboard/mobile polish next; do not fake conversation persistence, uploads or provider authority. When host access returns, resume the already-prepared live runtime qualification sequence from this handoff.
 
 ## HARD_BLOCKERS
 
