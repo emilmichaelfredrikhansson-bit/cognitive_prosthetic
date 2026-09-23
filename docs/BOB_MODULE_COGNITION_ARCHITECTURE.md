@@ -134,6 +134,22 @@ The cognition-envelope numbers may later improve from measured evidence. The 15k
 
 The runtime defaults live in bob/cognition_policy.py.
 
+### V1 measurement contract
+
+The first executable module-size contract is versioned as `BOB_TOKEN_ESTIMATE_V1`.
+
+V1 measures each manifest-owned UTF-8 text file as:
+
+~~~text
+ceil(UTF-8 bytes / 3)
+~~~
+
+and sums the result across the module's declared source, test and contract paths.
+
+This is deliberately deterministic and conservative for ordinary source/code, but it is **not** presented as the exact tokenizer used by ChatGPT. The measurement schema is versioned so a later exact or better-calibrated tokenizer can replace it without silently changing historical footprint receipts.
+
+The hard architectural rule is therefore: **a module must remain <=15,000 tokens under the active canonical measurement contract.**
+
 ## ChatGPT project-memory independence
 
 Fresh cognition means correctness must be independent of prior ChatGPT chat history **and** of any implicit project-memory recall.
@@ -210,7 +226,7 @@ Question 2:
 
 Bob must recompile the relevant problem/context for the next request. The new conversation must not depend on seeing the old transcript.
 
-This is why the current V1 stateful READ/RESULT loop cannot simply be switched to fresh chats without the Context Compiler. The dedicated fresh /cognition bridge primitive exists now, while full orchestration is gated on durable compiled continuation.
+Bob now has a first executable stateless module path: `BOB_MODULE_GRAPH_V1` + `BOB_COMPILED_CONTEXT_V1` feed `POST /bob/module-turn`. On this path, every Bob-owned READ or approved effect result is carried forward as durable continuation data, the full bounded module problem is recompiled, and the next call uses a fresh `/cognition` conversation. The legacy ordinary `/bob/turn` path remains stateful until module selection/context compilation becomes the default orchestration path.
 
 ## Source-grounded cognition and impact checking
 
@@ -254,6 +270,18 @@ decision/canon references
 ~~~
 
 ChatGPT may expand from those pointers through the connected GitHub integration as needed.
+
+The current V1 substrate is repo-native:
+
+~~~text
+.bob/module_graph.json     BOB_MODULE_GRAPH_V1
+→ deterministic footprint measurement
+→ ContextCompiler          BOB_COMPILED_CONTEXT_V1
+→ POST /bob/module-turn
+→ fresh /cognition request
+~~~
+
+`POST /bob/module-graph` exposes measured module status for inspection. The graph may initially have `coverage=PARTIAL`; partial coverage is explicit and must not be misrepresented as a complete project graph.
 
 ### Optional review/meta cognition
 
