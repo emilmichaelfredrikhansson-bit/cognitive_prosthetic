@@ -126,6 +126,25 @@ Secrets must not be exposed to browser JavaScript when a server-side Worker/API 
 
 The Python Bob API and ChatGPT browser bridge are **loopback-only** in V1 and do not grant cross-origin browser access. V1 intentionally has no public/LAN Bob endpoint. Any V2 remote/mobile reachability must be provided by an explicit authenticated reverse-proxy/tunnel boundary, not by binding the credential-bearing Python services directly to a public/LAN interface.
 
+## ChatGPT account and project isolation
+
+Bob V1 uses the operator's **existing ChatGPT subscription/account**; it does not require or assume a second OpenAI account. The Bob-managed Chromium profile is nevertheless a separate browser profile from the operator's normal browser session.
+
+All Bob cognition must be confined to one dedicated private ChatGPT Project, canonically named **Bob**:
+
+```text
+same ChatGPT Plus account
+├─ operator's normal ChatGPT/browser
+│  └─ normal chats and other projects
+└─ Bob-managed Chromium profile
+   └─ private ChatGPT Project: Bob
+      └─ Bob-created cognition threads only
+```
+
+The Bob project should use **Project-only memory** when the account offers it. Bob must never deliberately target the ChatGPT home page, a normal personal chat, or another project for cognition. New Bob conversations begin from the exact configured Bob Project URL. Project instructions belong in that project and define the ChatGPT side of the Bob protocol.
+
+The same-account model means normal human ChatGPT use can continue in parallel, but subscription/account usage limits are shared rather than multiplied.
+
 ## ChatGPT transport and runtime evolution
 
 Direct GitHub/Supabase/HF/Cloudflare operations remain independent provider adapters.
