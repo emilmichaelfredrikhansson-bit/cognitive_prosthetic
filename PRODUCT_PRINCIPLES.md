@@ -213,6 +213,34 @@ For any proposed Bob feature, ask:
 
 If internal power increases while operator complexity also increases, redesign the interface before calling the feature complete.
 
+## 13. Recursive / self-hosting development
+
+Bob should increasingly be able to use Bob to improve Bob.
+
+The intended loop is:
+
+```text
+Bob Vn
+-> inspects Bob's own repository/runtime
+-> diagnoses or designs an improvement
+-> implements and verifies it through Bob's normal bounded tools
+-> presents any required approval
+-> lands a qualified change
+-> Bob Vn+1 performs the next development cycle with improved capability
+```
+
+This is recursive capability improvement through **self-hosting**, not self-authorizing autonomy.
+
+The desirable compounding effect is that improvements to Bob's memory, orchestration, testing, integrations, recovery, UI and cognition routing make later Bob development progressively easier and more reliable.
+
+Hard boundary:
+
+> **Bob may help improve its own capabilities, but Bob may never use self-development to expand its own authority.**
+
+Self-modification therefore remains subject to the same or stricter root-of-trust, approval, verification, versioning and rollback rules as any other material project effect. A new Bob version must earn trust from external evidence and existing authority; it cannot declare itself trusted.
+
+Recursive development is especially valuable because Bob's target problem is itself long-lived software development. Bob should become one of Bob's most demanding real-world users.
+
 ## Canonical summary
 
 > **Bob is a long-lived project work engine with a conversational interface.**
