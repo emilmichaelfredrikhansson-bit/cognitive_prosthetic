@@ -21,8 +21,7 @@
 
       <label class="sidebar-search" for="sidebarFilter">
         <span aria-hidden="true">⌕</span>
-        <input id="sidebarFilter" type="search" autocomplete="off" placeholder="Search projects" />
-        <kbd>⌘K</kbd>
+        <input id="sidebarFilter" type="search" autocomplete="off" placeholder="Filter projects" />
       </label>
 
       <nav class="sidebar-nav">
@@ -54,6 +53,8 @@
           <div class="project-heading"><strong id="projectName">Bob</strong><span id="projectMeta">Select a project</span></div>
         </div>
         <div class="topbar-actions">
+          <button id="projectSearch" class="topbar-button search-trigger" type="button"><span>Search</span><kbd>⌘K</kbd></button>
+          <button id="approvalInbox" class="topbar-button approval-inbox hidden" type="button">Approvals <span id="approvalCount" class="count-badge">0</span></button>
           <button id="verifyWorkspace" class="topbar-button" type="button">Verify</button>
           <button id="inspectorToggle" class="topbar-button" type="button" aria-expanded="false" aria-controls="inspector">Project</button>
         </div>
@@ -101,6 +102,10 @@
       </div>
       <div class="inspector-scroll">
         <section class="inspector-section">
+          <div class="section-row"><h3>Project settings</h3><span class="mini-badge neutral">Read only</span></div>
+          <div id="settingsList" class="settings-list"></div>
+        </section>
+        <section class="inspector-section">
           <div class="section-row"><h3>Reality</h3><span id="realityBadge" class="mini-badge neutral">Not checked</span></div>
           <div id="realityChecks" class="status-list"><p class="muted">Verify this workspace to read external identities.</p></div>
         </section>
@@ -111,6 +116,20 @@
     </aside>
 
     <div id="scrim" class="scrim hidden"></div>
+
+    <dialog id="projectSearchDialog" class="search-dialog">
+      <header class="search-head">
+        <div><span class="eyebrow">Project search</span><h2 id="projectSearchTitle">Search configured context</h2></div>
+        <button id="projectSearchClose" class="icon-button" type="button" aria-label="Close project search">×</button>
+      </header>
+      <form id="projectSearchForm" class="project-search-form">
+        <span aria-hidden="true">⌕</span>
+        <input id="projectSearchInput" type="search" autocomplete="off" placeholder="Search project context" aria-label="Search project context" />
+        <button class="search-submit" type="submit">Search</button>
+      </form>
+      <p id="projectSearchMeta" class="search-meta">Searches only configured entry documents through bounded Bob reads.</p>
+      <div id="projectSearchResults" class="search-results"></div>
+    </dialog>
 
     <dialog id="documentViewer" class="document-viewer">
       <header class="document-head">
