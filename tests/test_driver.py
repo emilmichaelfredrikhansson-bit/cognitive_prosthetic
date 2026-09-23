@@ -24,6 +24,7 @@ class FakeGitHub:
     def __init__(self):
         self.branch_sha = "branch-abc"
         self.effects = []
+        self.reads = []
 
     def capabilities(self):
         return ["github.read_file", "github.create_file"]
@@ -38,7 +39,13 @@ class FakeGitHub:
         return self.branch_sha
 
     def read(self, workspace, tool, args):
-        return {"path": args["path"], "sha": "abc", "content": "hello"}
+        path = args["path"]
+        self.reads.append(path)
+        content = {
+            "CURRENT_WORK.md": "Needle alpha\ncontext line",
+            "docs/INSTRUCTIONS.md": "Instructions without the target term",
+        }.get(path, "hello")
+        return {"path": path, "sha": "abc", "content": content}
 
     def effect(self, workspace, tool, args):
         self.effects.append((tool, dict(args)))
@@ -53,6 +60,9 @@ def make_workspace(tmp):
             "repository": "owner/repo",
             "repository_id": 123,
             "default_branch": "main"
+        },
+        "context": {
+            "entry_documents": ["CURRENT_WORK.md", "docs/INSTRUCTIONS.md"]
         },
         "effects": {"write_branch": True, "open_pr": True}
     }))
@@ -204,6 +214,35 @@ class DriverTests(unittest.TestCase):
             self.assertTrue(result["qualified"])
             self.assertEqual(result["checks"]["github"]["status"], "PASS")
             self.assertEqual(result["checks"]["supabase"]["status"], "PASS")
+
+
+    def test_project_context_search_reads_only_configured_entry_documents(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            make_workspace(tmp)
+            runtime = BobRuntime(workspace_dir=tmp, bridge=FakeBridge([]))
+            github = FakeGitHub()
+            runtime.adapters = {"github": github}
+
+            result = runtime.search_project_context("X", "needle")
+
+            self.assertEqual(result["scope"], "entry_documents")
+            self.assertEqual(github.reads, ["CURRENT_WORK.md", "docs/INSTRUCTIONS.md"])
+            self.assertEqual(result["total_matches"], 1)
+            self.assertEqual(result["results"][0]["path"], "CURRENT_WORK.md")
+            self.assertEqual(result["results"][0]["line"], 1)
+            self.assertTrue(all(item["status"] == "PASS" for item in result["reads"]))
+
+    def test_project_context_search_rejects_unbounded_empty_query(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            make_workspace(tmp)
+            runtime = BobRuntime(workspace_dir=tmp, bridge=FakeBridge([]))
+            github = FakeGitHub()
+            runtime.adapters = {"github": github}
+
+            with self.assertRaises(ProtocolError):
+                runtime.search_project_context("X", " ")
+
+            self.assertEqual(github.reads, [])
 
 
     def test_manual_relay_start_returns_workspace_prompt(self):
