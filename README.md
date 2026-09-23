@@ -37,7 +37,7 @@ input
 
 New modules should fit, together with their direct contract neighborhood and relevant mission/invariants, inside the initial compiled-input envelope: **20k tokens target / 25k hard ceiling**.
 
-Canonical cognition is stateless: **one cognition question = one fresh ChatGPT conversation**. Bob carries project continuity and source pointers; fresh cognition may re-ground directly in connected GitHub reality and performs its own relevant impact check. Separate review/meta cognition is optional rather than a mandatory Steward stage.
+Canonical cognition is stateless: **one cognition question = one fresh ChatGPT conversation**. Bob carries project continuity and source pointers; fresh cognition may re-ground directly in connected GitHub reality and performs its own relevant impact check. Separate review/meta cognition is optional rather than a mandatory second stage.
 
 See `docs/BOB_MODULE_COGNITION_ARCHITECTURE.md`.
 
