@@ -9,7 +9,8 @@ It is being built from the `CodeMongerrr/cognitive_prosthetic` fork as a thin co
 - **Hugging Face** — portable compute, tests and ML jobs
 - **Supabase** — runtime, database and durable project state
 - **Cloudflare** — responsive web interface and project hosting/runtime surfaces
-- **Local PC (V1)** — loopback-only Bob runtime plus a managed authenticated ChatGPT browser session\n- **DigitalOcean (V2)** — optional persistent remote cognition runtime for mobile/always-on use
+- **Local PC (V1)** — loopback-only Bob runtime plus a managed authenticated ChatGPT browser session
+- **DigitalOcean (V2)** — optional persistent remote cognition runtime for mobile/always-on use
 
 The aim is not to recreate those systems. The aim is to connect them into one operator-facing development workflow usable from PC and mobile.
 
@@ -61,9 +62,9 @@ Provider integrations and the polished Cloudflare UI follow after the GitHub dev
 
 Direct GitHub, HF, Supabase and Cloudflare integrations can be server-side and work from both PC and mobile.
 
-Subscription-backed ChatGPT browser cognition requires a reachable authenticated browser session. The target runtime is a narrow persistent DigitalOcean browser bridge, optionally routing ChatGPT traffic through a secure home-network tunnel for home-IP egress. The inherited browser bridge is therefore treated as a replaceable `CognitionAdapter`, not as the product architecture itself.
+Subscription-backed ChatGPT browser cognition requires an authenticated browser session. **V1 keeps that session on the operator's own PC**: Bob runs on loopback, a managed persistent Chromium profile keeps ChatGPT in a background tab, and the Bob UI is brought to the foreground in the same browser. The browser bridge remains a replaceable `CognitionAdapter`.
 
-This allows the same Cloudflare-hosted Bob UI to work from PC or mobile without requiring the operator's PC to stay online.
+**V2** may move that cognition transport to DigitalOcean and add authenticated remote/mobile access. Core workspace, authority and provider semantics must not depend on that move.
 
 ## Lineage
 
