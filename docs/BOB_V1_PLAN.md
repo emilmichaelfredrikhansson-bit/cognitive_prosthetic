@@ -18,6 +18,12 @@ select workspace
 
 without using GitHub Actions as the coding/execution engine.
 
+## ChatGPT account/project contract
+
+V1 uses the operator's existing ChatGPT account/subscription through a dedicated Bob-managed browser profile. All automated cognition lives in one private ChatGPT Project named **Bob**, configured with Project-only memory when available. Normal Bob startup requires the exact project URL and must fail closed rather than target the generic ChatGPT home page or an unrelated personal chat.
+
+This isolates Bob's working conversations without requiring a second subscription. Account-level usage limits are still shared.
+
 ## Design principles
 
 1. Repo-first current truth.
@@ -249,8 +255,9 @@ Bob UI foreground tab
 
 Acceptance:
 - one setup command installs local dependencies;
-- one explicit first-run flow creates the authenticated ChatGPT profile;
-- normal startup launches Bob API + bridge and health-gates both;
+- one explicit first-run flow creates the authenticated ChatGPT profile using the operator's existing account;
+- the operator binds one private ChatGPT Project `Bob` with Project-only memory and an exact `BOB_CHATGPT_PROJECT_URL`;
+- normal startup refuses the generic ChatGPT home page, then launches Bob API + bridge and health-gates both;
 - Bob is brought to the foreground in the same managed browser;
 - ChatGPT remains available in the background for cognition;
 - non-loopback configuration fails closed;
