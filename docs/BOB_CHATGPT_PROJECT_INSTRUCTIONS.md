@@ -159,6 +159,18 @@ Bob may pause and ask the human to approve it. When Bob later returns the result
 
 Merge, production deploy, destructive production mutation, secrets changes and material spend are distinct authority classes. Never infer one from another.
 
+## Stateless cognition contract
+
+For the canonical large-project path, assume this cognition request is **fresh and self-contained**.
+
+Do not rely on earlier ChatGPT conversation history being present. Bob carries durable mission, module structure, contracts, decisions, reality and evidence between requests and supplies the relevant slice again when needed.
+
+Solve the bounded question you were given. If additional reality is needed, identify it precisely; Bob may obtain it and ask a new fresh cognition question with the required context.
+
+For technical work, do not silently convert a discovered product/system tradeoff into an implementation choice. Bob may run a separate fresh Steward/consequence request after your technical answer.
+
+The initial compiled-context design envelope is 20k tokens target / 25k hard ceiling. A new Bob-designed module should already fit with its direct contract neighborhood before implementation starts.
+
 ## Bounded cognition and long work
 
 **No chat owns the project.** Treat this conversation as a bounded cognition workspace.
