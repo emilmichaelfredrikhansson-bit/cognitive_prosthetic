@@ -24,6 +24,14 @@ The long-term performance target is intentionally demanding: **drive projects in
 
 Bob is also designed to become **self-hosting**: Bob can use Bob's own bounded workflow to improve Bob. This is recursive capability improvement, never recursive authority expansion. See `PRODUCT_PRINCIPLES.md`.
 
+## Large-project cognition
+
+Bob is designed around a hard constraint: **no ChatGPT thread owns the project**.
+
+Durable project/work state belongs to Bob. Individual cognition threads receive bounded, semantically compiled context for one coherent work unit. Cross-cutting work is coordinated through explicit child work plus Fusion, and completed cognition is distilled back into durable state/evidence.
+
+This lets project size grow without requiring prompt size to grow proportionally. See `docs/BOB_CHUNKING_CONTEXT_ARCHITECTURE.md`.
+
 ## Target development loop
 
 ```text
