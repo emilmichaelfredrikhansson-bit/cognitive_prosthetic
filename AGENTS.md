@@ -77,6 +77,10 @@ verify identity
 - Decompose substantial work semantically and give each cognition task bounded compiled context; do not dump the whole repository/history into a model merely because it is available.
 - Cross-cutting changes must name affected contracts/nodes and integrate through explicit coordination/Fusion rather than implicit transcript memory.
 - Bob carries global structural state so cognition does not have to. Supply bounded relevant structure to a cognition task; use separate bounded cognition to revise the structure itself when semantic judgment says the map is wrong.
+- For Bob-designed software, treat modules as pre-implementation cognitive atoms: input -> bounded responsibility -> output, with explicit contracts/adapters.
+- A proposed module must fit with its immediate contract neighborhood inside the active cognition envelope before implementation starts. Initial policy: 20k target / 25k hard ceiling.
+- Canonical large-project cognition is stateless: one cognition question -> one fresh ChatGPT conversation. Bob carries continuity; chat reuse is not a project-memory strategy.
+- After a material technical answer, run a separate bounded consequence/Steward cognition pass against relevant mission/system/decision state. Escalate operator-owned tradeoffs instead of silently optimizing them away.
 
 ## Verification
 
