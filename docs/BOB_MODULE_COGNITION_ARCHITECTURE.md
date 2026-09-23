@@ -86,6 +86,26 @@ This normally happens without operator interruption. Bob must involve the operat
 
 Bob should therefore never intentionally create a module that is expected to need an operator conversation merely to stay within the cap.
 
+### Design-time consequence
+
+The 15k hard cap is supplied to architecture cognition **before module boundaries are chosen**.
+
+ChatGPT should design the initial module graph with the expectation that each module must still be <=15k when substantially/fully implemented, not merely while the module is an empty scaffold.
+
+This means the cap actively shapes architecture from the beginning:
+
+~~~text
+product flow + 15k invariant
+→ fresh architecture cognition
+→ choose bounded responsibilities
+→ define module contracts/adapters
+→ implement
+~~~
+
+A module plan that is reasonably expected to exceed 15k at maturity is an invalid design even if its initial scaffold is tiny. Architecture cognition should instead choose narrower responsibilities or additional neighboring modules up front.
+
+Bob does not need to make that semantic forecast. Bob carries the invariant and later measures actual module size deterministically; ChatGPT performs the semantic module design with the invariant already in context.
+
 Legacy/external systems may already contain oversized components; those are migration/refactoring problems, but Bob-designed target modules must satisfy the same 15k invariant before being accepted as compliant.
 
 ## Initial cognition envelope
