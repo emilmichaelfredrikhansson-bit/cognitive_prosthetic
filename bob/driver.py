@@ -221,6 +221,84 @@ class BobRuntime:
         msg = BobMessage("BOB.READ", "direct", tool, args, {})
         return self._execute_read(workspace, msg)
 
+    def search_project_context(
+        self,
+        workspace_code: str,
+        query: str,
+        limit: int | str = 20,
+    ) -> dict[str, Any]:
+        """Search only the workspace's configured entry documents via real Bob READs."""
+        workspace = self.registry.get(workspace_code)
+        needle = str(query or "").strip()
+        if len(needle) < 2:
+            raise ProtocolError("project search query must contain at least 2 characters")
+        if len(needle) > 120:
+            raise ProtocolError("project search query must be at most 120 characters")
+        try:
+            bounded_limit = int(limit)
+        except (TypeError, ValueError) as exc:
+            raise ProtocolError("project search limit must be an integer") from exc
+        bounded_limit = max(1, min(bounded_limit, 50))
+
+        results: list[dict[str, Any]] = []
+        reads: list[dict[str, Any]] = []
+        total_matches = 0
+        folded_needle = needle.casefold()
+
+        for index, path in enumerate(workspace.entry_documents, start=1):
+            message = BobMessage(
+                "BOB.READ",
+                f"project-search-{index}",
+                "github.read_file",
+                {"path": path},
+                {},
+            )
+            try:
+                data = self._execute_read(workspace, message)
+                content = data.get("content") if isinstance(data, dict) else None
+                if not isinstance(content, str):
+                    raise ProtocolError(f"github.read_file returned no text content for {path}")
+                reads.append({
+                    "path": path,
+                    "tool": "github.read_file",
+                    "status": "PASS",
+                })
+            except Exception as exc:
+                reads.append({
+                    "path": path,
+                    "tool": "github.read_file",
+                    "status": "FAIL",
+                    "error": str(exc),
+                })
+                continue
+
+            lines = content.splitlines()
+            for line_number, line in enumerate(lines, start=1):
+                if folded_needle not in line.casefold():
+                    continue
+                total_matches += 1
+                if len(results) >= bounded_limit:
+                    continue
+                start = max(0, line_number - 2)
+                end = min(len(lines), line_number + 1)
+                snippet = "\n".join(lines[start:end]).strip()
+                results.append({
+                    "path": path,
+                    "line": line_number,
+                    "snippet": snippet[:700],
+                })
+
+        return {
+            "workspace": workspace.code,
+            "query": needle,
+            "scope": "entry_documents",
+            "documents": list(workspace.entry_documents),
+            "reads": reads,
+            "results": results,
+            "total_matches": total_matches,
+            "truncated": total_matches > len(results),
+        }
+
     def relay_start(self, workspace_code: str, human_message: str) -> dict[str, Any]:
         """Build the exact first prompt for a manual/external cognition loop."""
         workspace = self.registry.get(workspace_code)
