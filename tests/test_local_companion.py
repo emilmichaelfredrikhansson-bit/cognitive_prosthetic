@@ -74,6 +74,10 @@ class LocalCompanionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             chatgpt_api_server.validate_companion_ui_url("https://example.com/bob")
 
+    def test_bridge_exposes_fresh_cognition_endpoint(self):
+        routes = {rule.rule for rule in chatgpt_api_server.app.url_map.iter_rules()}
+        self.assertIn("/cognition", routes)
+
 
 if __name__ == "__main__":
     unittest.main()
