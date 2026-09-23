@@ -77,6 +77,7 @@ Legacy/external systems may already contain oversized components; those are migr
 The initial canonical engineering defaults are:
 
 ~~~text
+NEW_MODULE_DESIGN_GATE = 20,000 tokens
 COMPILED_CONTEXT_TARGET = 20,000 tokens
 COMPILED_CONTEXT_HARD_CEILING = 25,000 tokens
 ~~~
@@ -91,11 +92,21 @@ That includes the relevant combination of:
 - current reality/evidence;
 - the problem/question itself.
 
-The target exists to preserve cognitive headroom. Bob should prefer staying at or below 20k rather than packing the context to the technical maximum.
+The target exists to preserve cognitive headroom. **A new module must fit at or below 20k before implementation begins.** The 20–25k band is reserved for an exceptional heavier compiled question, not as permission to design modules at the ceiling.
 
 20k/25k are initial learnable engineering parameters, not claims about an eternal model limit. Bob may later improve them from measured evidence, but a running policy must never silently exceed its configured hard ceiling.
 
 The runtime defaults live in bob/cognition_policy.py.
+
+## ChatGPT project-memory independence
+
+Fresh cognition means correctness must be independent of prior ChatGPT chat history **and** of any implicit project-memory recall.
+
+Bob may currently use a dedicated ChatGPT Project for account/UI isolation and project instructions, but project-level memory is never authoritative project state.
+
+Every cognition request must be sufficiently self-contained to remain correct if no prior project chat is recalled.
+
+If the ChatGPT product/runtime later provides a practical way to retain Bob's project instructions while disabling cross-chat memory influence, the stateless cognition path should prefer that configuration.
 
 ## Immediate contract neighborhood
 
