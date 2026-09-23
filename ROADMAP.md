@@ -44,6 +44,9 @@ Goal: use Bob on the operator PC with ChatGPT in a background managed browser ta
 Exit criteria:
 - [x] loopback-only Bob API and ChatGPT bridge;
 - [x] dedicated persistent ChatGPT browser profile;
+- [x] same-account/dedicated-project cognition model canonicalized;
+- [x] normal runtime fails closed without an explicit Bob ChatGPT Project URL;
+- [ ] private ChatGPT Project `Bob` created on the operator account with Project-only memory;
 - [x] one-time local login flow;
 - [x] Windows setup/first-run/start launchers;
 - [x] local launcher health-gates both services;
