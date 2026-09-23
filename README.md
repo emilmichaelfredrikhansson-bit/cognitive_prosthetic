@@ -39,6 +39,8 @@ New modules should fit, together with their direct contract neighborhood and rel
 
 Canonical cognition is stateless: **one cognition question = one fresh ChatGPT conversation**. Bob carries project continuity and source pointers; fresh cognition may re-ground directly in connected GitHub reality and performs its own relevant impact check. Separate review/meta cognition is optional rather than a mandatory second stage.
 
+The first executable vertical slice is now present: `.bob/module_graph.json` (`BOB_MODULE_GRAPH_V1`) + deterministic module footprint measurement + `BOB_COMPILED_CONTEXT_V1` + `POST /bob/module-turn`. On that path, Bob recompiles READ/effect continuation into another fresh cognition request. Ordinary `/bob/turn` is still the legacy stateful path until module routing becomes the default.
+
 See `docs/BOB_MODULE_COGNITION_ARCHITECTURE.md`.
 
 ## Large-project cognition
