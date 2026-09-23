@@ -28,6 +28,7 @@ class LocalCompanionTests(unittest.TestCase):
             self.assertEqual(env["BOB_HOST"], "127.0.0.1")
             self.assertEqual(env["CHATGPT_BRIDGE_HOST"], "127.0.0.1")
             self.assertEqual(env["BOB_COMPANION_UI_URL"], "http://127.0.0.1:5002/")
+            self.assertEqual(env["CHATGPT_CAPTURE_MODE"], "copy")
 
     def test_local_launcher_rejects_non_loopback_bindings(self):
         env = {
