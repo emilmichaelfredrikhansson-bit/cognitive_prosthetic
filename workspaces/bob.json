@@ -15,7 +15,8 @@
       "AGENTS.md",
       "ARCHITECTURE.md",
       "docs/BOB_CHATGPT_PROJECT_INSTRUCTIONS.md"
-    ]
+    ],
+    "module_graph": ".bob/module_graph.json"
   },
   "providers": {},
   "effects": {
