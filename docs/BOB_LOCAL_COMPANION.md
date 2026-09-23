@@ -17,9 +17,26 @@ Windows PC
    GitHub / Supabase / HF / Cloudflare adapters
 ```
 
-The ChatGPT tab uses a dedicated persistent Bob browser profile. It is not fake history and it does not copy browser cookies into the repository. The operator signs in once through the explicit local login flow.
+The ChatGPT tab uses a dedicated persistent Bob browser profile, signed into the operator's **same ChatGPT account/Plus subscription**. The operator's normal browser remains independent and can continue using ChatGPT normally. The Bob browser profile is not fake history and it does not copy browser cookies into the repository.
 
 Both credential-bearing Python services are loopback-only. V1 has no public Bob endpoint, tunnel, Cloudflare Access dependency or DigitalOcean runtime.
+
+## Dedicated ChatGPT Project contract
+
+Create one private ChatGPT Project named **Bob** in the same account and set its Memory setting to **Project-only memory**. Bob's browser bridge is allowed to create/use cognition chats only inside that project.
+
+Canonical rules:
+
+- same ChatGPT account/subscription as the operator;
+- separate Bob-managed browser profile;
+- dedicated private ChatGPT Project named `Bob`;
+- Project-only memory preferred/required for V1 qualification when available;
+- `BOB_CHATGPT_PROJECT_URL` stores the exact project URL locally;
+- Bob must not target the ChatGPT home page, a personal chat, or another project;
+- each Bob New Chat starts by navigating to the configured Bob Project URL;
+- future Bob history may expose only real ChatGPT thread URLs/identities from this project.
+
+This gives product separation without a second subscription. Account-level usage/rate limits are still shared with normal ChatGPT use.
 
 ## Windows first run
 
@@ -28,10 +45,10 @@ From a fresh checkout of `feat/bob-core-v1`:
 1. Run `setup_bob.bat`.
 2. Copy/edit `.env.local` as needed. Never commit it.
 3. Put only the provider credentials Bob actually needs into `.env.local`.
-4. Set `CHATGPT_TARGET_URL` to the Bob-enabled ChatGPT Project URL when available.
-5. Run `first_run_bob.bat`.
-6. Sign in to ChatGPT in the browser that opens, then press Enter in the terminal.
-7. Bob starts both local services, verifies their health, opens Bob in the same browser, and brings the Bob tab to the front.
+4. In your normal ChatGPT, create/open the private project **Bob**, set Memory to **Project-only memory**, and copy its exact URL.
+5. Put that URL in `.env.local` as `BOB_CHATGPT_PROJECT_URL=...`.
+6. Run `first_run_bob.bat` and sign in with the **same ChatGPT account** in the Bob browser profile.
+7. Bob starts both local services, verifies the dedicated project target and browser health, opens Bob in the same browser, and brings the Bob tab to the front.
 
 After the first run, use `start_bob.bat`.
 
