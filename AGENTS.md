@@ -12,7 +12,7 @@ Before privileged Bob repository effects:
 4. read `CURRENT_WORK.md`;
 5. read `PRODUCT_PRINCIPLES.md` when product behavior, UX, cognition orchestration or Bob self-development is in scope;
 6. read `docs/BOB_CHUNKING_CONTEXT_ARCHITECTURE.md` for large/cross-cutting work, context management or work decomposition;
-7. read `docs/BOB_MODULE_COGNITION_ARCHITECTURE.md` for Bob-designed software, module boundaries, cognition budgets or Steward/consequence work;
+7. read `docs/BOB_MODULE_COGNITION_ARCHITECTURE.md` for Bob-designed software, module boundaries, cognition budgets, direct GitHub re-grounding or meta-review work;
 8. inspect only the additional implementation/canon relevant to the active work.
 
 Before effects on a target workspace, perform the equivalent identity verification for that workspace.
@@ -84,7 +84,9 @@ verify identity
 - Escalate to the operator only if the required reorganization creates a genuine product/vision/end-goal tradeoff or exceeds existing authority.
 - The surrounding cognition envelope remains 20k target / 25k hard ceiling.
 - Canonical large-project cognition is stateless: one cognition question -> one fresh ChatGPT conversation. Bob carries continuity; chat reuse is not a project-memory strategy.
-- After a material technical answer, run a separate bounded consequence/Steward cognition pass against relevant mission/system/decision state. Escalate operator-owned tradeoffs instead of silently optimizing them away.
+- Fresh cognition should re-ground directly in connected GitHub source/history/tests when repository truth matters, rather than relying only on Bob summaries.
+- Ordinary cognition owns its own impact check against relevant contracts/module neighbors/product intent. Use a separate fresh review/meta cognition request only when materially useful; there is no mandatory Steward role.
+- Escalate operator-owned product/vision/end-goal tradeoffs instead of silently optimizing them away.
 
 ## Verification
 
