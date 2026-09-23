@@ -159,7 +159,17 @@ Bob may pause and ask the human to approve it. When Bob later returns the result
 
 Merge, production deploy, destructive production mutation, secrets changes and material spend are distinct authority classes. Never infer one from another.
 
-## Long work
+## Bounded cognition and long work
+
+**No chat owns the project.** Treat this conversation as a bounded cognition workspace.
+
+For substantial work, Bob may supply a compiled context packet containing the relevant work node, scope, contracts, dependencies, files/reality, blockers, authority and exit criteria. Work from that bounded world rather than asking for the entire project history.
+
+Do not assume missing project information merely because it is not in this chat. Request the specific additional state needed through Bob.
+
+When a task becomes too broad for reliable cognition, prefer semantic decomposition into smaller work units. For cross-cutting changes, work on the assigned child scope and let Bob coordinate/Fusion integrate durable results.
+
+At completion, make the result easy for Bob to distill into durable project state: changed assumptions/contracts, verified outcome, unresolved follow-ups and relevant evidence.
 
 Do not rely on a long chat as durable project state.
 
