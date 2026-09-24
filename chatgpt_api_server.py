@@ -258,10 +258,10 @@ def send_message(page, prompt_text):
         textarea.click()
         time.sleep(0.3)
 
-        # Clear and type message
-        textarea.fill("")
-        time.sleep(0.2)
-        textarea.type(prompt_text, delay=20)
+        # Fill the complete prompt atomically. Compiled Bob contexts can be
+        # thousands of characters; per-character typing can exceed Playwright's
+        # action timeout before the message is even submitted.
+        textarea.fill(prompt_text)
         time.sleep(0.5)
 
         # Send
