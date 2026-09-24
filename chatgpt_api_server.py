@@ -244,6 +244,62 @@ def find_textarea(page, timeout=10):
 
     return None
 
+def copy_candidates(page):
+    """Return de-duplicated visible Copy controls across supported UI locales."""
+    candidates = []
+    selectors = [
+        'button[data-testid*="copy"]',
+        'button[aria-label*="Copy"]',
+        'button[aria-label*="copy"]',
+        'button[aria-label*="Kopiera"]',
+        'button[aria-label*="kopiera"]',
+        'button[title*="Copy"]',
+        'button[title*="copy"]',
+        'button[title*="Kopiera"]',
+        'button[title*="kopiera"]',
+    ]
+    for selector in selectors:
+        try:
+            candidates.extend(page.locator(selector).all())
+        except Exception:
+            pass
+
+    try:
+        candidates.extend(page.get_by_role(
+            "button",
+            name=re.compile(r"(copy|kopiera)", re.IGNORECASE),
+        ).all())
+    except Exception:
+        pass
+
+    seen = set()
+    visible = []
+    for candidate in candidates:
+        try:
+            if not candidate.is_visible():
+                continue
+            key = candidate.evaluate("(el) => el.outerHTML")
+        except Exception:
+            continue
+        if key not in seen:
+            seen.add(key)
+            visible.append(candidate)
+    return visible
+
+
+def wait_for_new_copy_control(page, baseline_count, timeout=180):
+    """Treat the new assistant response's Copy control as completion evidence."""
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        try:
+            if len(copy_candidates(page)) > baseline_count:
+                return True
+        except Exception:
+            pass
+        time.sleep(0.5)
+    return False
+
+
 def send_message(page, prompt_text):
     """Send message and get response"""
     try:
@@ -264,34 +320,26 @@ def send_message(page, prompt_text):
         textarea.fill(prompt_text)
         time.sleep(0.5)
 
+        # Capture the number of visible response-copy controls before submission.
+        # A newly visible Copy/Kopiera control is our locale-independent evidence
+        # that the next assistant response has completed.
+        baseline_copy_count = len(copy_candidates(page))
+
         # Send
         page.keyboard.press("Enter")
         logging.info("✓ Message sent, waiting for response...")
 
-        time.sleep(3)
-
-        # Wait for response completion
-        try:
-            # Wait for stop button to appear
-            page.wait_for_selector(
-                'button[aria-label*="Stop"], button[aria-label*="stop"]',
-                timeout=5000,
-                state='visible'
-            )
-            logging.info("✓ Response started...")
-
-            # Wait for it to disappear (response complete)
-            page.wait_for_selector(
-                'button[aria-label*="Stop"], button[aria-label*="stop"]',
-                timeout=180000,
-                state='hidden'
-            )
-            logging.info("✓ Response complete!")
-        except:
-            logging.warning("Stop button not detected, using time-based wait...")
-            time.sleep(5)
-
-        time.sleep(1.5)
+        if CHATGPT_CAPTURE_MODE == "copy":
+            if not wait_for_new_copy_control(page, baseline_copy_count, timeout=180):
+                logging.error("No new Copy/Kopiera control appeared before response timeout")
+                return {
+                    "success": False,
+                    "error": "Timed out waiting for completed assistant response"
+                }
+            logging.info("✓ Response complete (new Copy/Kopiera control visible)")
+        else:
+            # Explicit legacy mode keeps a bounded time-based compatibility path.
+            time.sleep(8)
 
         # Capture response through the visible Copy action by default.
         response_text = capture_response(page)
@@ -322,39 +370,7 @@ def capture_response(page):
     compatibility mode.
     """
     if CHATGPT_CAPTURE_MODE == "copy":
-        copy_candidates = []
-        selectors = [
-            'button[aria-label*="Copy"]',
-            'button[aria-label*="copy"]',
-            'button[title*="Copy"]',
-            'button[title*="copy"]',
-        ]
-        for selector in selectors:
-            try:
-                copy_candidates.extend(page.locator(selector).all())
-            except Exception:
-                pass
-
-        try:
-            copy_candidates.extend(page.get_by_role(
-                "button",
-                name=re.compile("copy", re.IGNORECASE),
-            ).all())
-        except Exception:
-            pass
-
-        seen = set()
-        unique = []
-        for candidate in copy_candidates:
-            try:
-                key = candidate.evaluate("(el) => el.outerHTML")
-            except Exception:
-                key = str(id(candidate))
-            if key not in seen:
-                seen.add(key)
-                unique.append(candidate)
-
-        for candidate in reversed(unique):
+        for candidate in reversed(copy_candidates(page)):
             try:
                 if not candidate.is_visible():
                     continue
