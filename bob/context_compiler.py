@@ -89,7 +89,14 @@ class ContextCompiler:
             "product/vision/end-goal or authority decisions.\n"
             "Use BOB protocol messages only for Bob-owned reads/effects/ASK/DONE. "
             "Repository inspection through your connected GitHub integration does not need "
-            "a BOB.READ round-trip.\n\n"
+            "a BOB.READ round-trip.\n"
+            "BOB protocol output contract: every machine message needs a non-empty id that "
+            "is unique within the response. READ={type:'BOB.READ',id:'...',tool:'...',args:{...}}; "
+            "EFFECT={type:'BOB.EFFECT',id:'...',tool:'...',args:{...}}; "
+            "ASK={type:'BOB.ASK',id:'...',args:{question:'...',reason:'...'}}; "
+            "DONE={type:'BOB.DONE',id:'...',args:{summary:'...'}}. "
+            "Normally wrap each object in a fenced bob block. If the entire response is exactly "
+            "one protocol object, raw JSON is also accepted by the visible-Copy transport.\n\n"
             "BOB.COMPILED_CONTEXT\n"
             + json.dumps(packet, ensure_ascii=False, sort_keys=True, indent=2)
         )
