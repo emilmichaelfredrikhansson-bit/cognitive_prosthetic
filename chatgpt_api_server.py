@@ -17,6 +17,15 @@ from urllib.parse import urlsplit
 
 from profile_config import load_profile_path
 
+# Windows/remote shells may inherit a legacy code page such as cp1252. Bob's
+# human-facing logs contain Unicode, so make stdio encoding deterministic without
+# letting an unrenderable glyph crash the bridge process.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="backslashreplace")
+    except (AttributeError, ValueError):
+        pass
+
 app = Flask(__name__)
 
 BOB_CHATGPT_PROJECT_NAME = os.environ.get("BOB_CHATGPT_PROJECT_NAME", "Bob").strip() or "Bob"
