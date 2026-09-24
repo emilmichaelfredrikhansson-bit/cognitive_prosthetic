@@ -48,13 +48,13 @@ class GitHubAdapter:
         if completed.returncode != 0 and not allow_failure:
             detail = (completed.stderr or completed.stdout or "").strip()
             raise ProtocolError(f"local git {' '.join(args)} failed: {detail}")
-        return completed.stdout.strip()
+        return completed.stdout
 
     def _detect_local_repository(self) -> str | None:
         if self.local_repo_root is None:
             return None
         try:
-            remote = self._git("remote", "get-url", "origin")
+            remote = self._git("remote", "get-url", "origin").strip()
         except Exception:
             return None
         value = remote.strip()
@@ -96,7 +96,7 @@ class GitHubAdapter:
                 "--verify",
                 f"{candidate}^{{commit}}",
                 allow_failure=True,
-            )
+            ).strip()
             if resolved:
                 return candidate
         raise ProtocolError(f"local Git ref unavailable: {requested}")
@@ -111,12 +111,12 @@ class GitHubAdapter:
         resolved_ref = self._local_ref(workspace, ref)
         spec = f"{resolved_ref}:{safe_path}"
         content = self._git("show", spec)
-        sha = self._git("rev-parse", spec)
+        sha = self._git("rev-parse", spec).strip()
         return {
             "path": safe_path,
             "sha": sha,
             "ref": ref,
-            "content": content + ("\n" if content and not content.endswith("\n") else ""),
+            "content": content,
             "size": len(content.encode("utf-8")),
             "source": "local_git",
         }
@@ -184,7 +184,7 @@ class GitHubAdapter:
     def branch_head(self, workspace: Workspace, branch: str) -> str:
         if self._use_local_read(workspace):
             resolved_ref = self._local_ref(workspace, branch)
-            return self._git("rev-parse", f"{resolved_ref}^{{commit}}")
+            return self._git("rev-parse", f"{resolved_ref}^{{commit}}").strip()
         self.verify_workspace(workspace)
         ref = self.http.request(
             "GET",
