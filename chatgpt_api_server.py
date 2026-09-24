@@ -323,13 +323,18 @@ def assistant_copy_candidates(page):
                     ).all()
                 except Exception:
                     pass
-                preferred = [item for item in preferred if item.is_visible()]
+                preferred = [
+                    item for item in preferred
+                    if item.is_visible() and item.is_enabled()
+                ]
                 if preferred:
                     return preferred
 
                 fallbacks = []
                 for candidate in copy_candidates(container):
                     try:
+                        if not candidate.is_enabled():
+                            continue
                         label = " ".join(filter(None, [
                             candidate.get_attribute("aria-label"),
                             candidate.get_attribute("title"),
