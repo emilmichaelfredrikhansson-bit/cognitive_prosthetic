@@ -5,6 +5,22 @@ from pathlib import Path
 
 from bob.driver import BobRuntime
 from bob.errors import AuthorityError, ProtocolError
+from bob.integrations.github import GitHubAdapter
+
+
+class GitHubAdapterCapabilityTests(unittest.TestCase):
+    def test_anonymous_adapter_exposes_reads_but_not_writes(self):
+        adapter = GitHubAdapter("")
+        capabilities = adapter.capabilities()
+        self.assertIn("github.read_file", capabilities)
+        self.assertNotIn("github.create_file", capabilities)
+        self.assertNotIn("github.open_pr", capabilities)
+
+    def test_authenticated_adapter_exposes_writes(self):
+        capabilities = GitHubAdapter("token").capabilities()
+        self.assertIn("github.read_file", capabilities)
+        self.assertIn("github.create_file", capabilities)
+        self.assertIn("github.open_pr", capabilities)
 
 
 class FakeBridge:
