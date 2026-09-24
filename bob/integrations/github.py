@@ -9,26 +9,33 @@ from .http import JsonHttp
 
 
 class GitHubAdapter:
-    def __init__(self, token: str):
+    def __init__(self, token: str | None = None):
+        token = str(token or "").strip()
+        self.authenticated = bool(token)
         headers = {
             "Accept": "application/vnd.github+json",
-            "Authorization": f"Bearer {token}",
             "X-GitHub-Api-Version": "2022-11-28",
         }
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
         self.http = JsonHttp("https://api.github.com", headers=headers)
 
     def capabilities(self) -> list[str]:
-        return [
+        capabilities = [
             "github.repo",
             "github.read_file",
             "github.read_files",
             "github.list_contents",
-            "github.create_branch",
-            "github.create_file",
-            "github.replace_file",
-            "github.delete_file",
-            "github.open_pr",
         ]
+        if self.authenticated:
+            capabilities.extend([
+                "github.create_branch",
+                "github.create_file",
+                "github.replace_file",
+                "github.delete_file",
+                "github.open_pr",
+            ])
+        return capabilities
 
     def verify_workspace(self, workspace: Workspace) -> dict[str, Any]:
         repo = self.http.request("GET", f"/repos/{workspace.github_repository}")
@@ -78,6 +85,8 @@ class GitHubAdapter:
         raise ProtocolError(f"unsupported GitHub read tool: {tool}")
 
     def effect(self, workspace: Workspace, tool: str, args: dict[str, Any]) -> Any:
+        if not self.authenticated:
+            raise ProtocolError("GitHub write effects require GITHUB_TOKEN")
         self.verify_workspace(workspace)
         if tool == "github.create_branch":
             base = str(args.get("base") or workspace.default_branch)
