@@ -20,7 +20,7 @@ SECRET_KEYS = (
 
 def parse_env_file(path: Path) -> dict[str, str]:
     values: dict[str, str] = {}
-    for raw in path.read_text().splitlines():
+    for raw in path.read_text(encoding="utf-8").splitlines():
         line = raw.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue
@@ -60,9 +60,16 @@ def inspect_runtime(
 
     env_values: dict[str, str] = {}
     if env_file.is_file():
-        mode = stat.S_IMODE(env_file.stat().st_mode)
-        secure_mode = mode & 0o077 == 0
-        checks.append(check("env-file-mode", secure_mode, f"{env_file} mode={mode:04o}"))
+        if os.name == "posix":
+            mode = stat.S_IMODE(env_file.stat().st_mode)
+            secure_mode = mode & 0o077 == 0
+            checks.append(check("env-file-mode", secure_mode, f"{env_file} mode={mode:04o}"))
+        else:
+            checks.append(check(
+                "env-file-mode",
+                True,
+                "POSIX mode enforcement is not applicable on this test platform",
+            ))
         try:
             env_values = parse_env_file(env_file)
             checks.append(check("env-file-parse", True, "parsed without exposing values"))
