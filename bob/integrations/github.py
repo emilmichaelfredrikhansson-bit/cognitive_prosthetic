@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 import base64
+import os
+import subprocess
+from pathlib import Path, PurePosixPath
 from typing import Any
+from urllib.parse import urlsplit
 
 from bob.errors import ExternalEffectError, IdentityMismatch, ProtocolError
 from bob.workspaces import Workspace
@@ -9,7 +13,7 @@ from .http import JsonHttp
 
 
 class GitHubAdapter:
-    def __init__(self, token: str | None = None):
+    def __init__(self, token: str | None = None, local_repo_root: str | None = None):
         token = str(token or "").strip()
         self.authenticated = bool(token)
         headers = {
@@ -19,6 +23,132 @@ class GitHubAdapter:
         if token:
             headers["Authorization"] = f"Bearer {token}"
         self.http = JsonHttp("https://api.github.com", headers=headers)
+
+        candidate = Path(
+            local_repo_root
+            or os.environ.get("BOB_GITHUB_LOCAL_REPO", "")
+            or os.getcwd()
+        ).resolve()
+        self.local_repo_root = candidate if (candidate / ".git").exists() else None
+        self.local_repository = self._detect_local_repository()
+
+    def _git(self, *args: str, allow_failure: bool = False) -> str:
+        if self.local_repo_root is None:
+            raise ProtocolError("local Git repository is unavailable")
+        completed = subprocess.run(
+            ["git", *args],
+            cwd=str(self.local_repo_root),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=20,
+            check=False,
+        )
+        if completed.returncode != 0 and not allow_failure:
+            detail = (completed.stderr or completed.stdout or "").strip()
+            raise ProtocolError(f"local git {' '.join(args)} failed: {detail}")
+        return completed.stdout.strip()
+
+    def _detect_local_repository(self) -> str | None:
+        if self.local_repo_root is None:
+            return None
+        try:
+            remote = self._git("remote", "get-url", "origin")
+        except Exception:
+            return None
+        value = remote.strip()
+        if value.startswith("git@github.com:"):
+            name = value.split(":", 1)[1]
+        else:
+            parts = urlsplit(value)
+            if (parts.hostname or "").lower() != "github.com":
+                return None
+            name = parts.path.lstrip("/")
+        if name.endswith(".git"):
+            name = name[:-4]
+        name = name.strip("/")
+        return name or None
+
+    def _use_local_read(self, workspace: Workspace) -> bool:
+        return (
+            not self.authenticated
+            and self.local_repo_root is not None
+            and isinstance(self.local_repository, str)
+            and self.local_repository.casefold() == workspace.github_repository.casefold()
+        )
+
+    @staticmethod
+    def _safe_repo_path(path: str) -> str:
+        value = str(path or "").replace("\\", "/").strip("/")
+        parsed = PurePosixPath(value)
+        if not value or parsed.is_absolute() or ".." in parsed.parts:
+            raise ProtocolError(f"invalid repository path: {path!r}")
+        return value
+
+    def _local_ref(self, workspace: Workspace, ref: str | None) -> str:
+        requested = str(ref or workspace.default_branch).strip()
+        if not requested:
+            raise ProtocolError("Git ref must not be empty")
+        for candidate in (requested, f"origin/{requested}"):
+            resolved = self._git(
+                "rev-parse",
+                "--verify",
+                f"{candidate}^{{commit}}",
+                allow_failure=True,
+            )
+            if resolved:
+                return candidate
+        raise ProtocolError(f"local Git ref unavailable: {requested}")
+
+    def _read_local_file(
+        self,
+        workspace: Workspace,
+        path: str,
+        ref: str | None,
+    ) -> dict[str, Any]:
+        safe_path = self._safe_repo_path(path)
+        resolved_ref = self._local_ref(workspace, ref)
+        spec = f"{resolved_ref}:{safe_path}"
+        content = self._git("show", spec)
+        sha = self._git("rev-parse", spec)
+        return {
+            "path": safe_path,
+            "sha": sha,
+            "ref": ref,
+            "content": content + ("\n" if content and not content.endswith("\n") else ""),
+            "size": len(content.encode("utf-8")),
+            "source": "local_git",
+        }
+
+    def _list_local_contents(
+        self,
+        workspace: Workspace,
+        path: str,
+        ref: str | None,
+    ) -> list[dict[str, Any]]:
+        normalized = str(path or "").replace("\\", "/").strip("/")
+        if normalized:
+            normalized = self._safe_repo_path(normalized)
+        resolved_ref = self._local_ref(workspace, ref)
+        treeish = resolved_ref if not normalized else f"{resolved_ref}:{normalized}"
+        raw = self._git("ls-tree", treeish)
+        items: list[dict[str, Any]] = []
+        for line in raw.splitlines():
+            try:
+                metadata, name = line.split("\t", 1)
+                _mode, obj_type, sha = metadata.split(" ", 2)
+            except ValueError:
+                continue
+            full_path = f"{normalized}/{name}".strip("/")
+            items.append({
+                "name": name,
+                "path": full_path,
+                "sha": sha,
+                "type": "file" if obj_type == "blob" else "dir",
+                "source": "local_git",
+            })
+        return items
 
     def capabilities(self) -> list[str]:
         capabilities = [
@@ -52,6 +182,9 @@ class GitHubAdapter:
         }
 
     def branch_head(self, workspace: Workspace, branch: str) -> str:
+        if self._use_local_read(workspace):
+            resolved_ref = self._local_ref(workspace, branch)
+            return self._git("rev-parse", f"{resolved_ref}^{{commit}}")
         self.verify_workspace(workspace)
         ref = self.http.request(
             "GET",
@@ -64,7 +197,6 @@ class GitHubAdapter:
         return str(sha)
 
     def read(self, workspace: Workspace, tool: str, args: dict[str, Any]) -> Any:
-        self.verify_workspace(workspace)
         if tool == "github.repo":
             return self.verify_workspace(workspace)
         if tool == "github.read_file":
@@ -76,6 +208,9 @@ class GitHubAdapter:
             return [self.read_file(workspace, str(path), args.get("ref")) for path in paths]
         if tool == "github.list_contents":
             path = str(args.get("path") or "")
+            if self._use_local_read(workspace):
+                return self._list_local_contents(workspace, path, args.get("ref"))
+            self.verify_workspace(workspace)
             params = {"ref": args["ref"]} if args.get("ref") else None
             return self.http.request(
                 "GET",
@@ -233,6 +368,8 @@ class GitHubAdapter:
         raise ProtocolError(f"unsupported GitHub effect tool: {tool}")
 
     def read_file(self, workspace: Workspace, path: str, ref: str | None = None) -> dict[str, Any]:
+        if self._use_local_read(workspace):
+            return self._read_local_file(workspace, path, ref)
         params = {"ref": ref} if ref else None
         result = self.http.request(
             "GET",
