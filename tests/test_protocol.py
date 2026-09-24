@@ -17,6 +17,24 @@ class ProtocolTests(unittest.TestCase):
         self.assertEqual(parsed.messages[0].type, "BOB.READ")
         self.assertEqual(parsed.messages[0].tool, "github.read_file")
 
+    def test_accepts_raw_protocol_json_when_copy_strips_fences(self):
+        parsed = parse_model_response(
+            '{"type":"BOB.DONE","id":"done-1","args":{"summary":"complete"}}'
+        )
+        self.assertEqual(parsed.visible_text, "")
+        self.assertEqual(len(parsed.messages), 1)
+        self.assertEqual(parsed.messages[0].type, "BOB.DONE")
+
+    def test_preserves_non_protocol_raw_json_as_visible_text(self):
+        text = '{"status":"ok","value":1}'
+        parsed = parse_model_response(text)
+        self.assertEqual(parsed.visible_text, text)
+        self.assertEqual(parsed.messages, ())
+
+    def test_rejects_unknown_raw_bob_type(self):
+        with self.assertRaises(ProtocolError):
+            parse_model_response('{"type":"BOB.MAGIC","id":"x","args":{}}')
+
     def test_rejects_unknown_type(self):
         with self.assertRaises(ProtocolError):
             parse_model_response(
