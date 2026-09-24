@@ -295,7 +295,12 @@ def assistant_count(page):
 
 
 def assistant_copy_candidates(page):
-    """Return Copy controls belonging to the newest assistant turn only."""
+    """Return the newest assistant turn's message-level Copy control.
+
+    Code blocks can expose their own Copy/Kopiera button while the assistant is
+    still streaming. Prefer ChatGPT's turn-action copy button and exclude
+    controls explicitly labelled as code-copy fallbacks.
+    """
     try:
         messages = page.locator('[data-message-author-role="assistant"]')
         count = messages.count()
@@ -308,10 +313,35 @@ def assistant_copy_candidates(page):
         ):
             try:
                 container = message.locator(xpath)
-                if container.count():
-                    candidates = copy_candidates(container)
-                    if candidates:
-                        return candidates
+                if not container.count():
+                    continue
+
+                preferred = []
+                try:
+                    preferred = container.locator(
+                        'button[data-testid="copy-turn-action-button"]'
+                    ).all()
+                except Exception:
+                    pass
+                preferred = [item for item in preferred if item.is_visible()]
+                if preferred:
+                    return preferred
+
+                fallbacks = []
+                for candidate in copy_candidates(container):
+                    try:
+                        label = " ".join(filter(None, [
+                            candidate.get_attribute("aria-label"),
+                            candidate.get_attribute("title"),
+                            candidate.get_attribute("data-testid"),
+                        ])).lower()
+                    except Exception:
+                        label = ""
+                    if "code" in label or "kod" in label:
+                        continue
+                    fallbacks.append(candidate)
+                if fallbacks:
+                    return fallbacks
             except Exception:
                 pass
     except Exception:
@@ -403,17 +433,22 @@ def capture_response(page):
     compatibility mode.
     """
     if CHATGPT_CAPTURE_MODE == "copy":
-        for candidate in reversed(assistant_copy_candidates(page)):
+        candidates = assistant_copy_candidates(page)
+        for candidate in reversed(candidates):
             try:
                 if not candidate.is_visible():
                     continue
-                candidate.click()
+                candidate.click(timeout=5000)
                 time.sleep(0.4)
                 copied = page.evaluate("navigator.clipboard.readText()")
                 if isinstance(copied, str) and copied.strip():
                     return copied.strip()
-            except Exception:
+            except Exception as exc:
+                logging.warning(f"Assistant Copy control failed: {exc}")
                 continue
+        logging.error(
+            f"Could not copy newest assistant turn; candidates={len(candidates)}"
+        )
         return None
 
     # Explicit compatibility escape hatch only.
