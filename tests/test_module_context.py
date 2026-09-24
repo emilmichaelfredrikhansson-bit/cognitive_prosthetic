@@ -118,6 +118,22 @@ class ModuleGraphTests(unittest.TestCase):
 
 
 class StatelessModuleRuntimeTests(unittest.TestCase):
+    def test_compiled_context_includes_protocol_output_contract(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            make_workspace(tmp)
+            bridge = FreshBridge([
+                '```bob\n{"type":"BOB.DONE","id":"d1","args":{"summary":"done"}}\n```'
+            ])
+            runtime = BobRuntime(workspace_dir=tmp, bridge=bridge)
+            runtime.adapters = {"github": FakeGitHub()}
+
+            runtime.module_turn("X", "M", "Finish it", ref="dev")
+
+            prompt = bridge.cognition_prompts[0]
+            self.assertIn("BOB protocol output contract", prompt)
+            self.assertIn("non-empty id", prompt)
+            self.assertIn("DONE={type:'BOB.DONE'", prompt)
+
     def test_read_continuation_recompiles_into_fresh_cognition(self):
         with tempfile.TemporaryDirectory() as tmp:
             make_workspace(tmp)
