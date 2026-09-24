@@ -839,7 +839,11 @@ class BobRuntime:
         if not tool.startswith("github."):
             return None
         adapter = self._adapter_for(tool)
-        adapter.verify_workspace(workspace)
+        local_preview = getattr(adapter, "can_preview_from_local_git", lambda _workspace: False)(
+            workspace
+        )
+        if not local_preview:
+            adapter.verify_workspace(workspace)
         args = message.args
 
         if tool == "github.create_branch":
