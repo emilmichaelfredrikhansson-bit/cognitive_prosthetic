@@ -2,9 +2,9 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-HTML = (ROOT / "frontend/index.html").read_text()
-JS = (ROOT / "frontend/app.js").read_text()
-CSS = (ROOT / "frontend/styles.css").read_text()
+HTML = (ROOT / "frontend/index.html").read_text(encoding="utf-8")
+JS = (ROOT / "frontend/app.js").read_text(encoding="utf-8")
+CSS = (ROOT / "frontend/styles.css").read_text(encoding="utf-8")
 
 
 class FrontendShellTests(unittest.TestCase):
