@@ -4,11 +4,11 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-BOB_UNIT = (ROOT / "deploy/systemd/bob-api.service").read_text()
-BRIDGE_UNIT = (ROOT / "deploy/systemd/chatgpt-bridge.service").read_text()
-INSTALLER = (ROOT / "deploy/install_runtime.sh").read_text()
-ROLLBACK = (ROOT / "deploy/rollback_release.sh").read_text()
-ACCEPTANCE = (ROOT / "deploy/runtime_acceptance.py").read_text()
+BOB_UNIT = (ROOT / "deploy/systemd/bob-api.service").read_text(encoding="utf-8")
+BRIDGE_UNIT = (ROOT / "deploy/systemd/chatgpt-bridge.service").read_text(encoding="utf-8")
+INSTALLER = (ROOT / "deploy/install_runtime.sh").read_text(encoding="utf-8")
+ROLLBACK = (ROOT / "deploy/rollback_release.sh").read_text(encoding="utf-8")
+ACCEPTANCE = (ROOT / "deploy/runtime_acceptance.py").read_text(encoding="utf-8")
 
 spec = importlib.util.spec_from_file_location("runtime_doctor", ROOT / "deploy/runtime_doctor.py")
 runtime_doctor = importlib.util.module_from_spec(spec)
@@ -48,13 +48,13 @@ class RuntimeDeployTests(unittest.TestCase):
             units = root / "etc/systemd/system"
             (app / "current").mkdir(parents=True)
             (app / "venv/bin").mkdir(parents=True)
-            (app / "venv/bin/python").write_text("")
+            (app / "venv/bin/python").write_text("", encoding="utf-8")
             (state / "chatgpt-profile").mkdir(parents=True)
             units.mkdir(parents=True)
-            (units / "bob-api.service").write_text(BOB_UNIT)
-            (units / "chatgpt-bridge.service").write_text(BRIDGE_UNIT)
+            (units / "bob-api.service").write_text(BOB_UNIT, encoding="utf-8")
+            (units / "chatgpt-bridge.service").write_text(BRIDGE_UNIT, encoding="utf-8")
             env.parent.mkdir(parents=True)
-            env.write_text("BOB_HOST=127.0.0.1\nCHATGPT_BRIDGE_HOST=127.0.0.1\n")
+            env.write_text("BOB_HOST=127.0.0.1\nCHATGPT_BRIDGE_HOST=127.0.0.1\n", encoding="utf-8")
             env.chmod(0o600)
             old = runtime_doctor.shutil.which
             runtime_doctor.shutil.which = lambda name: "/usr/bin/xvfb-run" if name == "xvfb-run" else old(name)
@@ -79,7 +79,7 @@ class RuntimeDeployTests(unittest.TestCase):
             (units / "bob-api.service").write_text(BOB_UNIT)
             (units / "chatgpt-bridge.service").write_text(BRIDGE_UNIT)
             env.parent.mkdir(parents=True)
-            env.write_text("BOB_HOST=0.0.0.0\nCHATGPT_BRIDGE_HOST=127.0.0.1\n")
+            env.write_text("BOB_HOST=0.0.0.0\nCHATGPT_BRIDGE_HOST=127.0.0.1\n", encoding="utf-8")
             env.chmod(0o600)
             old = runtime_doctor.shutil.which
             runtime_doctor.shutil.which = lambda name: "/usr/bin/xvfb-run" if name == "xvfb-run" else old(name)
