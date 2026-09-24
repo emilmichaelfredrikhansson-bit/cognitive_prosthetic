@@ -26,6 +26,24 @@ class ParsedResponse:
     messages: tuple[BobMessage, ...]
 
 
+def _parse_message_payload(payload: Any) -> BobMessage:
+    if not isinstance(payload, dict):
+        raise ProtocolError("BOB message must contain a JSON object")
+    msg_type = payload.get("type")
+    if msg_type not in ALLOWED_TYPES:
+        raise ProtocolError(f"unsupported BOB message type: {msg_type}")
+    msg_id = payload.get("id")
+    if not isinstance(msg_id, str) or not msg_id.strip():
+        raise ProtocolError("BOB message requires non-empty string id")
+    tool = payload.get("tool")
+    if msg_type in {"BOB.READ", "BOB.EFFECT"} and (not isinstance(tool, str) or not tool):
+        raise ProtocolError(f"{msg_type} requires tool")
+    args = payload.get("args") or {}
+    if not isinstance(args, dict):
+        raise ProtocolError("BOB args must be an object")
+    return BobMessage(msg_type, msg_id, tool, args, payload)
+
+
 def parse_model_response(text: str) -> ParsedResponse:
     messages: list[BobMessage] = []
 
@@ -35,24 +53,30 @@ def parse_model_response(text: str) -> ParsedResponse:
             payload = json.loads(payload_text)
         except json.JSONDecodeError as exc:
             raise ProtocolError(f"invalid BOB JSON: {exc}") from exc
-        if not isinstance(payload, dict):
-            raise ProtocolError("BOB block must contain a JSON object")
-        msg_type = payload.get("type")
-        if msg_type not in ALLOWED_TYPES:
-            raise ProtocolError(f"unsupported BOB message type: {msg_type}")
-        msg_id = payload.get("id")
-        if not isinstance(msg_id, str) or not msg_id.strip():
-            raise ProtocolError("BOB message requires non-empty string id")
-        tool = payload.get("tool")
-        if msg_type in {"BOB.READ", "BOB.EFFECT"} and (not isinstance(tool, str) or not tool):
-            raise ProtocolError(f"{msg_type} requires tool")
-        args = payload.get("args") or {}
-        if not isinstance(args, dict):
-            raise ProtocolError("BOB args must be an object")
-        messages.append(BobMessage(msg_type, msg_id, tool, args, payload))
+        messages.append(_parse_message_payload(payload))
         return ""
 
     visible = BLOCK_RE.sub(replace, text).strip()
+
+    # ChatGPT's visible Copy action can normalize a response that consists only
+    # of one fenced JSON block into the raw JSON payload (without markdown
+    # fences). Accept that transport representation only when the *entire*
+    # copied response is one BOB protocol object.
+    if not messages and visible:
+        try:
+            raw_payload = json.loads(visible)
+        except json.JSONDecodeError:
+            raw_payload = None
+        if isinstance(raw_payload, dict):
+            msg_type = raw_payload.get("type")
+            if msg_type in ALLOWED_TYPES:
+                messages.append(_parse_message_payload(raw_payload))
+                visible = ""
+            elif isinstance(msg_type, str) and msg_type.startswith("BOB."):
+                # Preserve fail-closed semantics for unknown protocol types even
+                # when markdown fences were stripped by the UI transport.
+                _parse_message_payload(raw_payload)
+
     return ParsedResponse(visible_text=visible, messages=tuple(messages))
 
 
