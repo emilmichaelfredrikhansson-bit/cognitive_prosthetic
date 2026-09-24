@@ -150,6 +150,10 @@ class GitHubAdapter:
             })
         return items
 
+    def can_preview_from_local_git(self, workspace: Workspace) -> bool:
+        """Allow approval staging from a matching local checkout without granting writes."""
+        return self._use_local_read(workspace)
+
     def capabilities(self) -> list[str]:
         capabilities = [
             "github.repo",
