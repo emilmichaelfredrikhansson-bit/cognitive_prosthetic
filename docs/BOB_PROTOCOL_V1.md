@@ -16,7 +16,7 @@ ChatGPT asks for semantic tools. Bob owns credentials, identity binding, mechani
 
 ## Model-to-Bob messages
 
-Each request is a fenced `bob` JSON object with a unique `id`.
+Each request is normally a fenced `bob` JSON object with a non-empty `id`. IDs must be unique within one model response so result correlation is unambiguous.
 
 ### Read
 
@@ -30,6 +30,11 @@ Each request is a fenced `bob` JSON object with a unique `id`.
 ```
 
 Reads may execute automatically inside the selected verified workspace.
+
+The visible ChatGPT Copy transport may normalize a response that consists only of
+one fenced BOB object into the raw JSON object without markdown fences. Bob accepts
+that exact whole-response representation as transport-equivalent. Mixed prose plus
+protocol messages still requires fenced `bob` blocks.
 
 ### Effect
 
@@ -135,6 +140,7 @@ Capabilities are runtime data and may differ between installations.
 - `supabase.query`
 
 ### Hugging Face reads
+- `hf.identity`
 - `hf.list_jobs`
 - `hf.inspect_job`
 - `hf.job_logs`
