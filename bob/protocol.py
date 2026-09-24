@@ -77,6 +77,10 @@ def parse_model_response(text: str) -> ParsedResponse:
                 # when markdown fences were stripped by the UI transport.
                 _parse_message_payload(raw_payload)
 
+    ids = [message.id for message in messages]
+    if len(ids) != len(set(ids)):
+        raise ProtocolError("BOB message ids must be unique within one model response")
+
     return ParsedResponse(visible_text=visible, messages=tuple(messages))
 
 
