@@ -443,7 +443,11 @@ def capture_response(page):
             try:
                 if not candidate.is_visible():
                     continue
-                candidate.click(timeout=5000)
+                # ChatGPT's floating action toolbar can transiently overlay the
+                # message-level Copy button even after it is visible/enabled.
+                # Force the click on the already-qualified button rather than
+                # failing on pointer-interception geometry.
+                candidate.click(timeout=5000, force=True)
                 time.sleep(0.4)
                 copied = page.evaluate("navigator.clipboard.readText()")
                 if isinstance(copied, str) and copied.strip():
