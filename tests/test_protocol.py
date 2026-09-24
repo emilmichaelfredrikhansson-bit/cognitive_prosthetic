@@ -35,6 +35,13 @@ class ProtocolTests(unittest.TestCase):
         with self.assertRaises(ProtocolError):
             parse_model_response('{"type":"BOB.MAGIC","id":"x","args":{}}')
 
+    def test_rejects_duplicate_ids_in_one_response(self):
+        with self.assertRaises(ProtocolError):
+            parse_model_response(
+                '```bob\n{"type":"BOB.READ","id":"same","tool":"github.read_file","args":{"path":"A"}}\n```\n'
+                '```bob\n{"type":"BOB.READ","id":"same","tool":"github.read_file","args":{"path":"B"}}\n```'
+            )
+
     def test_rejects_unknown_type(self):
         with self.assertRaises(ProtocolError):
             parse_model_response(
