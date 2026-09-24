@@ -244,7 +244,7 @@ def find_textarea(page, timeout=10):
 
     return None
 
-def copy_candidates(page):
+def copy_candidates(scope):
     """Return de-duplicated visible Copy controls across supported UI locales."""
     candidates = []
     selectors = [
@@ -260,12 +260,12 @@ def copy_candidates(page):
     ]
     for selector in selectors:
         try:
-            candidates.extend(page.locator(selector).all())
+            candidates.extend(scope.locator(selector).all())
         except Exception:
             pass
 
     try:
-        candidates.extend(page.get_by_role(
+        candidates.extend(scope.get_by_role(
             "button",
             name=re.compile(r"(copy|kopiera)", re.IGNORECASE),
         ).all())
@@ -287,13 +287,46 @@ def copy_candidates(page):
     return visible
 
 
-def wait_for_new_copy_control(page, baseline_count, timeout=180):
-    """Treat the new assistant response's Copy control as completion evidence."""
+def assistant_count(page):
+    try:
+        return page.locator('[data-message-author-role="assistant"]').count()
+    except Exception:
+        return 0
+
+
+def assistant_copy_candidates(page):
+    """Return Copy controls belonging to the newest assistant turn only."""
+    try:
+        messages = page.locator('[data-message-author-role="assistant"]')
+        count = messages.count()
+        if count < 1:
+            return []
+        message = messages.nth(count - 1)
+        for xpath in (
+            "xpath=ancestor::article[1]",
+            "xpath=ancestor::*[contains(@data-testid,'conversation-turn')][1]",
+        ):
+            try:
+                container = message.locator(xpath)
+                if container.count():
+                    candidates = copy_candidates(container)
+                    if candidates:
+                        return candidates
+            except Exception:
+                pass
+    except Exception:
+        pass
+    return []
+
+
+def wait_for_new_assistant_copy(page, baseline_assistant_count, timeout=180):
+    """Wait for a completed *assistant* turn, not the user's own Copy control."""
     deadline = time.time() + timeout
     while time.time() < deadline:
         try:
-            if len(copy_candidates(page)) > baseline_count:
-                return True
+            if assistant_count(page) > baseline_assistant_count:
+                if assistant_copy_candidates(page):
+                    return True
         except Exception:
             pass
         time.sleep(0.5)
@@ -320,23 +353,23 @@ def send_message(page, prompt_text):
         textarea.fill(prompt_text)
         time.sleep(0.5)
 
-        # Capture the number of visible response-copy controls before submission.
-        # A newly visible Copy/Kopiera control is our locale-independent evidence
-        # that the next assistant response has completed.
-        baseline_copy_count = len(copy_candidates(page))
+        # Track assistant turns before submission. User turns also expose Copy
+        # controls, so a raw page-level Copy count is not sufficient completion
+        # evidence.
+        baseline_assistant_count = assistant_count(page)
 
         # Send
         page.keyboard.press("Enter")
         logging.info("✓ Message sent, waiting for response...")
 
         if CHATGPT_CAPTURE_MODE == "copy":
-            if not wait_for_new_copy_control(page, baseline_copy_count, timeout=180):
-                logging.error("No new Copy/Kopiera control appeared before response timeout")
+            if not wait_for_new_assistant_copy(page, baseline_assistant_count, timeout=180):
+                logging.error("No completed assistant Copy/Kopiera control appeared before timeout")
                 return {
                     "success": False,
                     "error": "Timed out waiting for completed assistant response"
                 }
-            logging.info("✓ Response complete (new Copy/Kopiera control visible)")
+            logging.info("✓ Response complete (assistant Copy/Kopiera control visible)")
         else:
             # Explicit legacy mode keeps a bounded time-based compatibility path.
             time.sleep(8)
@@ -370,7 +403,7 @@ def capture_response(page):
     compatibility mode.
     """
     if CHATGPT_CAPTURE_MODE == "copy":
-        for candidate in reversed(copy_candidates(page)):
+        for candidate in reversed(assistant_copy_candidates(page)):
             try:
                 if not candidate.is_visible():
                     continue
