@@ -107,8 +107,9 @@ class BobRuntime:
         self._configure_adapters()
 
     def _configure_adapters(self) -> None:
-        if os.environ.get("GITHUB_TOKEN"):
-            self.adapters["github"] = GitHubAdapter(os.environ["GITHUB_TOKEN"])
+        # Public GitHub reads are useful even without a token. The adapter itself
+        # withholds write capabilities and rejects effects unless authenticated.
+        self.adapters["github"] = GitHubAdapter(os.environ.get("GITHUB_TOKEN"))
         if os.environ.get("SUPABASE_ACCESS_TOKEN"):
             self.adapters["supabase"] = SupabaseAdapter(os.environ["SUPABASE_ACCESS_TOKEN"])
         if os.environ.get("HF_TOKEN"):
