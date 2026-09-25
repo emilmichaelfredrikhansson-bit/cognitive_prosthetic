@@ -31,9 +31,9 @@ class PendingEffect:
 
 
 class ChatGPTBridge:
-    def __init__(self, base_url: str | None = None, timeout: int = 220):
+    def __init__(self, base_url: str | None = None, timeout: int | None = None):
         self.base_url = (base_url or os.environ.get("CHATGPT_BRIDGE_URL") or "http://127.0.0.1:5001").rstrip("/")
-        self.timeout = timeout
+        self.timeout = timeout or int(os.environ.get("CHATGPT_BRIDGE_TIMEOUT_SECONDS", "420"))
         self._lock = threading.Lock()
 
     def send(self, prompt: str) -> str:

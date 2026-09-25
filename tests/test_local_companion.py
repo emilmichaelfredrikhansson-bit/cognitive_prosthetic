@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 import bob_local
 import chatgpt_api_server
+from bob.driver import ChatGPTBridge
 
 
 class LocalCompanionTests(unittest.TestCase):
@@ -29,6 +30,8 @@ class LocalCompanionTests(unittest.TestCase):
             self.assertEqual(env["CHATGPT_BRIDGE_HOST"], "127.0.0.1")
             self.assertEqual(env["BOB_COMPANION_UI_URL"], "http://127.0.0.1:5002/")
             self.assertEqual(env["CHATGPT_CAPTURE_MODE"], "copy")
+            self.assertEqual(env["CHATGPT_RESPONSE_TIMEOUT_SECONDS"], "360")
+            self.assertEqual(env["CHATGPT_BRIDGE_TIMEOUT_SECONDS"], "420")
 
     def test_local_launcher_rejects_non_loopback_bindings(self):
         env = {
@@ -77,6 +80,19 @@ class LocalCompanionTests(unittest.TestCase):
     def test_bridge_exposes_fresh_cognition_endpoint(self):
         routes = {rule.rule for rule in chatgpt_api_server.app.url_map.iter_rules()}
         self.assertIn("/cognition", routes)
+
+    def test_response_timeout_is_bounded_and_bridge_has_headroom(self):
+        self.assertEqual(chatgpt_api_server.parse_timeout_seconds("360"), 360)
+        with self.assertRaises(RuntimeError):
+            chatgpt_api_server.parse_timeout_seconds("29")
+        with self.assertRaises(RuntimeError):
+            chatgpt_api_server.parse_timeout_seconds("901")
+        with patch.dict(
+            os.environ,
+            {"CHATGPT_BRIDGE_TIMEOUT_SECONDS": "420"},
+            clear=False,
+        ):
+            self.assertEqual(ChatGPTBridge().timeout, 420)
 
 
 if __name__ == "__main__":

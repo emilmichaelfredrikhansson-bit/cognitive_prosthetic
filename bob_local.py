@@ -70,6 +70,8 @@ def build_env(env_file: Path) -> dict[str, str]:
     env.setdefault("BOB_CHATGPT_PROJECT_URL", "")
     env.setdefault("CHATGPT_TARGET_URL", "")
     env.setdefault("CHATGPT_CAPTURE_MODE", "copy")
+    env.setdefault("CHATGPT_RESPONSE_TIMEOUT_SECONDS", "360")
+    env.setdefault("CHATGPT_BRIDGE_TIMEOUT_SECONDS", "420")
     assert_local_only(env)
     return env
 

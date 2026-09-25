@@ -33,6 +33,22 @@ BOB_CHATGPT_PROJECT_URL = os.environ.get("BOB_CHATGPT_PROJECT_URL", "").strip()
 CHATGPT_TARGET_URL = (BOB_CHATGPT_PROJECT_URL or os.environ.get("CHATGPT_TARGET_URL", "")).strip()
 CHATGPT_CAPTURE_MODE = os.environ.get("CHATGPT_CAPTURE_MODE", "copy").strip().lower()
 BOB_COMPANION_UI_URL = os.environ.get("BOB_COMPANION_UI_URL", "http://127.0.0.1:5002/").strip()
+
+def parse_timeout_seconds(value, default=360):
+    raw = str(value or "").strip()
+    if not raw:
+        return default
+    try:
+        timeout = int(raw)
+    except ValueError as exc:
+        raise RuntimeError("CHATGPT_RESPONSE_TIMEOUT_SECONDS must be an integer") from exc
+    if not 30 <= timeout <= 900:
+        raise RuntimeError("CHATGPT_RESPONSE_TIMEOUT_SECONDS must be between 30 and 900")
+    return timeout
+
+CHATGPT_RESPONSE_TIMEOUT_SECONDS = parse_timeout_seconds(
+    os.environ.get("CHATGPT_RESPONSE_TIMEOUT_SECONDS")
+)
 if CHATGPT_CAPTURE_MODE not in {"copy", "legacy_dom"}:
     raise RuntimeError("CHATGPT_CAPTURE_MODE must be 'copy' or 'legacy_dom'")
 logging.basicConfig(
@@ -398,7 +414,11 @@ def send_message(page, prompt_text):
         logging.info("✓ Message sent, waiting for response...")
 
         if CHATGPT_CAPTURE_MODE == "copy":
-            if not wait_for_new_assistant_copy(page, baseline_assistant_count, timeout=180):
+            if not wait_for_new_assistant_copy(
+                page,
+                baseline_assistant_count,
+                timeout=CHATGPT_RESPONSE_TIMEOUT_SECONDS,
+            ):
                 logging.error("No completed assistant Copy/Kopiera control appeared before timeout")
                 return {
                     "success": False,
@@ -510,7 +530,7 @@ def chat():
 
     # Wait for result (with timeout)
     try:
-        result = result_queue.get(timeout=200)  # 200 second timeout
+        result = result_queue.get(timeout=CHATGPT_RESPONSE_TIMEOUT_SECONDS + 30)
         if result.get('success'):
             return jsonify(result), 200
         else:
@@ -534,7 +554,7 @@ def cognition():
 
     task_queue.put({'type': 'cognition_request', 'prompt': prompt})
     try:
-        result = result_queue.get(timeout=230)
+        result = result_queue.get(timeout=CHATGPT_RESPONSE_TIMEOUT_SECONDS + 30)
         if result.get('success'):
             return jsonify(result), 200
         return jsonify(result), 500
