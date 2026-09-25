@@ -16,6 +16,8 @@
 - Product behavior canon: `PRODUCT_PRINCIPLES.md`
 - Large-project cognition canon: `docs/BOB_CHUNKING_CONTEXT_ARCHITECTURE.md`
 - Module/stateless cognition canon: `docs/BOB_MODULE_COGNITION_ARCHITECTURE.md`
+- Recursive self-improvement canon: `docs/BOB_RECURSIVE_SELF_IMPROVEMENT_ARCHITECTURE.md`
+- Knowledge Fabric canon: `docs/BOB_KNOWLEDGE_FABRIC_ARCHITECTURE.md`
 - Bob protocol: `docs/BOB_PROTOCOL_V1.md`
 - Manual relay: `docs/BOB_MANUAL_RELAY_V1.md`
 - ChatGPT Project instructions: `docs/BOB_CHATGPT_PROJECT_INSTRUCTIONS.md`
@@ -55,9 +57,59 @@ No component is globally smart.
 - providers own external state;
 - the operator owns material approvals.
 
-The inherited ChatGPT browser bridge is a replaceable cognition transport. **Canonical large-project cognition is stateless: one cognition question -> one fresh ChatGPT conversation, with Bob carrying all continuity. Bob now has an executable stateless module path (`/bob/module-turn`) that recompiles the complete bounded module problem after Bob-owned READ/effect results and calls fresh `/cognition` each round. The ordinary `/bob/turn` path remains legacy/stateful until module selection and context compilation become the default orchestration path.** **V1 response capture is canonically the visible ChatGPT Copy action -> clipboard; DOM scraping is legacy-only, while Windows UI Automation is deferred unless real-world robustness requires it.** **Bob V1 runs as Local Companion on the operator's own PC using the operator's existing ChatGPT account/subscription but a separate Bob-managed Chromium profile. All Bob cognition is confined to one dedicated private ChatGPT Project named `Bob`, with Project-only memory as the V1 isolation setting.** Bob API and bridge remain loopback-only, the Bob Project/ChatGPT tab lives in the background, and the Bob UI is brought to the foreground in the same managed browser. DigitalOcean/persistent remote cognition is deferred to V2.
+The inherited ChatGPT browser bridge is a replaceable cognition transport. **Canonical large-project cognition is stateless: one cognition question -> one fresh ChatGPT conversation, with Bob carrying all continuity. Bob now has an executable stateless module path (`/bob/module-turn`) that recompiles the complete bounded module problem after Bob-owned READ/effect results and calls fresh `/cognition` each round. The ordinary `/bob/turn` path remains legacy/stateful until module selection and context compilation become the default orchestration path.** **V1 response capture is canonically the visible ChatGPT Copy action -> clipboard; DOM scraping is legacy-only, while Windows UI Automation is deferred unless real-world robustness requires it.** **Bob V1 runs as Local Companion on the operator's own PC using the operator's existing ChatGPT account/subscription but a separate Bob-managed Chromium profile. All Bob cognition is confined to one dedicated private ChatGPT Project named `Bob`, with Project-only memory as the V1 isolation setting.** Bob API and bridge remain loopback-only, the Bob Project/ChatGPT tab lives in the background, and the Bob UI is brought to the foreground in the same managed browser. DigitalOcean/persistent remote cognition is deferred to V2. **Recursive self-development is now canonicalized as a low-priority daytime background lane: interactive work always wins, background mutation uses isolated worktree/branch state plus semantic leases, and promotion remains a separate authority boundary. Bob's compounding cognition model is a provenance-rich Knowledge Fabric whose relevant verified patterns/failures/playbooks/examples/source pointers are selected into the existing bounded context envelope rather than dumped wholesale into prompts.**
 
 ## LAST_COMPLETED
+
+`BOB_RECURSIVE_SELF_IMPROVEMENT_AND_KNOWLEDGE_FABRIC_CANON`
+
+The long-term recursive objective is now explicit:
+
+> **Every useful cognition cycle should raise the starting floor for future relevant cognition by converting transient reasoning into durable, verified cognitive infrastructure.**
+
+Two new canonical architecture documents are source-of-truth for this direction:
+
+- `docs/BOB_RECURSIVE_SELF_IMPROVEMENT_ARCHITECTURE.md`
+- `docs/BOB_KNOWLEDGE_FABRIC_ARCHITECTURE.md`
+
+Canonical recursive/background behavior:
+- Bob may work quietly while the operator PC is awake; shutdown/restart must not lose continuity because durable state, not a chat/process, carries the loop;
+- self-development is a low-priority lane and **interactive work always wins**;
+- background mutation uses an isolated worktree/branch or equivalent isolated mutable state;
+- semantic module/work-node leases prevent interactive and background workers from mutating the same scope concurrently;
+- unattended work may explore, test, checkpoint, commit and discard candidates only inside existing granted authority;
+- promotion/merge into canonical Bob state is a separate authority class;
+- repository deletion, protected-branch force push/deletion, repository/ruleset administration, secrets administration and unauthorized production mutation/deploy/spend stay outside the normal self-development capability surface and should also be denied provider-side with least-privilege credentials;
+- unattended safety target: **even worst-plausible cognition must not be sufficient to destroy or silently promote canonical project state**;
+- every non-trivial cycle should reflect on expected vs observed outcome and distill reusable evidence-backed learning.
+
+Canonical Knowledge Fabric behavior:
+- Bob may accumulate a very large external knowledge body because most items cost **zero cognition tokens until selected**;
+- first-class reusable classes are verified knowledge/decisions, skills/playbooks, reference implementations/examples and failure memory;
+- maturity is `OBSERVATION -> CANDIDATE_LESSON -> VERIFIED_PATTERN -> CANONICAL_PRACTICE`;
+- model output alone is never verified reusable knowledge;
+- provenance, freshness, source/evidence pointers and supersession lineage are first-class;
+- the module/work graph tells Bob **where** a problem lives; the Knowledge Fabric tells Bob **what prior verified experience may help**;
+- the Context Compiler retrieves only the smallest relevant knowledge slice inside the existing 20k target / 25k hard ceiling and prefers source pointers/direct GitHub inspection over injecting large bodies when practical;
+- Bob may learn recurring cognition failure modes and selectively include concise corrective warnings/checklists when evidence says they apply;
+- the compounding principle is: **no good thought should need to be thought from zero twice**.
+
+Product Principles, Constitution, Architecture, Roadmap, AGENTS, ChatGPT Project instructions, chunking/context canon and module/stateless canon now point at these contracts. No authority was expanded.
+
+`BOB_LOCAL_STATELESS_LIVE_QUALIFICATION`
+
+The operator-PC Local Companion achieved the first real stateless-cognition proof before later branch changes:
+
+- Windows setup/runtime was made portable and the then-current full suite reached **79/79 PASS** at exact commit `008728c82138b6abb6ddfa5fe7e42d4b63c43242`;
+- the dedicated Bob ChatGPT Project started successfully through the managed Chromium profile;
+- `POST /bob/module-graph` returned 200 against real local runtime/GitHub state;
+- a real `POST /bob/module-turn` on compliant `BOB_PROTOCOL` opened fresh ChatGPT cognition, re-grounded against connected GitHub, returned through visible Copy/clipboard transport, parsed a raw copied `BOB.DONE`, and completed with HTTP 200 / `status=DONE`;
+- live runtime work discovered and fixed Windows stdio encoding, slow per-character prompt typing, locale-sensitive Copy capture, user-vs-assistant Copy ambiguity and Copy transport stripping markdown fences;
+- the live cognition review itself identified real protocol/documentation inconsistencies, which were then corrected and tested.
+
+This proves the architecture can close the loop in reality. It does **not** qualify later current head: subsequent implementation and canon commits require a fresh operator-PC suite/runtime rerun.
+
+Previous completed implementation/canon remains below for historical handoff continuity.
 
 `BOB_MODULE_GRAPH_CONTEXT_COMPILER_V1`
 
@@ -381,52 +433,60 @@ The dedicated ChatGPT Project isolation tranche was then reconciled from its bra
 
 `BOB_MODULE_STATELESS_VERTICAL_QUALIFICATION`
 
-The first executable module graph + Context Compiler + fresh-cognition continuation path is landed. The immediate goal is to qualify that path on current head and then use Bob's own oversized legacy runtime node as the first self-hosting architecture-repair canary.
+The first executable module graph + Context Compiler + fresh-cognition path is landed and its basic live `module-turn -> fresh ChatGPT -> GitHub re-ground -> BOB.DONE` path has been proven on the operator PC at exact earlier commit `008728c82138b6abb6ddfa5fe7e42d4b63c43242`.
 
-Current deterministic graph evidence under `BOB_TOKEN_ESTIMATE_V1`:
+Remaining qualification before the stateless vertical can be considered closed:
+- rerun the full suite and Local Companion on **current head** after later implementation/canon changes;
+- force at least one Bob-owned `BOB.READ -> BOB.RESULT -> recompile -> second fresh cognition` continuation live;
+- qualify one approval-bound module effect and its post-effect fresh continuation live;
+- use the oversized runtime module as the first end-to-end self-hosting architecture-repair canary.
+
+Current deterministic `BOB_TOKEN_ESTIMATE_V1` measurement on branch content after the new canon:
 
 ```text
-BOB_PROTOCOL               3,236   compliant
-BOB_MODULE_COGNITION      13,824   compliant
-BOB_RUNTIME_ORCHESTRATION 19,040   MIGRATION_REQUIRED
+BOB_PROTOCOL               4,152   compliant
+BOB_MODULE_COGNITION      14,766   compliant (234 tokens headroom)
+BOB_RUNTIME_ORCHESTRATION 19,374   MIGRATION_REQUIRED
 ```
 
-The branch declares **74** unittest methods. Connector-level static reconciliation confirms:
-- `.bob/module_graph.json` parses as `BOB_MODULE_GRAPH_V1` and binds repository ID `1374229539`;
-- the stateless module loop calls `bridge.cognition(...)` and does not call legacy `bridge.send(...)`;
-- READ results are added to durable continuation and the full module problem is recompiled;
-- approved module effects resume through fresh cognition;
-- normal module writes are bound to manifest-owned paths and the selected working ref;
-- `/bob/module-turn` and `/bob/module-graph` are exposed;
-- Context Compiler instructs direct GitHub source grounding.
+`BOB_MODULE_COGNITION` is now very close to the 15k hard cap. Do not add further responsibility to that module without remeasurement/reorganization.
 
-This is structural/static evidence only. The current-head Python suite has not been executed in this interactive environment because its container cannot resolve github.com, and no material-spend remote compute job was dispatched.
+The graph still has explicit `coverage=PARTIAL`. Recursive self-development and Knowledge Fabric are canonical architecture/roadmap now, but their runtime modules, durable queue, worktree/lease machinery, knowledge store and retrieval pipeline are **not yet implemented**.
 
 ## NEXT_INTENDED_WORK
 
-1. On the operator PC, pull the current `feat/bob-core-v1` head and run `python -m unittest discover -s tests -v`.
-2. Start Local Companion against the dedicated Bob ChatGPT Project and qualify `POST /bob/module-graph` on ref `feat/bob-core-v1`.
-3. Run one bounded `POST /bob/module-turn` on a compliant module and force at least one Bob-owned READ continuation; verify a second fresh ChatGPT conversation receives the recompiled original problem + result.
-4. Qualify one approval-bound module effect on the same working ref; verify post-approval continuation also uses a fresh cognition request and re-reads current GitHub reality.
-5. Use `BOB_RUNTIME_ORCHESTRATION` (currently 19,040 measured tokens) as the first >15k self-hosting architecture-repair canary. The cognition side should propose/deploy a compliant decomposition while Bob repeatedly re-measures the graph. Existing GitHub effect approvals remain in force.
-6. After that canary passes, make module selection/Context Compiler routing the default behind ordinary Bob chat so the operator no longer chooses `module-turn` explicitly.
-7. Then add durable product-vision/bootstrap and result-distillation state, followed by reusable module-template extraction from genuinely generic verified modules.
-8. DigitalOcean/mobile persistence remains V2 and is not a prerequisite.
+1. Reconnect the operator PC/Remote Desktop Commander, pull current `feat/bob-core-v1`, run the full unittest suite, and restart Local Companion from current head.
+2. Re-qualify `POST /bob/module-graph` on current head and record current live footprints.
+3. Force one bounded `/bob/module-turn` to emit a Bob-owned READ; verify Bob executes it, recompiles original problem + result, and opens a **second fresh ChatGPT conversation**.
+4. Qualify one approval-bound module Git effect on the same working ref and verify post-effect read-back + fresh cognition continuation.
+5. Use `BOB_RUNTIME_ORCHESTRATION` (>15k) as the first architecture-repair canary and return all affected target modules to <=15k without authority expansion.
+6. Split/reorganize `BOB_MODULE_COGNITION` before meaningful additional responsibility if projected growth would cross 15k.
+7. Make module selection/Context Compiler routing the default behind ordinary Bob chat.
+8. Implement Phase 3.75 foundations in this order: durable self-development queue/state -> isolated selfdev worktree/branch lifecycle -> semantic leases + interactive pre-emption -> checkpoint/revert/discard -> separate promotion gate.
+9. Implement Knowledge Fabric V1: item schema/provenance/freshness/maturity -> first distilled Bob failures/patterns/reference items -> bounded retrieval into Context Compiler -> retrieval/effectiveness metrics.
+10. Prove one daytime unattended multi-cycle canary and one PC restart/resume canary, producing a concise operator digest rather than background chatter.
+11. Product-vision/bootstrap, richer durable result distillation and reusable module/template extraction remain coupled follow-up work.
+12. DigitalOcean/mobile persistence remains V2 and is not a prerequisite.
 
 ## OPEN_FINDINGS
 
-- The module graph currently has explicit `coverage=PARTIAL`; it is not yet a complete semantic map of Bob.
-- `BOB_TOKEN_ESTIMATE_V1` is deterministic `ceil(UTF-8 bytes / 3)`, not ChatGPT's exact tokenizer. The schema is versioned so the measurement contract can later be upgraded without silently changing historical receipts.
-- Normal module effects are intentionally limited to one effect per fresh cognition request, manifest-owned paths and the selected working ref. Architecture-repair mode has broader path scope because splitting an oversized module may require new files plus graph rewrites; existing workspace authority, approval and read-back verification still apply.
-- The ordinary `/bob/turn` path is still stateful. Statelessness is currently executable through `/bob/module-turn`, not yet automatic for every operator message.
-- New/planned modules whose declared files do not yet exist do not yet have a dedicated bootstrap path; the current vertical slice targets existing modules.
-- The current interactive development environment cannot run the real managed browser against the operator's authenticated ChatGPT account. Copy->clipboard, exact Bob Project targeting and direct connected-GitHub behavior remain live Local Companion qualification items even though the operator has confirmed the same ChatGPT account has GitHub access.
-- Bob effect approvals remain in process memory. Restart persistence is later hardening; current approvals remain bound to workspace authority + staged GitHub state and fail closed on drift.
+- The module graph has explicit `coverage=PARTIAL`; it is not yet a complete semantic map of Bob.
+- `BOB_TOKEN_ESTIMATE_V1` is deterministic `ceil(UTF-8 bytes / 3)`, not ChatGPT's exact tokenizer.
+- `BOB_MODULE_COGNITION` is currently about **14,766 / 15,000** measured tokens; it is compliant but has almost no growth headroom.
+- `BOB_RUNTIME_ORCHESTRATION` is about **19,374 / 15,000** and remains the intended architecture-repair canary.
+- Normal module effects remain one effect per fresh cognition request, manifest-owned path/ref constrained; architecture-repair scope is wider but still approval/authority/read-back bounded.
+- Ordinary `/bob/turn` is still stateful. Statelessness is executable through `/bob/module-turn`, not yet automatic for every operator message.
+- The live operator-PC proof covered module graph and a direct GitHub-grounded DONE turn; a Bob-owned READ continuation and approval-bound effect continuation still need live qualification.
+- Current branch head after later implementation/canon changes has **not** yet received a fresh operator-PC full-suite + managed-browser qualification.
+- Remote Desktop Commander was offline at the latest reconciliation, so current-head local runtime state could not be re-read.
+- Self-development background runtime is canon, not implementation: no durable selfdev queue, separate worktree lifecycle, lease manager, background scheduler/pre-emption or promotion gate exists yet.
+- Knowledge Fabric is canon, not implementation: no item store/schema, maturity transitions, retrieval/ranking or compiler injection exists yet.
+- Bob effect approvals remain in process memory; restart persistence is still later hardening.
 - V2 systemd/Xvfb/remote-host material remains preserved but is not required for V1.
 
 ## FIRST_ACTION
 
-Qualify the current stateless module vertical slice on the operator PC: current-head unittest suite -> Local Companion -> `/bob/module-graph` on `feat/bob-core-v1` -> one READ-continuation `/bob/module-turn` -> one approval-continuation `/bob/module-turn`. Then use the measured 19,040-token runtime node as the first architecture-repair canary.
+When the operator PC connector is available: pull current head -> run full suite -> restart Local Companion -> requalify module graph -> force one Bob-owned READ continuation -> force one approval-bound effect continuation. Then use the >15k runtime module as the self-hosting repair canary before beginning Phase 3.75 runtime implementation.
 
 ## HARD_BLOCKERS
 
@@ -436,3 +496,6 @@ Qualify the current stateless module vertical slice on the operator PC: current-
 - No SL or AB production mutation/deploy/spend is authorized by the current workspaces.
 - No secret may be committed to the repository or sent to browser JavaScript.
 - Do not make DigitalOcean a general-purpose execution engine merely because it hosts the ChatGPT browser.
+- Unattended self-development must not receive repository deletion/admin, protected-branch force-push/deletion, secrets administration or unauthorized production deploy/mutation/spend capability.
+- Self-development may not promote/merge itself into canonical Bob state merely because its own cognition reports success.
+- Knowledge Fabric content never grants authority and model output alone never becomes verified reusable knowledge.
