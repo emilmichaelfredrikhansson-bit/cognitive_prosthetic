@@ -13,7 +13,9 @@ Before privileged Bob repository effects:
 5. read `PRODUCT_PRINCIPLES.md` when product behavior, UX, cognition orchestration or Bob self-development is in scope;
 6. read `docs/BOB_CHUNKING_CONTEXT_ARCHITECTURE.md` for large/cross-cutting work, context management or work decomposition;
 7. read `docs/BOB_MODULE_COGNITION_ARCHITECTURE.md` for Bob-designed software, module boundaries, cognition budgets, direct GitHub re-grounding or meta-review work;
-8. inspect only the additional implementation/canon relevant to the active work.
+8. read `docs/BOB_RECURSIVE_SELF_IMPROVEMENT_ARCHITECTURE.md` for Bob self-development, unattended/background execution, selfdev isolation, leases, promotion or recursive safety work;
+9. read `docs/BOB_KNOWLEDGE_FABRIC_ARCHITECTURE.md` for durable lessons, patterns, failure memory, reference implementations, retrieval or context-learning work;
+10. inspect only the additional implementation/canon relevant to the active work.
 
 Before effects on a target workspace, perform the equivalent identity verification for that workspace.
 
@@ -87,6 +89,53 @@ verify identity
 - Fresh cognition should re-ground directly in connected GitHub source/history/tests when repository truth matters, rather than relying only on Bob summaries.
 - Ordinary cognition owns its own impact check against relevant contracts/module neighbors/product intent. Use a separate fresh review/meta cognition request only when materially useful; there is no mandatory second-stage reviewer.
 - Escalate operator-owned product/vision/end-goal tradeoffs instead of silently optimizing them away.
+
+## Recursive self-development operating rules
+
+When operating in unattended/background self-development mode:
+
+- treat the self-development lane as lower priority than active operator work;
+- use an isolated self-development worktree/branch or equivalent isolated mutable state;
+- do not mutate a semantic module/work-node that is leased by the interactive lane;
+- start each material batch from an explicit base/checkpoint and preserve rollback/discard ability;
+- allow cognition to propose broadly, but expose only bounded semantic capabilities for actual effects;
+- never hand broad provider credentials directly to cognition;
+- keep repository deletion, protected-branch force push/deletion, repository/ruleset administration, secrets administration and unauthorized production mutation/deploy/spend outside the normal self-development capability surface;
+- treat canonical promotion/merge as separate authority from experimentation and branch commits;
+- after each batch, inspect diff, verify tests/evals, recheck module/context invariants and read back actual Git state;
+- failed or ambiguous experiments should be reverted/discarded rather than accumulated;
+- persist reusable verified lessons into the Knowledge Fabric instead of relying on the chat transcript;
+- background work should stop/yield at a safe checkpoint when interactive work needs the same resources/scope.
+
+The unattended safety target is mechanical: a bad cognition decision must not be sufficient to destroy or silently promote canonical project state.
+
+## Knowledge distillation rules
+
+After a non-trivial solved or failed problem, consider whether the result should become:
+
+- a regression test;
+- failure signature;
+- verified pattern;
+- skill/playbook;
+- template;
+- reference implementation;
+- invariant/contract;
+- Context Compiler retrieval heuristic.
+
+Do not promote a model assertion into reusable knowledge without evidence.
+
+Use the maturity ladder:
+
+```text
+OBSERVATION
+→ CANDIDATE_LESSON
+→ VERIFIED_PATTERN
+→ CANONICAL_PRACTICE
+```
+
+Repository/provider/runtime reality outranks summaries. Keep source/evidence pointers, freshness and supersession lineage.
+
+A larger Knowledge Fabric must not justify dumping more material into every prompt. Retrieval remains bounded by the existing cognition envelope.
 
 ## Verification
 
