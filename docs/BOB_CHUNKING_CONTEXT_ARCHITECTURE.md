@@ -180,6 +180,7 @@ authority/effect constraints
 verification requirements
 exit criteria
 freshness/provenance markers
+relevant verified Knowledge Fabric items / failure signatures / source pointers
 ```
 
 The compiler must prefer current canonical/reality state over old conversation text.
@@ -194,9 +195,10 @@ Conceptually:
 3. include only contracts required by that closure
 4. fetch fresh reality for facts that may have changed
 5. select exact files/excerpts required for the task
-6. include current blockers, authority and exit criteria
-7. fit the packet to a bounded cognition budget
-8. send the packet to a fresh cognition thread
+6. retrieve only the relevant verified Knowledge Fabric patterns/failures/examples/decisions
+7. include current blockers, authority and exit criteria
+8. rank/deduplicate source material and fit the packet to a bounded cognition budget
+9. send the packet to a fresh cognition thread
 ```
 
 If the packet exceeds the hard cognition ceiling, Bob must fail closed and route a bounded architecture/context problem rather than silently dropping critical context. Separately, no individual Bob module may exceed its 15k hard cap.
@@ -408,7 +410,9 @@ Bob must not blindly preserve a chunking pattern merely because it was used befo
 
 ## Reusable knowledge without context leakage
 
-Bob may distill cross-project lessons into abstract reusable playbooks when they are genuinely generic.
+Reusable knowledge is a first-class Bob subsystem defined in `docs/BOB_KNOWLEDGE_FABRIC_ARCHITECTURE.md`.
+
+Bob may distill verified lessons into patterns, playbooks, failure signatures, examples, tests and reference implementations when they are genuinely reusable.
 
 Example:
 
@@ -421,7 +425,20 @@ rehearsal migration
 → rollback receipt
 ```
 
-Reusable knowledge must not leak project-private data or silently grant cross-workspace authority.
+The Knowledge Fabric may grow very large because most items consume **zero cognition tokens until selected**. The Context Compiler should retrieve only the smallest relevant set and may prefer source pointers over injected implementation bodies when fresh cognition can inspect GitHub directly.
+
+Knowledge maturity is evidence-driven:
+
+```text
+OBSERVATION
+→ CANDIDATE_LESSON
+→ VERIFIED_PATTERN
+→ CANONICAL_PRACTICE
+```
+
+Model output alone is never sufficient to promote reusable guidance.
+
+Reusable knowledge must not leak project-private data or silently grant cross-workspace authority. Knowledge is cognition support, never permission.
 
 ## Recursive self-hosting consequence
 
