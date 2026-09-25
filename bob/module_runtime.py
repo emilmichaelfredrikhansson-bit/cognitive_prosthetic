@@ -43,9 +43,27 @@ class ModuleRuntimeMixin:
             resolved_ref = str(ref or workspace.default_branch).strip()
             graph = self._load_module_graph(workspace, resolved_ref)
             github = self._adapter_for("github.read_file")
+            all_paths = list(dict.fromkeys(
+                path for module in graph.modules for path in module.owned_paths
+            ))
+            snapshot_reader = getattr(github, "read_files_snapshot", None)
+            snapshot_results = (
+                snapshot_reader(workspace, all_paths, resolved_ref)
+                if callable(snapshot_reader)
+                else [github.read_file(workspace, path, resolved_ref) for path in all_paths]
+            )
+            snapshot = {str(item["path"]): item for item in snapshot_results}
+            if set(snapshot) != set(all_paths):
+                raise ConfigurationError("module graph snapshot did not return every owned path")
             modules = []
             for module in graph.modules:
-                footprint = measure_module(workspace, module, github, resolved_ref)
+                footprint = measure_module(
+                    workspace,
+                    module,
+                    github,
+                    resolved_ref,
+                    preloaded=snapshot,
+                )
                 modules.append({
                     **module.summary_dict(),
                     "footprint": footprint.public_dict(),

@@ -5,7 +5,7 @@ import os
 import subprocess
 from pathlib import Path, PurePosixPath
 from typing import Any
-from urllib.parse import urlsplit
+from urllib.parse import quote, urlsplit
 
 from bob.errors import ExternalEffectError, IdentityMismatch, ProtocolError
 from bob.workspaces import Workspace
@@ -70,13 +70,15 @@ class GitHubAdapter:
         name = name.strip("/")
         return name or None
 
-    def _use_local_read(self, workspace: Workspace) -> bool:
+    def _matches_local_repository(self, workspace: Workspace) -> bool:
         return (
-            not self.authenticated
-            and self.local_repo_root is not None
+            self.local_repo_root is not None
             and isinstance(self.local_repository, str)
             and self.local_repository.casefold() == workspace.github_repository.casefold()
         )
+
+    def _use_local_read(self, workspace: Workspace) -> bool:
+        return not self.authenticated and self._matches_local_repository(workspace)
 
     @staticmethod
     def _safe_repo_path(path: str) -> str:
@@ -101,25 +103,33 @@ class GitHubAdapter:
                 return candidate
         raise ProtocolError(f"local Git ref unavailable: {requested}")
 
-    def _read_local_file(
+    def _read_local_file_at_ref(
         self,
-        workspace: Workspace,
         path: str,
-        ref: str | None,
+        resolved_ref: str,
+        requested_ref: str | None,
     ) -> dict[str, Any]:
         safe_path = self._safe_repo_path(path)
-        resolved_ref = self._local_ref(workspace, ref)
         spec = f"{resolved_ref}:{safe_path}"
         content = self._git("show", spec)
         sha = self._git("rev-parse", spec).strip()
         return {
             "path": safe_path,
             "sha": sha,
-            "ref": ref,
+            "ref": requested_ref,
             "content": content,
             "size": len(content.encode("utf-8")),
             "source": "local_git",
         }
+
+    def _read_local_file(
+        self,
+        workspace: Workspace,
+        path: str,
+        ref: str | None,
+    ) -> dict[str, Any]:
+        resolved_ref = self._local_ref(workspace, ref)
+        return self._read_local_file_at_ref(path, resolved_ref, ref)
 
     def _list_local_contents(
         self,
@@ -370,6 +380,35 @@ class GitHubAdapter:
             }
 
         raise ProtocolError(f"unsupported GitHub effect tool: {tool}")
+
+    def read_files_snapshot(
+        self,
+        workspace: Workspace,
+        paths: list[str] | tuple[str, ...],
+        ref: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Read one coherent repository snapshot, preferring verified exact local Git."""
+        requested_paths = [self._safe_repo_path(path) for path in paths]
+        if not requested_paths:
+            return []
+        if self._matches_local_repository(workspace):
+            resolved_ref = self._local_ref(workspace, ref)
+            local_commit = self._git("rev-parse", f"{resolved_ref}^{{commit}}").strip()
+            exact_local = not self.authenticated
+            if self.authenticated:
+                self.verify_workspace(workspace)
+                requested_ref = str(ref or workspace.default_branch).strip()
+                remote = self.http.request(
+                    "GET",
+                    f"/repos/{workspace.github_repository}/commits/{quote(requested_ref, safe='')}",
+                )
+                exact_local = isinstance(remote, dict) and str(remote.get("sha") or "") == local_commit
+            if exact_local:
+                return [
+                    self._read_local_file_at_ref(path, resolved_ref, ref)
+                    for path in requested_paths
+                ]
+        return [self.read_file(workspace, path, ref) for path in requested_paths]
 
     def read_file(self, workspace: Workspace, path: str, ref: str | None = None) -> dict[str, Any]:
         if self._use_local_read(workspace):

@@ -86,6 +86,35 @@ class LocalGitReadTests(unittest.TestCase):
             self.assertEqual(items[0]["type"], "file")
             self.assertEqual(items[0]["source"], "local_git")
 
+    def test_authenticated_snapshot_uses_local_git_only_when_remote_ref_matches(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = self.make_repo(tmp)
+            adapter = GitHubAdapter("token", local_repo_root=str(root))
+            local_sha = run_git(root, "rev-parse", "main")
+            adapter.verify_workspace = lambda _workspace: {"repository_id": 123}
+            adapter.http.request = lambda *_args, **_kwargs: {"sha": local_sha}
+
+            results = adapter.read_files_snapshot(
+                workspace(), ["hello.txt", "nested/item.txt"], "main"
+            )
+
+            self.assertEqual([item["source"] for item in results], ["local_git", "local_git"])
+
+    def test_authenticated_snapshot_falls_back_when_local_ref_is_stale(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = self.make_repo(tmp)
+            adapter = GitHubAdapter("token", local_repo_root=str(root))
+            adapter.verify_workspace = lambda _workspace: {"repository_id": 123}
+            adapter.http.request = lambda *_args, **_kwargs: {"sha": "different-remote-sha"}
+            adapter.read_file = lambda _workspace, path, ref=None: {
+                "path": path, "sha": "remote", "ref": ref,
+                "content": "remote", "size": 6, "source": "remote",
+            }
+
+            results = adapter.read_files_snapshot(workspace(), ["hello.txt"], "main")
+
+            self.assertEqual(results[0]["source"], "remote")
+
 
 if __name__ == "__main__":
     unittest.main()

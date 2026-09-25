@@ -167,11 +167,17 @@ class ModuleFootprint:
         }
 
 
-def measure_module(workspace: Any, module: ModuleNode, github: Any, ref: str) -> ModuleFootprint:
+def measure_module(
+    workspace: Any,
+    module: ModuleNode,
+    github: Any,
+    ref: str,
+    preloaded: dict[str, dict[str, Any]] | None = None,
+) -> ModuleFootprint:
     files: list[dict[str, Any]] = []
     total = 0
     for path in module.owned_paths:
-        result = github.read_file(workspace, path, ref)
+        result = preloaded[path] if preloaded is not None else github.read_file(workspace, path, ref)
         content = result.get("content")
         if not isinstance(content, str):
             raise ConfigurationError(f"module path has no text content: {path}")
