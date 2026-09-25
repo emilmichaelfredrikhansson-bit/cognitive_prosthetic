@@ -96,6 +96,8 @@ Canonical Knowledge Fabric behavior:
 
 Product Principles, Constitution, Architecture, Roadmap, AGENTS, ChatGPT Project instructions, chunking/context canon and module/stateless canon now point at these contracts. No authority was expanded.
 
+The dedicated Bob ChatGPT Project now also has an **exact canonical cognition bootloader payload** in `docs/BOB_CHATGPT_PROJECT_INSTRUCTIONS.md`, versioned as `BOB_COGNITION_CONTRACT_VERSION=1`. It is intentionally limited to stable invariants; dynamic state remains in Bob/GitHub/Knowledge Fabric and compiled context. Current payload length is 6,064 characters. Runtime version-sync enforcement is still pending.
+
 `BOB_LOCAL_STATELESS_LIVE_QUALIFICATION`
 
 The operator-PC Local Companion achieved the first real stateless-cognition proof before later branch changes:
@@ -462,11 +464,12 @@ The graph still has explicit `coverage=PARTIAL`. Recursive self-development and 
 5. Use `BOB_RUNTIME_ORCHESTRATION` (>15k) as the first architecture-repair canary and return all affected target modules to <=15k without authority expansion.
 6. Split/reorganize `BOB_MODULE_COGNITION` before meaningful additional responsibility if projected growth would cross 15k.
 7. Make module selection/Context Compiler routing the default behind ordinary Bob chat.
-8. Implement Phase 3.75 foundations in this order: durable self-development queue/state -> isolated selfdev worktree/branch lifecycle -> semantic leases + interactive pre-emption -> checkpoint/revert/discard -> separate promotion gate.
-9. Implement Knowledge Fabric V1: item schema/provenance/freshness/maturity -> first distilled Bob failures/patterns/reference items -> bounded retrieval into Context Compiler -> retrieval/effectiveness metrics.
-10. Prove one daytime unattended multi-cycle canary and one PC restart/resume canary, producing a concise operator digest rather than background chatter.
-11. Product-vision/bootstrap, richer durable result distillation and reusable module/template extraction remain coupled follow-up work.
-12. DigitalOcean/mobile persistence remains V2 and is not a prerequisite.
+8. Add cognition-contract synchronization: runtime/preflight should detect stale/missing `BOB_COGNITION_CONTRACT_VERSION` in the configured Bob Project instructions and fail closed or require re-sync.
+9. Implement Phase 3.75 foundations in this order: durable self-development queue/state -> isolated selfdev worktree/branch lifecycle -> semantic leases + interactive pre-emption -> checkpoint/revert/discard -> separate promotion gate.
+10. Implement Knowledge Fabric V1: item schema/provenance/freshness/maturity -> first distilled Bob failures/patterns/reference items -> bounded retrieval into Context Compiler -> retrieval/effectiveness metrics.
+11. Prove one daytime unattended multi-cycle canary and one PC restart/resume canary, producing a concise operator digest rather than background chatter.
+12. Product-vision/bootstrap, richer durable result distillation and reusable module/template extraction remain coupled follow-up work.
+13. DigitalOcean/mobile persistence remains V2 and is not a prerequisite.
 
 ## OPEN_FINDINGS
 
@@ -481,6 +484,7 @@ The graph still has explicit `coverage=PARTIAL`. Recursive self-development and 
 - Remote Desktop Commander was offline at the latest reconciliation, so current-head local runtime state could not be re-read.
 - Self-development background runtime is canon, not implementation: no durable selfdev queue, separate worktree lifecycle, lease manager, background scheduler/pre-emption or promotion gate exists yet.
 - Knowledge Fabric is canon, not implementation: no item store/schema, maturity transitions, retrieval/ranking or compiler injection exists yet.
+- Project Instructions bootloader text is canonical/versioned, but the runtime does not yet verify that the configured ChatGPT Project actually contains the expected `BOB_COGNITION_CONTRACT_VERSION`.
 - Bob effect approvals remain in process memory; restart persistence is still later hardening.
 - V2 systemd/Xvfb/remote-host material remains preserved but is not required for V1.
 
