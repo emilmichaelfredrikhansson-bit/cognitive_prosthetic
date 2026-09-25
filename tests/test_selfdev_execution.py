@@ -182,6 +182,49 @@ class SelfDevelopmentExecutionTests(unittest.TestCase):
             )
             self.assertEqual(result["item"]["attempt_count"], 1)
 
+    def test_qualified_finish_requires_terminal_run_and_records_branch_head(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            repo = init_repo(root)
+            queue = make_queue(root / "selfdev.json")
+            execution = make_execution(root, repo)
+            queue.enqueue(
+                goal="qualify",
+                leases=["work:qualify"],
+                item_id="qualify",
+            )
+            bridge = SelfDevelopmentExecution(queue, execution)
+            claimed = bridge.claim_next(base_ref=CANONICAL)
+            with self.assertRaisesRegex(ProtocolError, "must be terminal"):
+                bridge.finish_item(
+                    "qualify",
+                    state="QUALIFIED",
+                    verification={"tests": "PASS"},
+                )
+
+            execution.cancel_run(
+                claimed["run"]["run_id"],
+                reason="qualification proof complete",
+            )
+            result = bridge.finish_item(
+                "qualify",
+                state="QUALIFIED",
+                verification={"tests": "PASS"},
+            )
+            self.assertEqual(result["item"]["state"], "QUALIFIED")
+            receipt = result["item"]["verification"]
+            self.assertEqual(receipt["tests"], "PASS")
+            self.assertEqual(
+                receipt["execution"]["run_id"], claimed["run"]["run_id"]
+            )
+            self.assertEqual(
+                receipt["execution"]["promotion_authority"], "NONE"
+            )
+            self.assertEqual(
+                receipt["execution"]["head_sha"],
+                execution.worktrees.branch_head(claimed["run"]["branch"]),
+            )
+
     def test_claim_requires_explicit_base_ref(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

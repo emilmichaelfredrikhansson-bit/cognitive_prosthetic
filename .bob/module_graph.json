@@ -242,6 +242,7 @@
         "Claim requires an explicit base ref and copies semantic leases into the existing repository coordinator.",
         "Restart reconciliation resumes the same live run without incrementing attempt_count or creating a duplicate run.",
         "Ambiguous or conflicting queue/run bindings fail closed.",
+        "Bound items can finish only after execution is terminal; QUALIFIED requires explicit verification and a preserved cancelled branch receipt.",
         "Self-development execution never integrates or promotes a candidate and records promotion_authority=NONE."
       ],
       "status": "WORKING"

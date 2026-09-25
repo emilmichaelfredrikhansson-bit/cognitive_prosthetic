@@ -45,7 +45,8 @@ The execution run is not replayed. Explicit reconciliation:
 - never increments `attempt_count` when resuming the same execution;
 - never creates a second run merely because Bob restarted.
 
-Terminal execution state requires a later explicit lifecycle decision; it is not silently converted into `QUALIFIED`.
+Terminal execution state requires a later explicit lifecycle decision; it is not silently converted into `QUALIFIED`. Finishing a bound self-development item requires the execution run to be terminal first. `QUALIFIED` additionally requires a preserved cancelled run plus explicit verification evidence; the binding layer records the branch head and `promotion_authority=NONE` in the qualification receipt.
+
 ## Worktree and promotion boundary
 
 The existing `ExecutionCoordinator` creates the isolated branch/worktree and owns worktree validation.

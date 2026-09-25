@@ -215,3 +215,49 @@ class SelfDevelopmentExecution:
                 pass
             raise
         return {"action": "CLAIMED", "item": item, "run": run}
+
+    def finish_item(
+        self,
+        item_id: str,
+        *,
+        state: str,
+        verification: dict[str, Any] | None = None,
+        reason: str | None = None,
+    ) -> dict[str, Any]:
+        """Finish queue lifecycle only after any bound execution is terminal."""
+        item = self._item(item_id)
+        run = self._validated_run(item, self._matching_runs(item["item_id"]))
+        state = str(state or "").strip().upper()
+
+        if run is not None and run.get("state") not in TERMINAL_RUN_STATES:
+            raise ProtocolError(
+                "self-development execution run must be terminal before item finish"
+            )
+        receipt = dict(verification or {})
+        if state == "QUALIFIED":
+            if run is None or run.get("state") != "CANCELLED":
+                raise ProtocolError(
+                    "QUALIFIED self-development requires a preserved cancelled "
+                    "execution run; promotion remains separate"
+                )
+            if not receipt:
+                raise ProtocolError(
+                    "QUALIFIED self-development requires verification evidence"
+                )
+            head_sha = self.execution.worktrees.branch_head(run["branch"])
+            receipt["execution"] = {
+                "run_id": run["run_id"],
+                "state": run["state"],
+                "branch": run["branch"],
+                "head_sha": head_sha,
+                "promotion_authority": (
+                    (run.get("authority") or {}).get("promotion_authority")
+                ),
+            }
+        finished = self.queue.finish(
+            item["item_id"],
+            state=state,
+            verification=receipt or None,
+            reason=reason,
+        )
+        return {"action": "FINISHED", "item": finished, "run": run}

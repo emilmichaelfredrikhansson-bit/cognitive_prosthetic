@@ -180,6 +180,18 @@ def self_development_reconcile(item_id):
     return jsonify({"success": True, **result})
 
 
+@app.post("/bob/self-development/items/<item_id>/finish")
+def self_development_finish(item_id):
+    data = request.get_json(force=True) or {}
+    result = selfdev_execution.finish_item(
+        str(item_id),
+        state=str(data["state"]),
+        verification=dict(data.get("verification") or {}),
+        reason=None if data.get("reason") in (None, "") else str(data["reason"]),
+    )
+    return jsonify({"success": True, **result})
+
+
 @app.post("/bob/read")
 def direct_read():
     data = request.get_json(force=True) or {}
