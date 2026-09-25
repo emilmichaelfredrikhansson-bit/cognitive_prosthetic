@@ -109,6 +109,34 @@ Exit criteria:
 - [ ] at least one real large workstream survives deliberate replacement of every cognition thread without loss of continuity;
 - [ ] module/context/source-grounding/review strategy records evidence for recursive improvement.
 
+## Phase 3.75 — Recursive self-improvement + Knowledge Fabric
+
+Goal: make Bob convert transient cognition into durable reusable capability and safely improve itself in the background while the operator PC is awake.
+
+Exit criteria:
+- [x] recursive self-improvement architecture canonicalized;
+- [x] Knowledge Fabric architecture canonicalized;
+- [x] unattended safety objective canonicalized: worst-plausible cognition cannot destroy/promote canonical project state;
+- [ ] persistent self-development queue/state survives Bob/PC restart without chat continuity;
+- [ ] separate interactive and self-development lanes implemented; interactive lane pre-empts background work at safe checkpoints;
+- [ ] isolated self-development worktree/branch lifecycle implemented;
+- [ ] module/work-node lease coordination prevents concurrent mutation of the same semantic scope;
+- [ ] self-development credential/capability surface excludes repository administration/deletion, protected-branch force push/deletion, secrets administration and unauthorized production effects;
+- [ ] deterministic checkpoint/revert/discard workflow exists for failed experiments;
+- [ ] promotion into canonical Bob state is a separate authority-gated action from unattended experimentation;
+- [ ] Knowledge Fabric item schema + provenance/freshness/maturity model implemented;
+- [ ] first durable failure-signature/pattern/reference-implementation items are distilled from verified Bob development incidents;
+- [ ] Context Compiler retrieves relevant Knowledge Fabric items within the existing 20k target / 25k hard ceiling;
+- [ ] known cognition failure modes can be selectively injected as bounded warnings/checklists when evidence says they are relevant;
+- [ ] self-development reflection records expected outcome, observed outcome, verification evidence and reusable lessons;
+- [ ] one daytime unattended canary completes multiple self-improvement cycles without operator supervision, keeps/discards candidates correctly and produces a concise end-of-run digest;
+- [ ] one restart-resume canary proves self-development continuity without relying on a surviving ChatGPT conversation;
+- [ ] recursive improvement metrics exist for context cost, cognition calls, first-pass success, rework, failures prevented and operator interruptions.
+
+Canonical docs:
+- `docs/BOB_RECURSIVE_SELF_IMPROVEMENT_ARCHITECTURE.md`
+- `docs/BOB_KNOWLEDGE_FABRIC_ARCHITECTURE.md`
+
 ## Phase 4 — Product parity and hardening
 
 Goal: make local Bob feel like a first-class ChatGPT workspace.
@@ -151,7 +179,7 @@ Exit criteria:
 
 ## Later
 
-- safe self-hosting: Bob uses Bob to improve Bob, while external authority and rollback remain preserved;
+- mature self-hosting beyond Phase 3.75: richer autonomous experiment selection, evidence-driven template/library growth and longer unattended runs while external authority and rollback remain preserved;
 - reusable cross-project playbooks without cross-project private-context leakage;
 - repair loops driven by deterministic test evidence;
 - multi-repo workspaces when a real project needs them;
