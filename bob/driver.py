@@ -36,6 +36,17 @@ class ChatGPTBridge:
         self.timeout = timeout or int(os.environ.get("CHATGPT_BRIDGE_TIMEOUT_SECONDS", "420"))
         self._lock = threading.Lock()
 
+    @staticmethod
+    def _payload_or_raise(response: requests.Response, fallback: str) -> dict[str, Any]:
+        try:
+            payload = response.json()
+        except ValueError:
+            response.raise_for_status()
+            raise BobError(fallback)
+        if not response.ok or not payload.get("success"):
+            raise BobError(str(payload.get("error") or fallback))
+        return payload
+
     def send(self, prompt: str) -> str:
         with self._lock:
             response = requests.post(
@@ -43,10 +54,7 @@ class ChatGPTBridge:
                 json={"prompt": prompt},
                 timeout=self.timeout,
             )
-            response.raise_for_status()
-            payload = response.json()
-            if not payload.get("success"):
-                raise BobError(payload.get("error") or "ChatGPT bridge failed")
+            payload = self._payload_or_raise(response, "ChatGPT bridge failed")
             text = payload.get("response")
             if not isinstance(text, str):
                 raise BobError("ChatGPT bridge returned no response text")
@@ -65,10 +73,7 @@ class ChatGPTBridge:
                 json={"prompt": prompt},
                 timeout=self.timeout,
             )
-            response.raise_for_status()
-            payload = response.json()
-            if not payload.get("success"):
-                raise BobError(payload.get("error") or "fresh cognition request failed")
+            payload = self._payload_or_raise(response, "fresh cognition request failed")
             text = payload.get("response")
             if not isinstance(text, str):
                 raise BobError("fresh cognition request returned no response text")
@@ -102,6 +107,7 @@ class BobRuntime:
         self.bridge = bridge or ChatGPTBridge()
         self.adapters: dict[str, Any] = {}
         self.pending: dict[str, PendingEffect] = {}
+        self.blocked_continuations: dict[str, dict[str, Any]] = {}
         self.initialized_workspace: str | None = None
         self.context_compiler = ContextCompiler()
         self._configure_adapters()
@@ -288,14 +294,60 @@ class BobRuntime:
         continuation = pending.continuation or {}
         if continuation.get("kind") == "module":
             prior = tuple(str(x) for x in continuation.get("results") or ())
-            return self._drive_module(
-                workspace,
-                str(continuation["module_id"]),
-                str(continuation["problem"]),
-                str(continuation["ref"]),
-                continuation=prior + (feedback,),
+            continuation_id = str(uuid.uuid4())
+            state = {
+                "workspace_code": workspace.code,
+                "module_id": str(continuation["module_id"]),
+                "problem": str(continuation["problem"]),
+                "ref": str(continuation["ref"]),
+                "results": list(prior + (feedback,)),
+                "effect": {
+                    "request_id": pending.message.id,
+                    "tool": pending.message.tool,
+                    "result": feedback,
+                },
+            }
+            return self._drive_or_block_module_continuation(
+                continuation_id,
+                state,
             )
         return self._drive(workspace, feedback)
+
+    def resume_continuation(self, continuation_id: str) -> dict[str, Any]:
+        """Resume cognition after an already-executed effect without replaying it."""
+        state = self.blocked_continuations.get(continuation_id)
+        if state is None:
+            raise ProtocolError("unknown or already-consumed blocked continuation")
+        return self._drive_or_block_module_continuation(continuation_id, state)
+
+    def _drive_or_block_module_continuation(
+        self,
+        continuation_id: str,
+        state: dict[str, Any],
+    ) -> dict[str, Any]:
+        workspace = self.registry.get(str(state["workspace_code"]))
+        try:
+            result = self._drive_module(
+                workspace,
+                str(state["module_id"]),
+                str(state["problem"]),
+                str(state["ref"]),
+                continuation=tuple(str(x) for x in state.get("results") or ()),
+            )
+        except Exception as exc:
+            state["last_error"] = str(exc)
+            self.blocked_continuations[continuation_id] = state
+            return {
+                "status": "CONTINUATION_BLOCKED",
+                "mode": "STATELESS_MODULE",
+                "module": str(state["module_id"]),
+                "continuation_id": continuation_id,
+                "effect": state.get("effect"),
+                "error": str(exc),
+                "pending": [],
+            }
+        self.blocked_continuations.pop(continuation_id, None)
+        return result
 
     def reject(self, pending_id: str) -> dict[str, Any]:
         """Discard one staged effect without executing it."""

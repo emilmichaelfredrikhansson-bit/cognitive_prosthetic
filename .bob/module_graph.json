@@ -13,7 +13,8 @@
       ],
       "test_paths": [
         "tests/test_driver.py",
-        "tests/test_workspaces.py"
+        "tests/test_workspaces.py",
+        "tests/test_module_runtime.py"
       ],
       "contract_paths": [],
       "producers": [

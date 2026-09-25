@@ -27,6 +27,7 @@ class LocalServerSurfaceTests(unittest.TestCase):
         rules = {rule.rule for rule in bob_api_server.app.url_map.iter_rules()}
         self.assertIn("/bob/module-turn", rules)
         self.assertIn("/bob/module-graph", rules)
+        self.assertIn("/bob/continuations/<continuation_id>/resume", rules)
 
     def test_execution_coordination_routes_are_exposed(self):
         rules = {rule.rule for rule in bob_api_server.app.url_map.iter_rules()}

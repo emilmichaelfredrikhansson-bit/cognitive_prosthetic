@@ -668,6 +668,62 @@ def assistant_copy_candidates(page):
     return []
 
 
+CHATGPT_TRANSIENT_UI_PATTERNS = (
+    (
+        "RATE_LIMITED",
+        re.compile(
+            r"too many (?:concurrent )?requests|rate limit(?:ed)?|please slow down",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "USAGE_LIMIT",
+        re.compile(
+            r"you(?:'|’)ve reached[^\n]{0,120}limit|usage limit|come back later",
+            re.IGNORECASE,
+        ),
+    ),
+)
+
+
+def detect_chatgpt_transient_ui_error(page):
+    """Return a sanitized transient ChatGPT UI error category, if visible.
+
+    Only alert/live-region/error surfaces are inspected. Raw UI text is never
+    logged or returned so prompts/responses do not leak into diagnostics.
+    """
+    selectors = (
+        '[role="alert"]',
+        '[role="status"]',
+        '[aria-live="assertive"]',
+        '[aria-live="polite"]',
+        '[data-sonner-toast]',
+        '[data-testid*="error"]',
+    )
+    visible_text = []
+    for selector in selectors:
+        try:
+            items = page.locator(selector)
+            for index in range(min(items.count(), 12)):
+                item = items.nth(index)
+                if not item.is_visible():
+                    continue
+                text = item.inner_text(timeout=1000)
+                if isinstance(text, str) and text.strip():
+                    visible_text.append(text.strip())
+        except Exception:
+            continue
+
+    if not visible_text:
+        return None
+
+    haystack = "\n".join(visible_text)
+    for category, pattern in CHATGPT_TRANSIENT_UI_PATTERNS:
+        if pattern.search(haystack):
+            return category
+    return None
+
+
 def wait_for_new_assistant_copy(page, baseline_assistant_count, timeout=180):
     """Wait for completion, but surface a dead Playwright target immediately."""
     deadline = time.time() + timeout
@@ -677,6 +733,15 @@ def wait_for_new_assistant_copy(page, baseline_assistant_count, timeout=180):
         try:
             if page.is_closed():
                 raise RuntimeError("ChatGPT page is closed")
+            transient_ui_error = detect_chatgpt_transient_ui_error(page)
+            if transient_ui_error:
+                logging.warning(
+                    "ChatGPT transient UI state detected: %s",
+                    transient_ui_error,
+                )
+                raise RuntimeError(
+                    f"CHATGPT_TRANSIENT_UI:{transient_ui_error}"
+                )
             current_assistant_count = assistant_count(page)
             if current_assistant_count > baseline_assistant_count:
                 if assistant_copy_candidates(page):
@@ -704,7 +769,7 @@ def wait_for_new_assistant_copy(page, baseline_assistant_count, timeout=180):
                     logging.info("Capture wait diagnostic failed: %s", diag_exc)
                 next_diagnostic_at = time.time() + 15
         except Exception as exc:
-            if is_browser_closed_error(exc):
+            if is_browser_closed_error(exc) or str(exc).startswith("CHATGPT_TRANSIENT_UI:"):
                 raise
         time.sleep(0.5)
     logging.error("Capture wait timed out; last_diagnostic=%s", last_diagnostic)

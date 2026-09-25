@@ -164,6 +164,47 @@ class LocalCompanionTests(unittest.TestCase):
             "success": False,
             "error": "Timed out waiting for completed assistant response",
         }))
+        self.assertFalse(chatgpt_api_server.browser_result_needs_recovery({
+            "success": False,
+            "error": "CHATGPT_TRANSIENT_UI:RATE_LIMITED",
+        }))
+
+    def test_transient_rate_limit_ui_is_detected_without_logging_raw_text(self):
+        class Item:
+            def is_visible(self):
+                return True
+
+            def inner_text(self, timeout=None):
+                return "Too many requests. Please try again later."
+
+        class Items:
+            def __init__(self, values):
+                self.values = values
+
+            def count(self):
+                return len(self.values)
+
+            def nth(self, index):
+                return self.values[index]
+
+        class Page:
+            def locator(self, selector):
+                if selector == '[role="alert"]':
+                    return Items([Item()])
+                return Items([])
+
+        page = Page()
+        self.assertEqual(
+            chatgpt_api_server.detect_chatgpt_transient_ui_error(page),
+            "RATE_LIMITED",
+        )
+        page.is_closed = lambda: False
+        with self.assertRaisesRegex(RuntimeError, "CHATGPT_TRANSIENT_UI:RATE_LIMITED"):
+            chatgpt_api_server.wait_for_new_assistant_copy(
+                page,
+                baseline_assistant_count=0,
+                timeout=30,
+            )
 
     def test_wait_for_copy_surfaces_closed_page_immediately(self):
         class ClosedPage:

@@ -124,6 +124,12 @@ def reject():
     return jsonify({"success": True, **result})
 
 
+@app.post("/bob/continuations/<continuation_id>/resume")
+def resume_continuation(continuation_id):
+    result = runtime.resume_continuation(str(continuation_id))
+    return jsonify({"success": True, **result})
+
+
 @app.post("/bob/read")
 def direct_read():
     data = request.get_json(force=True) or {}
