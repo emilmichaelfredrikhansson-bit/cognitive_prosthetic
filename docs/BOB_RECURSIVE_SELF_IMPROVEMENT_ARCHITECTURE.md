@@ -110,6 +110,22 @@ next start
 
 A long-running chat is never the continuity mechanism.
 
+### Background must stay in the background
+
+Unattended self-development must not steal focus from ordinary operator use.
+
+In Local Companion mode the background lane should:
+
+- keep its ChatGPT cognition surface in the background;
+- never call foreground/show-UI behavior merely because a cognition cycle starts;
+- avoid opening disruptive visible windows when the same work can happen in the managed background browser context;
+- emit durable logs/receipts rather than continuous operator-facing chatter;
+- surface only a concise digest, a real blocker, or an approval/decision that genuinely requires the operator.
+
+The operator should be able to use ChatGPT, the browser and the rest of the computer normally while background self-development runs.
+
+Resource contention should be treated like any other scheduling constraint: interactive work gets priority and background work yields or pauses at a safe checkpoint.
+
 ## Two execution lanes
 
 Bob should separate operator-directed work from recursive background work.
