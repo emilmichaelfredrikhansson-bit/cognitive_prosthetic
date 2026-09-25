@@ -569,7 +569,7 @@ The dedicated ChatGPT Project isolation tranche was then reconciled from its bra
 The first executable module graph + Context Compiler + fresh-cognition path is landed and its basic live `module-turn -> fresh ChatGPT -> GitHub re-ground -> BOB.DONE` path has been proven on the operator PC at exact earlier commit `008728c82138b6abb6ddfa5fe7e42d4b63c43242`.
 
 Remaining qualification before the stateless vertical can be considered closed:
-- current deterministic verification after architecture split + restart-durable continuation/approval storage + verified snapshot optimization is **131/131 PASS**; focused approval/store/driver/local-server **43/43 PASS**; focused GitHub snapshot/module runtime **17/17 PASS**; `py_compile` PASS and `git diff --check` PASS;
+- current deterministic verification at working head `2a55a84…` is **147/147 PASS**; the submission-diagnostic tranche was **145/145 PASS** before the visible-send actuator hardening; focused current Local Companion is **24/24 PASS**; `py_compile` and `git diff --check` PASS;
 - Bob-owned `BOB.READ -> BOB.RESULT -> recompile -> second fresh cognition` is **LIVE GREEN**;
 - approval-bound effect staging/execution/verified read-back is **LIVE GREEN**, but one clean post-effect fresh continuation still remains to be live-qualified after the observed transient ChatGPT request-limit episode;
 - the former oversized runtime monolith has been manually decomposed into bounded runtime, effect-authority and stateless-module-runtime modules without changing the public `BobRuntime` API or widening authority;
@@ -583,9 +583,9 @@ Remaining qualification before the stateless vertical can be considered closed:
 - approval durability is pushed at `8115692fe95db3fcecd247c85c4d9fe56b80ac90` (`Persist pending effect approvals`). Module-graph snapshot optimization is pushed at `eaad1e41f82c6f483cb45379295a2b258e82372f` (`Speed verified module graph snapshots`), which exactly matches `origin/feat/bob-execution-ledger-v1`.
 - Local Companion was cleanly restarted from `eaad1e4…` without cognition. Live read-only qualification: Bob API running; bridge `ready=true`; approvals `count=0`; continuations `count=0`; execution **0 active / 0 integration queue**; exactly two supervisor-owned process trees own 5002/5001; three consecutive `POST /bob/module-graph` calls returned HTTP 200 in **5.375 s / 4.960 s / 5.243 s** versus the prior ~18–36 s observed latency.
 - snapshot acceleration preserves identity: authenticated local Git is used only after GitHub repository identity is verified and the requested remote ref commit SHA exactly matches the local commit; stale local refs fall back to remote reads. Effect execution/read-back semantics are unchanged and remain remote/provider verified.
-- the working branch is **13 commits ahead / 0 behind** canonical; `feat/bob-core-v1` remains unchanged at `098e6ac9f2adb47e7174c4db8ad2d0b1639d1279`.
+- the working branch is **20 commits ahead / 0 behind** canonical at `2a55a849e50300a94573a138b3188f84876f7ca5`; `feat/bob-core-v1` remains unchanged at `098e6ac9f2adb47e7174c4db8ad2d0b1639d1279`.
 
-Current authoritative `BOB_TOKEN_ESTIMATE_V1` measurement on `8b8c522…`:
+Current authoritative `BOB_TOKEN_ESTIMATE_V1` values remain the same because no declared module-owned source/test/contract path changed after `8b8c522…`; the real graph-cap regression is green again in the **147/147** suite at `2a55a84…`:
 
 ```text
 BOB_RUNTIME_ORCHESTRATION 13,341   compliant (1,659 tokens headroom)
@@ -603,15 +603,16 @@ The package now has a regression test that loads the real `.bob/module_graph.jso
 
 ## LATEST_CHECKPOINT_2026-09-25
 
-- Working branch `feat/bob-execution-ledger-v1` is pushed through commit `8b8c522f031304c674ddd41b08e78d406efeeb24` (`Persist self-development queue state`). Canonical `origin/feat/bob-core-v1` remains unchanged at `098e6ac9f2adb47e7174c4db8ad2d0b1639d1279`.
-- A single fresh cleanup-cognition probe was attempted after bridge restart. The prompt was sent, but ChatGPT materialized zero conversation/assistant turns for the full response budget and returned `Timed out waiting for completed assistant response` after ~368 s. No rate-limit alert was independently visible, no effect was staged, approvals/continuations remained empty, and no retry was sent.
-- Because cognition remained practically unavailable, work moved to local Phase 3.75 foundation only.
-- New bounded module `BOB_SELF_DEVELOPMENT_STATE` owns `bob/selfdev_queue.py`, `tests/test_selfdev_queue.py`, and `docs/BOB_SELF_DEVELOPMENT_STATE_V1.md`; measured footprint is **7,267 / 15,000**.
-- The queue is repo/canonical-ref bound, durable across restart, FIFO, V1 single-active, converts persisted ACTIVE to `INTERRUPTED` on restart instead of replaying, and refuses blind requeue when an execution run is already bound.
-- Bob API now exposes read-only `GET /bob/self-development` plus enqueue-only `POST /bob/self-development/items`; these persist intent only and do not create runs/effects/promotions.
-- Full suite after integration fix: **137/137 PASS**. `py_compile` and `git diff --check` PASS. All nine declared modules remain <=15k; largest remains `BOB_PROCESS_SUPERVISION` at 13,661 and `BOB_RUNTIME_ORCHESTRATION` is now 13,341.
-- Live runtime was restarted through ProcessSupervisor and is healthy. Durable selfdev queue currently contains exactly one queued item: `selfdev-b624525477b7`, goal = isolated self-development worktree/branch lifecycle, leases = `module:BOB_SELF_DEVELOPMENT_STATE` + `module:BOB_WORKTREE_COORDINATION`, with no execution run bound yet.
-- Stop point is intentional for operator context switch. Do not claim/execute the queued selfdev item until work resumes.
+- Working branch `feat/bob-execution-ledger-v1` is pushed through `2a55a849e50300a94573a138b3188f84876f7ca5` (`Prefer visible ChatGPT send control`) and is **20 ahead / 0 behind** canonical. Canonical `origin/feat/bob-core-v1` remains unchanged at `098e6ac9f2adb47e7174c4db8ad2d0b1639d1279`.
+- Concurrent operator work was reconciled, not overwritten: `b349c3a6d3ed8a7fe40f838f2dc8a3f7c48feeca` (`Plan bounded autonomous work campaigns`) landed between the transport commits and only changes `CURRENT_WORK.md` / `ROADMAP.md`.
+- `712ef02` (`Detect failed ChatGPT submissions`) split submission acceptance from assistant completion. After submit actuation Bob now requires observable user/conversation/assistant state within **12 s** and otherwise returns sanitized `CHATGPT_SUBMISSION_FAILED:NO_CONVERSATION_TURN` instead of waiting ~360 s for an assistant response that never began.
+- Live canary `submission-probe-20260925-1` proved the historical long hang is a real submit/materialization failure: the old Enter actuator produced exact sanitized baseline/final counts `user=0 / conversation_turn=0 / assistant=0` and failed quickly as `NO_CONVERSATION_TURN`; no visible `RATE_LIMITED` / `USAGE_LIMIT` state was detected and no retry was sent.
+- `2a55a84` then changed actuation to prefer ChatGPT's visible enabled Send control, fail closed on a visible disabled send control, and use input-local Enter only when no send control can be discovered. Deterministic verification is **147/147 PASS**, focused Local Companion **24/24 PASS**, `py_compile` PASS and `git diff --check` PASS.
+- Local Companion was restarted from exact `2a55a84`. Live canary `submission-probe-20260925-2` logged `Submission actuated via send_button` but again remained exactly `0 -> 0` for user/conversation/assistant state and returned `CHATGPT_SUBMISSION_FAILED:NO_CONVERSATION_TURN`. Therefore the current failure is **not explained by page-level Enter or failure to click the visible Send control**. No further cognition probes should be sent until new evidence justifies one.
+- Runtime remains healthy after that failure: Bob API running; bridge `browser_ready=true`, `runtime_error=null`, `active_count=0`, no traffic cooldown/throttle state.
+- Phase 3.75 foundation remains durable: `BOB_SELF_DEVELOPMENT_STATE` is repo/canonical-ref bound, FIFO, V1 single-active, restart-safe, and owns intent/lifecycle state only; execution/promotion authority remains elsewhere. Its measured footprint remains **7,267 / 15,000**.
+- Durable selfdev queue still contains exactly one untouched queued item: `selfdev-b624525477b7`, goal = isolated self-development worktree/branch lifecycle, leases = `module:BOB_SELF_DEVELOPMENT_STATE` + `module:BOB_WORKTREE_COORDINATION`, `execution_run_id=null`.
+- Because cognition is currently not materializing submissions, the active local next step is the queued Phase 3.75 isolated selfdev worktree/branch lifecycle on top of the existing repository execution coordinator; this must not add promotion authority.
 
 ## NEXT_INTENDED_WORK
 
@@ -636,8 +637,8 @@ The package now has a regression test that loads the real `.bob/module_graph.jso
 - This repaired branch is a deterministic reference implementation, not evidence that Bob cognition can independently perform the same architecture repair. The live self-hosting proof remains pending on an isolated branch rooted at pre-repair commit `c5102a9aacce349c9e5aded950daaa8c3ce825b1`.
 - Normal module effects remain one effect per fresh cognition request, manifest-owned path/ref constrained; architecture-repair scope is wider but still approval/authority/read-back bounded.
 - Ordinary `/bob/turn` is still stateful. Statelessness is executable through `/bob/module-turn`, not yet automatic for every operator message.
-- The live operator-PC proof now covers module graph, direct DONE, and a full Bob-owned READ continuation through a second fresh cognition. Approval-bound effect execution + verified GitHub after-state is also live-proven; only its post-effect fresh cognition remains unclosed because ChatGPT stopped materializing the submitted turn during a transient request-limit episode.
-- The bridge now has explicit sanitized `RATE_LIMITED` / `USAGE_LIMIT` UI classification and no automatic retry for those states.
+- The live operator-PC proof covers module graph, direct DONE, and a full Bob-owned READ continuation through a second fresh cognition. Approval-bound effect execution + verified GitHub after-state is also live-proven; only its post-effect fresh cognition remains unclosed. Current evidence now distinguishes the blocker from assistant capture: two later probes failed before any user/conversation turn materialized, including one verified visible Send-button click.
+- The bridge now has explicit sanitized `RATE_LIMITED` / `USAGE_LIMIT` UI classification and no automatic retry for those states, plus distinct `CHATGPT_SUBMISSION_FAILED:NO_CONVERSATION_TURN` classification after a bounded 12 s materialization window.
 - An already-executed module effect can enter restart-durable `CONTINUATION_BLOCKED` state. Its verified receipt/continuation is persisted before post-effect cognition, discoverable through read-only `/bob/continuations`, and resumable through `/bob/continuations/<continuation_id>/resume` without replaying the effect.
 - Remote Desktop Commander is currently online and current local/runtime state has been reconciled.
 - Self-development now has a durable repo-bound queue/state implementation, but separate selfdev worktree lifecycle, execution-run claiming/reconciliation, interactive pre-emption, background scheduler and promotion gate remain unimplemented.
@@ -648,7 +649,7 @@ The package now has a regression test that loads the real `.bob/module_graph.jso
 
 ## FIRST_ACTION
 
-Resume from pushed commit `8b8c522f031304c674ddd41b08e78d406efeeb24`. First reconcile live repo/runtime and inspect durable queued selfdev item `selfdev-b624525477b7`; do not auto-claim it merely because it exists. Do **not** send repeated cognition while ChatGPT is failing to materialize turns. If cognition is clearly available again, return to the distinct benign cleanup-effect continuation proof before the genuine self-hosting architecture-repair canary rooted at `c5102a9aacce349c9e5aded950daaa8c3ce825b1`. If cognition is still unavailable, the next local Phase 3.75 step is isolated selfdev worktree/branch lifecycle on top of the existing repository execution coordinator. No candidate may promote itself to canonical.
+Resume from pushed commit `2a55a849e50300a94573a138b3188f84876f7ca5` or later live head after reconciling concurrent operator work. Do **not** send another cognition probe merely to retest submission: both Enter and a verified visible Send-button click have produced zero user/conversation turns. Continue local Phase 3.75 by deliberately reconciling/claiming queued item `selfdev-b624525477b7` and implementing isolated selfdev worktree/branch lifecycle on top of the existing repository execution coordinator, without a second scheduler or any promotion authority. If later independent evidence shows cognition submissions are accepted again, return to the distinct benign cleanup-effect continuation proof before the genuine self-hosting architecture-repair canary rooted at `c5102a9aacce349c9e5aded950daaa8c3ce825b1`. No candidate may promote itself to canonical.
 
 ## HARD_BLOCKERS
 
