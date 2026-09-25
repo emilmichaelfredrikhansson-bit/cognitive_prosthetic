@@ -61,6 +61,97 @@ The inherited ChatGPT browser bridge is a replaceable cognition transport. **Can
 
 ## LAST_COMPLETED
 
+`BOB_REPOSITORY_EXECUTION_AND_PROCESS_SUPERVISION_V1`
+
+Status: **IMPLEMENTED / DETERMINISTIC_GREEN / LIVE_EXECUTION_GREEN / LIVE_COGNITION_TRANSPORT_NOT_YET_QUALIFIED**.
+
+Active local development branch for this tranche:
+- `feat/bob-execution-ledger-v1`
+- tranche base/recovery commit: `42bfa1e7a1a71ade25cb4d845149d5af2c4d52d4`
+- canonical `feat/bob-core-v1` remained at `098e6ac9f2adb47e7174c4db8ad2d0b1639d1279` during qualification;
+- **no merge/push/promotion to canonical was performed**.
+
+Three execution layers are now mechanically separate:
+
+```text
+Repository Execution
+  <= 3 ACTIVE/AWAITING_APPROVAL runs per repository
+  repository-scoped ledger / leases / worktrees / FIFO integration queue
+
+Cognition
+  <= 1 RUNNING cognition per run
+  run_id -> cognition_id -> request_id
+  request-private browser response queues
+
+Local Process Lifecycle
+  ProcessSupervisor-owned Bob children / ports / logs / cleanup
+  RDC is control transport, not process ownership
+```
+
+Repository execution:
+- every `ExecutionLedger` persists and validates `repository_full_name`, stable `repository_id`, resolved `repo_root` and `canonical_ref`; identity mismatch fails closed;
+- every `ExecutionCoordinator` verifies local Git `origin` and canonical ref before opening its repo domain;
+- `max_parallel_runs_per_repository=3`; a fourth eligible run is durable `QUEUED/CAPACITY`;
+- semantic leases, worktree root and serialized integration queue are repository-local;
+- `RepositoryCoordinatorRegistry` maps workspaces onto stable repository IDs, so two workspaces targeting one repository share one coordinator/ledger/cap;
+- repositories without a configured local binding cannot start local execution;
+- queued runs do not receive worktrees; attempting integration readiness while non-active fails semantically before branch resolution;
+- stale integration candidates still require re-ground/rebase + deterministic reverification;
+- ledger/coordinator never merge, push or promote.
+
+Cognition/bridge correlation:
+- browser requests use unique request IDs and private result queues rather than one global consumable result queue;
+- duplicate request IDs fail closed;
+- late/timed-out results cannot be consumed by a later request;
+- run/cognition/request tags survive the bridge boundary;
+- restart converts any ledger cognition still `RUNNING` to `INTERRUPTED`.
+
+Process supervision:
+- `bob/process_supervision.py` owns only explicitly started Bob children;
+- durable records include process/run/repository identity, purpose, PID + creation identity, class, ports, log path and cleanup policy;
+- executable allowlisting and argv spawning replace arbitrary shell ownership;
+- unknown external processes/port owners are never auto-killed;
+- PID reuse/identity mismatch fails closed;
+- long-lived output goes to bounded-tail log files;
+- completed probes/tests are explicitly reaped;
+- no automatic restart loop exists;
+- Windows venv redirectors are handled as owned process trees: after health, each declared port is bound to the exact listener PID + creation-time identity; stop verifies ownership and terminates the verified root tree; terminated process objects are not considered live unless Windows reports `STILL_ACTIVE`.
+
+Deterministic verification on the operator PC:
+- full suite: **115/115 PASS** before final documentation-only edits;
+- execution/worktree/server focused suite: **17/17 PASS**;
+- process supervision + Local Companion focused suite: **26/26 PASS**;
+- queued-run integration-readiness regression: PASS;
+- `git diff --check`: PASS.
+
+Current bounded-module measurements under `BOB_TOKEN_ESTIMATE_V1` are all below the 15k hard cap; remeasure after any source/test/contract edit before promotion.
+
+Live acceptance evidence:
+- Local Companion was stopped and restarted through `ProcessSupervisor`;
+- Bob API and ChatGPT bridge health returned ready/running;
+- supervisor state showed exactly two active long-lived runtime records, each with exact listener ownership for ports 5002/5001;
+- old runtime process trees were stopped without leaving listener children; ports became free before restart;
+- Bob repo: three runs became `ACTIVE`; run four became `QUEUED/CAPACITY`;
+- an overlapping lease became `QUEUED/SCOPE_CONFLICT:<run>`;
+- active runs had distinct branches and distinct external worktree paths;
+- a logically separate local Git fixture repository admitted its own three active runs independently;
+- FIFO integration planning returned `READY_TO_INTEGRATE` for queue head and `WAIT_FOR_EARLIER_INTEGRATION` for the next candidate;
+- restart recovery converted the intentionally interrupted live cognition from `RUNNING` to `INTERRUPTED`;
+- acceptance runs were cancelled, acceptance worktrees removed, final Bob execution state returned to **0 active / 0 integration queue**;
+- RDC reported **no active terminal sessions** after cleanup.
+
+Known live limitation:
+- a minimal fresh browser cognition (`Reply with only this token: BOB_LIVE_COGNITION_OK`) was request-correlated and sent successfully, but visible-response/copy capture did not complete after more than three minutes. The bounded acceptance was aborted and the bridge/API were supervisor-restarted cleanly. This is a **cognition transport/capture qualification failure**, not an execution-ledger or process-supervision failure. Do not describe fresh browser cognition at this head as live-qualified until this is resolved.
+
+Remaining work / boundaries:
+- diagnose and qualify the managed-browser visible Copy/capture hang with a minimal fresh cognition;
+- SL/AB obtain independent repo coordinators only after their local repo paths are explicitly configured (for example through repository bindings); they do not consume Bob's slots;
+- a future `BOB_MACHINE_SCHEDULER` may impose a separate higher machine resource cap for CPU/RAM/browser/API pressure; it is not the repository safety cap and is not implemented here;
+- the browser transport remains one serialized Playwright worker, so three repository workers do not yet mean three simultaneous model generations;
+- do **not** resume the oversized `BOB_RUNTIME_ORCHESTRATION` recursive self-repair canary until the remaining live cognition transport qualification is closed.
+
+Previous completed/canonical work remains below.
+
 `BOB_RECURSIVE_SELF_IMPROVEMENT_AND_KNOWLEDGE_FABRIC_CANON`
 
 The long-term recursive objective is now explicit:

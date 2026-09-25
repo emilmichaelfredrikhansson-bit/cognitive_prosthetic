@@ -47,3 +47,6 @@ Thumbs.db
 
 # Local Bob credentials/config
 .env.local
+
+# Local durable Bob execution state
+.bob/runtime/

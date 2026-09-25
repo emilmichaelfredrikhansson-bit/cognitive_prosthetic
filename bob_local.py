@@ -13,6 +13,8 @@ from urllib.parse import urlsplit
 
 import requests
 
+from bob.process_supervision import ProcessSupervisor
+from bob.workspaces import WorkspaceRegistry
 from profile_config import load_profile_path
 
 ROOT = Path(__file__).resolve().parent
@@ -73,6 +75,13 @@ def build_env(env_file: Path) -> dict[str, str]:
     env.setdefault("CHATGPT_CAPTURE_MODE", "copy")
     env.setdefault("CHATGPT_RESPONSE_TIMEOUT_SECONDS", "360")
     env.setdefault("CHATGPT_BRIDGE_TIMEOUT_SECONDS", "420")
+    env.setdefault("BOB_MAX_PARALLEL_RUNS_PER_REPOSITORY", "3")
+    env.setdefault("BOB_CANONICAL_REF", "feat/bob-core-v1")
+    env.setdefault("BOB_REPOSITORY_BINDINGS_JSON", "")
+    env.setdefault(
+        "BOB_PROCESS_SUPERVISOR_PATH",
+        str(ROOT / ".bob" / "runtime" / "process_supervisor.json"),
+    )
     assert_local_only(env)
     return env
 
@@ -153,6 +162,21 @@ def run_login(env: dict[str, str]) -> None:
         raise RuntimeError("ChatGPT login setup did not complete successfully")
 
 
+def make_process_supervisor(env: dict[str, str]) -> ProcessSupervisor:
+    return ProcessSupervisor(
+        env.get("BOB_PROCESS_SUPERVISOR_PATH")
+        or ROOT / ".bob" / "runtime" / "process_supervisor.json",
+        allowed_executables=[sys.executable],
+    )
+
+
+def stop_supervised_runtime(env: dict[str, str]) -> list[str]:
+    supervisor = make_process_supervisor(env)
+    stopped = supervisor.stop_all_owned(timeout=5)
+    supervisor.reap_completed()
+    return stopped
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Run Bob V1 locally with ChatGPT in a background managed browser tab."
@@ -168,10 +192,27 @@ def main() -> int:
         action="store_true",
         help="Start both local services but do not open/focus the Bob browser tab.",
     )
+    parser.add_argument(
+        "--detach",
+        action="store_true",
+        help="Leave supervisor-owned runtime children running after this control command exits.",
+    )
+    parser.add_argument(
+        "--stop",
+        action="store_true",
+        help="Stop only Bob processes recorded as owned by ProcessSupervisor, then exit.",
+    )
     args = parser.parse_args()
 
     env_file = Path(args.env_file).expanduser().resolve()
     env = build_env(env_file)
+
+    if args.stop:
+        if args.login or args.detach:
+            raise RuntimeError("--stop cannot be combined with --login or --detach")
+        stopped = stop_supervised_runtime(env)
+        print(f"Stopped {len(stopped)} supervisor-owned Bob process(es).")
+        return 0
 
     if args.login:
         run_login(env)
@@ -198,23 +239,45 @@ def main() -> int:
 
     assert_runtime_ports_free(env)
 
-    bob_api: subprocess.Popen | None = None
-    bridge: subprocess.Popen | None = None
+    workspace_registry = WorkspaceRegistry(env["BOB_WORKSPACE_DIR"])
+    bob_workspace = workspace_registry.get("BOB")
+    supervisor = make_process_supervisor(env)
+    bob_api_id: str | None = None
+    bridge_id: str | None = None
+    leave_running = False
     try:
         print("Starting Bob V1 Local Companion...")
-        bob_api = subprocess.Popen(
-            [sys.executable, str(ROOT / "bob_api_server.py")],
+        api_record = supervisor.start(
+            purpose="BOB_API",
+            command_class="LONG_LIVED_RUNTIME",
+            command=[sys.executable, str(ROOT / "bob_api_server.py")],
             cwd=ROOT,
+            repository_id=bob_workspace.github_repository_id,
+            owns_ports=[int(env["BOB_PORT"])],
             env=env,
         )
+        bob_api_id = api_record["process_id"]
+        bob_api = supervisor.process_handle(bob_api_id)
+        if bob_api is None:
+            raise RuntimeError("ProcessSupervisor lost Bob API child handle during startup")
         wait_json(bob_api, BOB_HEALTH, 20)
+        supervisor.bind_owned_ports(bob_api_id)
 
-        bridge = subprocess.Popen(
-            [sys.executable, str(ROOT / "chatgpt_api_server.py")],
+        bridge_record = supervisor.start(
+            purpose="CHATGPT_BRIDGE",
+            command_class="LONG_LIVED_RUNTIME",
+            command=[sys.executable, str(ROOT / "chatgpt_api_server.py")],
             cwd=ROOT,
+            repository_id=bob_workspace.github_repository_id,
+            owns_ports=[int(env["CHATGPT_BRIDGE_PORT"])],
             env=env,
         )
+        bridge_id = bridge_record["process_id"]
+        bridge = supervisor.process_handle(bridge_id)
+        if bridge is None:
+            raise RuntimeError("ProcessSupervisor lost ChatGPT bridge child handle during startup")
         wait_json(bridge, BRIDGE_HEALTH, 90, ready_key="ready")
+        supervisor.bind_owned_ports(bridge_id)
 
         if not args.no_open_ui:
             response = requests.post(
@@ -230,21 +293,37 @@ def main() -> int:
         print("Bob is ready.")
         print(f"UI: {env['BOB_COMPANION_UI_URL']}")
         print("ChatGPT is running in the background tab of the managed browser.")
+        if args.detach:
+            leave_running = True
+            print("Runtime children are supervisor-owned; this control command may exit.")
+            return 0
         print("Press Ctrl+C here to stop Bob.")
         print("")
 
         while True:
-            if bob_api.poll() is not None:
-                raise RuntimeError(f"Bob API exited with code {bob_api.returncode}")
-            if bridge.poll() is not None:
-                raise RuntimeError(f"ChatGPT bridge exited with code {bridge.returncode}")
+            supervisor.refresh()
+            api_state = supervisor.get(bob_api_id)
+            bridge_state = supervisor.get(bridge_id)
+            if api_state["state"] != "RUNNING":
+                raise RuntimeError(f"Bob API stopped unexpectedly: {api_state['state']}")
+            if bridge_state["state"] != "RUNNING":
+                raise RuntimeError(
+                    f"ChatGPT bridge stopped unexpectedly: {bridge_state['state']}"
+                )
             time.sleep(1)
     except KeyboardInterrupt:
         print("\nStopping Bob...")
         return 0
     finally:
-        stop_process(bridge)
-        stop_process(bob_api)
+        if not leave_running:
+            for process_id in (bridge_id, bob_api_id):
+                if process_id is None:
+                    continue
+                try:
+                    supervisor.stop(process_id)
+                except ProtocolError:
+                    pass
+            supervisor.reap_completed()
 
 
 if __name__ == "__main__":

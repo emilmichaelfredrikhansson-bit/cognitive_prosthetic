@@ -13,6 +13,7 @@ import os
 import re
 import ipaddress
 import sys
+import uuid
 from urllib.parse import urlsplit
 
 from profile_config import load_profile_path
@@ -56,14 +57,169 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-# Task queue for browser operations
+# Task queue for browser operations. Responses are request-correlated; there is
+# intentionally no shared result queue because late completion from one request
+# must never be consumable by another request.
 task_queue = queue.Queue()
-result_queue = queue.Queue()
+request_registry_lock = threading.RLock()
+request_registry = {}
+MAX_TRACKED_BROWSER_REQUESTS = 100
 is_ready = False
 startup_error = None
 browser_thread = None
 runtime_error = None
 browser_generation = 0
+
+
+def _normalize_request_id(value=None):
+    request_id = str(value or f"bridge-{uuid.uuid4().hex[:16]}").strip()
+    if not request_id or len(request_id) > 128:
+        raise ValueError("request_id must contain 1..128 characters")
+    if not re.fullmatch(r"[A-Za-z0-9._:-]+", request_id):
+        raise ValueError("request_id contains unsupported characters")
+    return request_id
+
+
+def _prune_request_registry_locked():
+    if len(request_registry) <= MAX_TRACKED_BROWSER_REQUESTS:
+        return
+    terminal = sorted(
+        (
+            item
+            for item in request_registry.values()
+            if item.get("state") in {"DONE", "FAILED", "TIMED_OUT"}
+        ),
+        key=lambda item: item.get("finished_at") or item.get("created_at") or 0,
+    )
+    while len(request_registry) > MAX_TRACKED_BROWSER_REQUESTS and terminal:
+        item = terminal.pop(0)
+        request_registry.pop(item["request_id"], None)
+
+
+def make_browser_task(task_type, *, request_id=None, tags=None, **payload):
+    request_id = _normalize_request_id(request_id)
+    response_queue = queue.Queue(maxsize=1)
+    now = time.time()
+    with request_registry_lock:
+        if request_id in request_registry:
+            raise ValueError(f"duplicate browser request_id: {request_id}")
+        request_registry[request_id] = {
+            "request_id": request_id,
+            "type": str(task_type),
+            "state": "QUEUED",
+            "created_at": now,
+            "started_at": None,
+            "finished_at": None,
+            "tags": dict(tags or {}),
+            "error": None,
+        }
+        _prune_request_registry_locked()
+    task = {
+        "type": str(task_type),
+        "_request_id": request_id,
+        "_response_queue": response_queue,
+        **payload,
+    }
+    return task, response_queue
+
+
+def update_browser_request(task, state, *, error=None):
+    request_id = task.get("_request_id")
+    if not request_id:
+        return
+    now = time.time()
+    with request_registry_lock:
+        item = request_registry.get(request_id)
+        if item is None:
+            return
+        item["state"] = str(state)
+        if state == "RUNNING" and item.get("started_at") is None:
+            item["started_at"] = now
+        if state in {"DONE", "FAILED", "TIMED_OUT"}:
+            item["finished_at"] = now
+        if error is not None:
+            item["error"] = str(error)
+        _prune_request_registry_locked()
+
+
+def deliver_browser_result(task, result):
+    result = dict(result or {
+        "success": False,
+        "error": "browser task produced no result",
+    })
+    request_id = task.get("_request_id")
+    if request_id:
+        result.setdefault("request_id", request_id)
+    tags = {}
+    with request_registry_lock:
+        item = request_registry.get(request_id)
+        if item is not None:
+            tags = dict(item.get("tags") or {})
+    for key, value in tags.items():
+        result.setdefault(key, value)
+    update_browser_request(
+        task,
+        "DONE" if result.get("success") else "FAILED",
+        error=result.get("error"),
+    )
+    response_queue = task.get("_response_queue")
+    if response_queue is not None:
+        try:
+            response_queue.put_nowait(result)
+        except queue.Full:
+            pass
+    return result
+
+
+def submit_browser_task(
+    task_type,
+    *,
+    timeout,
+    request_id=None,
+    tags=None,
+    **payload,
+):
+    task, response_queue = make_browser_task(
+        task_type,
+        request_id=request_id,
+        tags=tags,
+        **payload,
+    )
+    task_queue.put(task)
+    try:
+        result = response_queue.get(timeout=timeout)
+        return result, (200 if result.get("success") else 500)
+    except queue.Empty:
+        update_browser_request(task, "TIMED_OUT", error="Request timed out")
+        result = {
+            "success": False,
+            "error": "Request timed out",
+            "request_id": task["_request_id"],
+        }
+        for key, value in dict(tags or {}).items():
+            result.setdefault(key, value)
+        return result, 504
+
+
+def browser_request_status():
+    now = time.time()
+    with request_registry_lock:
+        items = []
+        for item in request_registry.values():
+            public = dict(item)
+            public["age_seconds"] = round(
+                now - float(item.get("created_at") or now), 3
+            )
+            items.append(public)
+    items.sort(key=lambda item: item.get("created_at") or 0, reverse=True)
+    active = [
+        item for item in items if item.get("state") in {"QUEUED", "RUNNING"}
+    ]
+    return {
+        "active_count": len(active),
+        "active": active,
+        "recent": items[:20],
+    }
 
 def is_browser_closed_error(value):
     """Classify Playwright target/context closure as recoverable browser loss."""
@@ -299,6 +455,7 @@ def browser_worker():
             if task is None:
                 break
 
+            update_browser_request(task, "RUNNING")
             result = None
             for attempt in range(2):
                 if page is None or not is_ready:
@@ -358,10 +515,7 @@ def browser_worker():
                     continue
                 break
 
-            result_queue.put(result or {
-                "success": False,
-                "error": "browser task produced no result",
-            })
+            deliver_browser_result(task, result)
     except Exception as exc:
         set_browser_state(False, f"browser worker failed: {exc}")
         logging.error(f"Error in browser worker: {exc}")
@@ -669,71 +823,79 @@ def bridge_can_accept_tasks():
 
 @app.route('/chat', methods=['POST'])
 def chat():
-    """Send a prompt to ChatGPT"""
+    """Send a prompt to ChatGPT using a request-correlated browser task."""
     if not bridge_can_accept_tasks():
         return jsonify({"success": False, "error": startup_error or runtime_error or "Server not ready"}), 503
 
-    data = request.get_json()
-    if not data or 'prompt' not in data:
-        return jsonify({"success": False, "error": "Missing 'prompt' field"}), 400
-
-    prompt = data['prompt']
+    data = request.get_json() or {}
+    prompt = data.get("prompt")
     if not isinstance(prompt, str) or not prompt.strip():
         return jsonify({"success": False, "error": "Prompt must be non-empty string"}), 400
-
-    # Queue the task
-    task_queue.put({'type': 'send_message', 'prompt': prompt})
-
-    # Wait for result (with timeout)
     try:
-        result = result_queue.get(timeout=CHATGPT_RESPONSE_TIMEOUT_SECONDS + 30)
-        if result.get('success'):
-            return jsonify(result), 200
-        else:
-            return jsonify(result), 500
-    except queue.Empty:
-        return jsonify({"success": False, "error": "Request timed out"}), 504
+        result, status_code = submit_browser_task(
+            "send_message",
+            prompt=prompt,
+            request_id=data.get("request_id"),
+            tags={
+                key: str(data[key])
+                for key in ("run_id", "cognition_id")
+                if data.get(key) not in (None, "")
+            },
+            timeout=CHATGPT_RESPONSE_TIMEOUT_SECONDS + 30,
+        )
+    except ValueError as exc:
+        return jsonify({"success": False, "error": str(exc)}), 409
+    return jsonify(result), status_code
+
 
 @app.route('/cognition', methods=['POST'])
 def cognition():
-    """Run one stateless cognition request in a fresh ChatGPT conversation."""
+    """Run one stateless, request-correlated cognition in a fresh conversation."""
     if not bridge_can_accept_tasks():
         return jsonify({"success": False, "error": startup_error or runtime_error or "Server not ready"}), 503
 
-    data = request.get_json()
-    if not data or 'prompt' not in data:
-        return jsonify({"success": False, "error": "Missing 'prompt' field"}), 400
-
-    prompt = data['prompt']
+    data = request.get_json() or {}
+    prompt = data.get("prompt")
     if not isinstance(prompt, str) or not prompt.strip():
         return jsonify({"success": False, "error": "Prompt must be non-empty string"}), 400
-
-    task_queue.put({'type': 'cognition_request', 'prompt': prompt})
     try:
-        result = result_queue.get(timeout=CHATGPT_RESPONSE_TIMEOUT_SECONDS + 30)
-        if result.get('success'):
-            return jsonify(result), 200
-        return jsonify(result), 500
-    except queue.Empty:
-        return jsonify({"success": False, "error": "Request timed out"}), 504
+        result, status_code = submit_browser_task(
+            "cognition_request",
+            prompt=prompt,
+            request_id=data.get("request_id"),
+            tags={
+                key: str(data[key])
+                for key in ("run_id", "cognition_id")
+                if data.get(key) not in (None, "")
+            },
+            timeout=CHATGPT_RESPONSE_TIMEOUT_SECONDS + 30,
+        )
+    except ValueError as exc:
+        return jsonify({"success": False, "error": str(exc)}), 409
+    return jsonify(result), status_code
 
 
 @app.route('/new-chat', methods=['POST'])
 def new_chat():
-    """Start a new chat"""
+    """Start a request-correlated fresh chat."""
     if not bridge_can_accept_tasks():
         return jsonify({"success": False, "error": startup_error or runtime_error or "Server not ready"}), 503
-
-    task_queue.put({'type': 'new_chat'})
-
+    data = request.get_json(silent=True) or {}
     try:
-        result = result_queue.get(timeout=30)
-        if result.get('success'):
-            return jsonify(result), 200
-        else:
-            return jsonify(result), 500
-    except queue.Empty:
-        return jsonify({"success": False, "error": "Request timed out"}), 504
+        result, status_code = submit_browser_task(
+            "new_chat",
+            request_id=data.get("request_id"),
+            tags={
+                key: str(data[key])
+                for key in ("run_id", "cognition_id")
+                if data.get(key) not in (None, "")
+            },
+            timeout=30,
+        )
+    except ValueError as exc:
+        return jsonify({"success": False, "error": str(exc)}), 409
+    return jsonify(result), status_code
+
 
 @app.route('/show-ui', methods=['POST'])
 def show_ui():
@@ -744,14 +906,20 @@ def show_ui():
     target = data.get("url") or BOB_COMPANION_UI_URL
     try:
         target = validate_companion_ui_url(target)
+        result, status_code = submit_browser_task(
+            "show_ui",
+            url=target,
+            request_id=data.get("request_id"),
+            tags={
+                key: str(data[key])
+                for key in ("run_id", "cognition_id")
+                if data.get(key) not in (None, "")
+            },
+            timeout=30,
+        )
     except ValueError as exc:
         return jsonify({"success": False, "error": str(exc)}), 400
-    task_queue.put({"type": "show_ui", "url": target})
-    try:
-        result = result_queue.get(timeout=30)
-        return jsonify(result), 200 if result.get("success") else 500
-    except queue.Empty:
-        return jsonify({"success": False, "error": "Request timed out"}), 504
+    return jsonify(result), status_code
 
 
 @app.route('/health', methods=['GET'])
@@ -785,6 +953,7 @@ def status():
         "browser_worker_alive": browser_worker_alive(),
         "browser_generation": browser_generation,
         "runtime_error": runtime_error,
+        "requests": browser_request_status(),
         "profile_path": load_profile_path(),
         "project_name": BOB_CHATGPT_PROJECT_NAME,
         "project_url_configured": bool(CHATGPT_TARGET_URL),

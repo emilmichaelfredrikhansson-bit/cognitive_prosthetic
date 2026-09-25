@@ -75,6 +75,80 @@
         "GitHub remains implementation truth."
       ],
       "status": "WORKING"
+    },
+    {
+      "id": "BOB_EXECUTION_LEDGER",
+      "purpose": "Persist repository-scoped bounded runs, cognition correlation, dependencies, leases and serialized integration state.",
+      "source_paths": [
+        "bob/execution_ledger.py"
+      ],
+      "test_paths": [
+        "tests/test_execution_ledger.py"
+      ],
+      "contract_paths": [
+        "docs/BOB_EXECUTION_LEDGER_V1.md"
+      ],
+      "producers": [],
+      "consumers": [
+        "BOB_WORKTREE_COORDINATION"
+      ],
+      "invariants": [
+        "At most 3 active Bob runs occupy worker slots per repository ledger.",
+        "Ledger repository identity and canonical ref are durable and fail closed on mismatch.",
+        "One run has at most one RUNNING cognition.",
+        "Every cognition has stable run_id/cognition_id/request_id correlation.",
+        "Integration is FIFO, single-owner per repo and stale candidates require rebase/reverification.",
+        "Ledger state never grants effect authority or performs promotion."
+      ],
+      "status": "WORKING"
+    },
+    {
+      "id": "BOB_WORKTREE_COORDINATION",
+      "purpose": "Isolate mutating Bob runs in dedicated local Git branches/worktrees and verify integration ancestry without performing promotion.",
+      "source_paths": [
+        "bob/worktree_coordination.py"
+      ],
+      "test_paths": [
+        "tests/test_worktree_coordination.py"
+      ],
+      "contract_paths": [
+        "docs/BOB_WORKTREE_INTEGRATION_V1.md"
+      ],
+      "producers": [
+        "BOB_EXECUTION_LEDGER"
+      ],
+      "consumers": [],
+      "invariants": [
+        "Coordinator verifies local Git origin and bound canonical ref before opening repository state.",
+        "Every active mutating run has an isolated branch/worktree.",
+        "Conflicting semantic leases cannot mutate concurrently.",
+        "Worktree coordination never merges, pushes, force-pushes or deletes branches.",
+        "Integrated state is recorded only after verified candidate ancestry is observed in canonical state."
+      ],
+      "status": "WORKING"
+    },
+    {
+      "id": "BOB_PROCESS_SUPERVISION",
+      "purpose": "Own durable lifecycle, ports, logs and bounded cleanup for explicit Bob Local child processes.",
+      "source_paths": [
+        "bob/process_supervision.py"
+      ],
+      "test_paths": [
+        "tests/test_process_supervision.py"
+      ],
+      "contract_paths": [
+        "docs/BOB_PROCESS_SUPERVISION_V1.md"
+      ],
+      "producers": [],
+      "consumers": [],
+      "invariants": [
+        "Only explicitly registered Bob-owned process identities may be stopped automatically.",
+        "PID reuse fails closed through creation-time identity.",
+        "Long-lived output goes to bounded-tail file logs rather than unbounded RDC stdout.",
+        "Port collisions block startup and never trigger killing an unknown process.",
+        "Recovery is bounded; V1 has no automatic infinite restart loop."
+      ],
+      "status": "WORKING"
     }
   ]
 }

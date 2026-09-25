@@ -28,6 +28,22 @@ class LocalServerSurfaceTests(unittest.TestCase):
         self.assertIn("/bob/module-turn", rules)
         self.assertIn("/bob/module-graph", rules)
 
+    def test_execution_coordination_routes_are_exposed(self):
+        rules = {rule.rule for rule in bob_api_server.app.url_map.iter_rules()}
+        expected = {
+            "/bob/execution",
+            "/bob/execution/runs",
+            "/bob/execution/runs/<run_id>",
+            "/bob/execution/runs/<run_id>/cognitions",
+            "/bob/execution/cognitions/<cognition_id>/finish",
+            "/bob/execution/runs/<run_id>/ready",
+            "/bob/execution/integration/plan",
+            "/bob/execution/integration/claim",
+            "/bob/execution/runs/<run_id>/integrated",
+            "/bob/execution/runs/<run_id>/cancel",
+        }
+        self.assertTrue(expected.issubset(rules))
+
     def test_loopback_defaults_are_documented_runtime_defaults(self):
         with patch.dict(os.environ, {}, clear=True):
             self.assertEqual(os.environ.get("BOB_HOST", "127.0.0.1"), "127.0.0.1")

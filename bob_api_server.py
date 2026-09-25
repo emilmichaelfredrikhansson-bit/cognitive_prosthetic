@@ -7,11 +7,30 @@ from pathlib import Path
 from flask import Flask, jsonify, request, send_from_directory
 from bob.driver import BobRuntime
 from bob.errors import BobError
+from bob.worktree_coordination import RepositoryCoordinatorRegistry
 
 BASE_DIR = Path(__file__).resolve().parent
 app = Flask(__name__, static_folder=str(BASE_DIR / "frontend"), static_url_path="")
 runtime = BobRuntime(
     workspace_dir=os.environ.get("BOB_WORKSPACE_DIR", str(BASE_DIR / "workspaces"))
+)
+_bob_workspace = runtime.registry.get("BOB")
+execution_registry = RepositoryCoordinatorRegistry.from_json(
+    runtime.registry,
+    os.environ.get("BOB_REPOSITORY_BINDINGS_JSON"),
+    default_bindings={
+        _bob_workspace.github_repository_id: {
+            "repository_full_name": _bob_workspace.github_repository,
+            "repository_id": _bob_workspace.github_repository_id,
+            "repo_root": BASE_DIR,
+            "canonical_ref": os.environ.get("BOB_CANONICAL_REF", "feat/bob-core-v1"),
+            "state_path": os.environ.get("BOB_EXECUTION_LEDGER_PATH") or None,
+            "worktree_root": os.environ.get("BOB_EXECUTION_WORKTREE_ROOT") or None,
+        }
+    },
+    max_parallel_runs_per_repository=int(
+        os.environ.get("BOB_MAX_PARALLEL_RUNS_PER_REPOSITORY", "3")
+    ),
 )
 
 
@@ -125,6 +144,151 @@ def project_search():
         data.get("limit", 20),
     )
     return jsonify({"success": True, **result})
+
+
+@app.get("/bob/execution")
+def execution_status():
+    return jsonify({"success": True, **execution_registry.snapshot()})
+
+
+@app.post("/bob/execution/runs")
+def execution_create_run():
+    data = request.get_json(force=True) or {}
+    workspace_code = str(data["workspace"])
+    workspace = runtime.registry.get(workspace_code)
+    execution = execution_registry.coordinator_for_workspace(workspace_code)
+    result = execution.create_run(
+        goal=str(data["goal"]),
+        workspace=workspace_code,
+        base_ref=str(data["base_ref"]),
+        leases=[str(item) for item in (data.get("leases") or [])],
+        depends_on=[str(item) for item in (data.get("depends_on") or [])],
+        lane=str(data.get("lane") or "interactive"),
+        authority={
+            "workspace": workspace.code,
+            "repository": workspace.github_repository,
+            "repository_id": workspace.github_repository_id,
+            "effects": dict(workspace.effects),
+        },
+    )
+    return jsonify({"success": True, "run": result})
+
+
+@app.get("/bob/execution/runs/<run_id>")
+def execution_get_run(run_id):
+    execution = execution_registry.coordinator_for_run(run_id)
+    return jsonify({"success": True, "run": execution.ledger.get_run(run_id)})
+
+
+@app.post("/bob/execution/runs/<run_id>/cognitions")
+def execution_begin_cognition(run_id):
+    data = request.get_json(force=True) or {}
+    execution = execution_registry.coordinator_for_run(run_id)
+    result = execution.ledger.begin_cognition(
+        run_id,
+        purpose=str(data["purpose"]),
+        request_id=None if data.get("request_id") in (None, "") else str(data["request_id"]),
+    )
+    return jsonify({"success": True, "cognition": result})
+
+
+@app.post("/bob/execution/cognitions/<cognition_id>/finish")
+def execution_finish_cognition(cognition_id):
+    data = request.get_json(force=True) or {}
+    execution = execution_registry.coordinator_for_cognition(cognition_id)
+    result = execution.ledger.finish_cognition(
+        cognition_id,
+        success=bool(data.get("success")),
+        summary=None if data.get("summary") is None else str(data.get("summary")),
+        error=None if data.get("error") is None else str(data.get("error")),
+    )
+    return jsonify({"success": True, "cognition": result})
+
+
+@app.post("/bob/execution/runs/<run_id>/awaiting-approval")
+def execution_awaiting_approval(run_id):
+    execution = execution_registry.coordinator_for_run(run_id)
+    return jsonify({
+        "success": True,
+        "run": execution.ledger.mark_awaiting_approval(run_id),
+    })
+
+
+@app.post("/bob/execution/runs/<run_id>/resume")
+def execution_resume(run_id):
+    execution = execution_registry.coordinator_for_run(run_id)
+    return jsonify({
+        "success": True,
+        "run": execution.ledger.resume_after_approval(run_id),
+    })
+
+
+@app.post("/bob/execution/runs/<run_id>/ready")
+def execution_ready(run_id):
+    data = request.get_json(force=True) or {}
+    execution = execution_registry.coordinator_for_run(run_id)
+    result = execution.mark_ready_for_integration(
+        run_id,
+        verified_base_sha=str(data["verified_base_sha"]),
+        verification=dict(data.get("verification") or {}),
+    )
+    return jsonify({"success": True, "run": result})
+
+
+@app.post("/bob/execution/runs/<run_id>/reverified")
+def execution_reverified(run_id):
+    data = request.get_json(force=True) or {}
+    execution = execution_registry.coordinator_for_run(run_id)
+    result = execution.record_rebase_verification(
+        run_id,
+        canonical_ref=str(data["canonical_ref"]),
+        verification=dict(data.get("verification") or {}),
+    )
+    return jsonify({"success": True, "run": result})
+
+
+@app.post("/bob/execution/integration/plan")
+def execution_integration_plan():
+    data = request.get_json(force=True) or {}
+    execution = execution_registry.coordinator_for_workspace(str(data["workspace"]))
+    result = execution.integration_plan(
+        None if data.get("canonical_ref") in (None, "") else str(data["canonical_ref"])
+    )
+    return jsonify({"success": True, **result})
+
+
+@app.post("/bob/execution/integration/claim")
+def execution_integration_claim():
+    data = request.get_json(force=True) or {}
+    run_id = str(data["run_id"])
+    execution = execution_registry.coordinator_for_run(run_id)
+    result = execution.begin_integration(
+        run_id,
+        canonical_ref=None if data.get("canonical_ref") in (None, "") else str(data["canonical_ref"]),
+    )
+    return jsonify({"success": True, "run": result})
+
+
+@app.post("/bob/execution/runs/<run_id>/integrated")
+def execution_integrated(run_id):
+    data = request.get_json(force=True) or {}
+    execution = execution_registry.coordinator_for_run(run_id)
+    result = execution.complete_integration(
+        run_id,
+        canonical_ref=None if data.get("canonical_ref") in (None, "") else str(data["canonical_ref"]),
+    )
+    return jsonify({"success": True, "run": result})
+
+
+@app.post("/bob/execution/runs/<run_id>/cancel")
+def execution_cancel(run_id):
+    data = request.get_json(silent=True) or {}
+    execution = execution_registry.coordinator_for_run(run_id)
+    result = execution.cancel_run(
+        run_id,
+        reason=str(data.get("reason") or "cancelled"),
+    )
+    return jsonify({"success": True, "run": result})
 
 
 @app.post("/bob/relay/start")

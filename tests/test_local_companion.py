@@ -32,6 +32,9 @@ class LocalCompanionTests(unittest.TestCase):
             self.assertEqual(env["CHATGPT_CAPTURE_MODE"], "copy")
             self.assertEqual(env["CHATGPT_RESPONSE_TIMEOUT_SECONDS"], "360")
             self.assertEqual(env["CHATGPT_BRIDGE_TIMEOUT_SECONDS"], "420")
+            self.assertEqual(env["BOB_MAX_PARALLEL_RUNS_PER_REPOSITORY"], "3")
+            self.assertEqual(env["BOB_CANONICAL_REF"], "feat/bob-core-v1")
+            self.assertTrue(env["BOB_PROCESS_SUPERVISOR_PATH"].endswith("process_supervisor.json"))
 
     def test_local_launcher_rejects_non_loopback_bindings(self):
         env = {
@@ -202,6 +205,53 @@ class LocalCompanionTests(unittest.TestCase):
             patch.object(chatgpt_api_server, "runtime_error", "ChatGPT page closed"),
         ):
             self.assertTrue(chatgpt_api_server.bridge_can_accept_tasks())
+
+    def test_browser_tasks_have_private_result_channels(self):
+        with patch.object(chatgpt_api_server, "request_registry", {}):
+            first, first_queue = chatgpt_api_server.make_browser_task(
+                "cognition_request",
+                request_id="req-one",
+                tags={"run_id": "run-one"},
+                prompt="one",
+            )
+            second, second_queue = chatgpt_api_server.make_browser_task(
+                "cognition_request",
+                request_id="req-two",
+                tags={"run_id": "run-two"},
+                prompt="two",
+            )
+
+            chatgpt_api_server.deliver_browser_result(
+                second,
+                {"success": True, "response": "two"},
+            )
+            self.assertTrue(first_queue.empty())
+            delivered = second_queue.get_nowait()
+            self.assertEqual(delivered["request_id"], "req-two")
+            self.assertEqual(delivered["run_id"], "run-two")
+
+            chatgpt_api_server.deliver_browser_result(
+                first,
+                {"success": True, "response": "one"},
+            )
+            delivered_first = first_queue.get_nowait()
+            self.assertEqual(delivered_first["request_id"], "req-one")
+            self.assertEqual(delivered_first["run_id"], "run-one")
+
+    def test_duplicate_browser_request_id_is_rejected(self):
+        with patch.object(chatgpt_api_server, "request_registry", {}):
+            chatgpt_api_server.make_browser_task(
+                "cognition_request",
+                request_id="same-request",
+                prompt="one",
+            )
+            with self.assertRaises(ValueError):
+                chatgpt_api_server.make_browser_task(
+                    "cognition_request",
+                    request_id="same-request",
+                    prompt="two",
+                )
+
 
 
 if __name__ == "__main__":
