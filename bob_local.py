@@ -90,6 +90,10 @@ def build_env(env_file: Path) -> dict[str, str]:
         "BOB_PENDING_EFFECT_STORE_PATH",
         str(ROOT / ".bob" / "runtime" / "pending_effects.json"),
     )
+    env.setdefault(
+        "BOB_SELFDEV_QUEUE_PATH",
+        str(ROOT / ".bob" / "runtime" / "self_development.json"),
+    )
     assert_local_only(env)
     return env
 

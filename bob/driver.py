@@ -13,6 +13,7 @@ from .errors import BobError, ConfigurationError, ProtocolError
 from .effect_runtime import EffectRuntimeMixin, PendingEffect
 from .module_runtime import ModuleRuntimeMixin
 from .pending_effect_store import PendingEffectStore
+from .selfdev_queue import SelfDevelopmentQueue
 from .integrations import CloudflareAdapter, GitHubAdapter, HuggingFaceAdapter, SupabaseAdapter
 from .protocol import BobMessage, make_result, make_workspace_packet, parse_model_response
 from .workspaces import Workspace, WorkspaceRegistry
@@ -98,6 +99,24 @@ class BobRuntime(ModuleRuntimeMixin, EffectRuntimeMixin):
         )
         self.continuation_store = ContinuationStore(continuation_path)
         self.blocked_continuations: dict[str, dict[str, Any]] = self.continuation_store.snapshot()
+        self.selfdev_queue: SelfDevelopmentQueue | None = None
+        try:
+            bob_workspace = self.registry.get("BOB")
+        except ConfigurationError:
+            # BobRuntime is project-agnostic and is used with non-BOB registries in
+            # tests/target workspaces. Self-development state exists only in the
+            # Bob control-plane workspace and must not become a global dependency.
+            pass
+        else:
+            selfdev_path = os.environ.get("BOB_SELFDEV_QUEUE_PATH") or str(
+                runtime_root / ".bob" / "runtime" / "self_development.json"
+            )
+            self.selfdev_queue = SelfDevelopmentQueue(
+                selfdev_path,
+                repository_full_name=bob_workspace.github_repository,
+                repository_id=bob_workspace.github_repository_id,
+                canonical_ref=os.environ.get("BOB_CANONICAL_REF", "feat/bob-core-v1"),
+            )
         self.initialized_workspace: str | None = None
         self.context_compiler = ContextCompiler()
         self._configure_adapters()
@@ -176,6 +195,31 @@ class BobRuntime(ModuleRuntimeMixin, EffectRuntimeMixin):
             "qualified": qualified,
             "checks": checks,
         }
+
+    def _require_selfdev_queue(self) -> SelfDevelopmentQueue:
+        if self.selfdev_queue is None:
+            raise ConfigurationError(
+                "Bob self-development state requires a configured BOB workspace"
+            )
+        return self.selfdev_queue
+
+    def self_development_status(self) -> dict[str, Any]:
+        """Return durable Bob self-development backlog state without executing work."""
+        return self._require_selfdev_queue().snapshot()
+
+    def enqueue_self_development(
+        self,
+        *,
+        goal: str,
+        leases: list[str],
+        expected_outcome: str | None = None,
+    ) -> dict[str, Any]:
+        """Persist one bounded self-development intent; execution remains separate."""
+        return self._require_selfdev_queue().enqueue(
+            goal=goal,
+            leases=leases,
+            expected_outcome=expected_outcome,
+        )
 
     def start_chat(self, workspace_code: str) -> dict[str, Any]:
         workspace = self.registry.get(workspace_code)

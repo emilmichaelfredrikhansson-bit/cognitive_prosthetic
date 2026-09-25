@@ -140,6 +140,26 @@ def resume_continuation(continuation_id):
     return jsonify({"success": True, **result})
 
 
+@app.get("/bob/self-development")
+def self_development_status():
+    return jsonify({"success": True, **runtime.self_development_status()})
+
+
+@app.post("/bob/self-development/items")
+def self_development_enqueue():
+    data = request.get_json(force=True) or {}
+    item = runtime.enqueue_self_development(
+        goal=str(data["goal"]),
+        leases=[str(item) for item in (data.get("leases") or [])],
+        expected_outcome=(
+            None
+            if data.get("expected_outcome") in (None, "")
+            else str(data["expected_outcome"])
+        ),
+    )
+    return jsonify({"success": True, "item": item})
+
+
 @app.post("/bob/read")
 def direct_read():
     data = request.get_json(force=True) or {}

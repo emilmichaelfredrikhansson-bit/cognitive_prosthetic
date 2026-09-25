@@ -191,6 +191,32 @@
       "status": "WORKING"
     },
     {
+      "id": "BOB_SELF_DEVELOPMENT_STATE",
+      "purpose": "Persist repo-bound self-development backlog and restart-safe lifecycle state without owning execution or promotion.",
+      "source_paths": [
+        "bob/selfdev_queue.py"
+      ],
+      "test_paths": [
+        "tests/test_selfdev_queue.py"
+      ],
+      "contract_paths": [
+        "docs/BOB_SELF_DEVELOPMENT_STATE_V1.md"
+      ],
+      "producers": [],
+      "consumers": [
+        "BOB_RUNTIME_ORCHESTRATION",
+        "BOB_EXECUTION_LEDGER"
+      ],
+      "invariants": [
+        "Queue state is bound to exact repository identity and canonical ref.",
+        "At most one self-development item is ACTIVE in V1.",
+        "ACTIVE work becomes INTERRUPTED on restart instead of being replayed.",
+        "Bound execution work must be reconciled before a self-development item is requeued.",
+        "Self-development state never grants effect authority or performs promotion."
+      ],
+      "status": "WORKING"
+    },
+    {
       "id": "BOB_PROCESS_SUPERVISION",
       "purpose": "Own durable lifecycle, ports, logs and bounded cleanup for explicit Bob Local child processes.",
       "source_paths": [
