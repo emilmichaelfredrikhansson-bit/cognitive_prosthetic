@@ -12,6 +12,7 @@ from .continuation_store import ContinuationStore
 from .errors import BobError, ConfigurationError, ProtocolError
 from .effect_runtime import EffectRuntimeMixin, PendingEffect
 from .module_runtime import ModuleRuntimeMixin
+from .pending_effect_store import PendingEffectStore
 from .integrations import CloudflareAdapter, GitHubAdapter, HuggingFaceAdapter, SupabaseAdapter
 from .protocol import BobMessage, make_result, make_workspace_packet, parse_model_response
 from .workspaces import Workspace, WorkspaceRegistry
@@ -80,9 +81,18 @@ class BobRuntime(ModuleRuntimeMixin, EffectRuntimeMixin):
         self.registry = WorkspaceRegistry(workspace_dir)
         self.bridge = bridge or ChatGPTBridge()
         self.adapters: dict[str, Any] = {}
-        self.pending: dict[str, PendingEffect] = {}
         workspace_path = Path(workspace_dir).expanduser().resolve()
         runtime_root = workspace_path.parent if workspace_path.name.lower() == "workspaces" else workspace_path
+        pending_path = os.environ.get("BOB_PENDING_EFFECT_STORE_PATH") or str(
+            runtime_root / ".bob" / "runtime" / "pending_effects.json"
+        )
+        self.pending_effect_store = PendingEffectStore(pending_path)
+        self.pending: dict[str, PendingEffect] = {}
+        for pending_id, durable in self.pending_effect_store.snapshot().items():
+            pending = PendingEffect.from_durable(durable)
+            if pending.pending_id != pending_id:
+                raise ConfigurationError("pending effect store key/id mismatch")
+            self.pending[pending_id] = pending
         continuation_path = os.environ.get("BOB_CONTINUATION_STORE_PATH") or str(
             runtime_root / ".bob" / "runtime" / "blocked_continuations.json"
         )

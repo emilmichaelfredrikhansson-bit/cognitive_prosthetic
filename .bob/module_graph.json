@@ -33,10 +33,12 @@
       "id": "BOB_EFFECT_AUTHORITY",
       "purpose": "Bind, preview, approve, execute and verify external effects without allowing cognition to widen authority.",
       "source_paths": [
-        "bob/effect_runtime.py"
+        "bob/effect_runtime.py",
+        "bob/pending_effect_store.py"
       ],
       "test_paths": [
-        "tests/test_effect_runtime.py"
+        "tests/test_effect_runtime.py",
+        "tests/test_pending_effect_store.py"
       ],
       "contract_paths": [
         "docs/BOB_EFFECT_AUTHORITY_V1.md"
@@ -50,7 +52,9 @@
       ],
       "invariants": [
         "Effects remain approval-bound to exact workspace and staged provider state.",
-        "Changed staged reality invalidates approval.",
+        "Pending approvals are durably persisted before they are exposed to the operator.",
+        "Restarted approvals are re-previewed and re-hashed against current reality before execution.",
+        "Approval consumption is durable before effect execution so a crash cannot leave a replayable approved effect.",
         "Verified effects are never replayed merely to recover later cognition."
       ],
       "status": "WORKING"

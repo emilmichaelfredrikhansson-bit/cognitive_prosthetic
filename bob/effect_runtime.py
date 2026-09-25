@@ -7,7 +7,7 @@ import uuid
 from dataclasses import dataclass
 from typing import Any
 
-from .errors import AuthorityError, ProtocolError
+from .errors import AuthorityError, ConfigurationError, ProtocolError
 from .protocol import BobMessage, make_result
 from .workspaces import Workspace
 
@@ -21,6 +21,58 @@ class PendingEffect:
     effect_class: str
     preview: dict[str, Any] | None
     continuation: dict[str, Any] | None = None
+
+    def durable_dict(self) -> dict[str, Any]:
+        return {
+            "pending_id": self.pending_id,
+            "workspace_code": self.workspace_code,
+            "message": {
+                "type": self.message.type,
+                "id": self.message.id,
+                "tool": self.message.tool,
+                "args": self.message.args,
+            },
+            "candidate_hash": self.candidate_hash,
+            "effect_class": self.effect_class,
+            "preview": self.preview,
+            "continuation": self.continuation,
+        }
+
+    @classmethod
+    def from_durable(cls, data: dict[str, Any]) -> "PendingEffect":
+        if not isinstance(data, dict):
+            raise ConfigurationError("durable pending effect must be an object")
+        raw = data.get("message")
+        if not isinstance(raw, dict) or raw.get("type") != "BOB.EFFECT":
+            raise ConfigurationError("durable pending effect requires a BOB.EFFECT message")
+        msg_id, tool, args = raw.get("id"), raw.get("tool"), raw.get("args") or {}
+        if not isinstance(msg_id, str) or not msg_id or not isinstance(tool, str) or not tool:
+            raise ConfigurationError("durable pending effect message identity is invalid")
+        if not isinstance(args, dict):
+            raise ConfigurationError("durable pending effect args must be an object")
+        pending_id = data.get("pending_id")
+        workspace_code = data.get("workspace_code")
+        candidate_hash = data.get("candidate_hash")
+        effect_class = data.get("effect_class")
+        if not all(isinstance(value, str) and value for value in (
+            pending_id, workspace_code, candidate_hash, effect_class
+        )):
+            raise ConfigurationError("durable pending effect metadata is invalid")
+        preview = data.get("preview")
+        continuation = data.get("continuation")
+        if preview is not None and not isinstance(preview, dict):
+            raise ConfigurationError("durable pending effect preview must be an object or null")
+        if continuation is not None and not isinstance(continuation, dict):
+            raise ConfigurationError("durable pending effect continuation must be an object or null")
+        return cls(
+            pending_id=pending_id,
+            workspace_code=workspace_code,
+            message=BobMessage("BOB.EFFECT", msg_id, tool, args, raw),
+            candidate_hash=candidate_hash,
+            effect_class=effect_class,
+            preview=preview,
+            continuation=continuation,
+        )
 
 
 class EffectRuntimeMixin:
@@ -38,10 +90,29 @@ class EffectRuntimeMixin:
             "cloudflare.pages_rollback": "deploy",
         }
 
-    def approve(self, pending_id: str) -> dict[str, Any]:
-            pending = self.pending.pop(pending_id, None)
+    def approval_status(self) -> dict[str, Any]:
+            items = []
+            for pending_id, pending in sorted(self.pending.items()):
+                items.append({
+                    "pending_id": pending_id,
+                    "request_id": pending.message.id,
+                    "tool": pending.message.tool,
+                    "effect_class": pending.effect_class,
+                    "args": pending.message.args,
+                    "candidate_hash": pending.candidate_hash,
+                    "preview": pending.preview,
+                })
+            return {"count": len(items), "pending": items}
+
+    def _consume_pending(self, pending_id: str) -> PendingEffect:
+            pending = self.pending.get(pending_id)
             if pending is None:
                 raise ProtocolError("unknown or already-consumed pending approval")
+            self.pending_effect_store.remove(pending_id)
+            return self.pending.pop(pending_id)
+
+    def approve(self, pending_id: str) -> dict[str, Any]:
+            pending = self._consume_pending(pending_id)
             workspace = self.registry.get(pending.workspace_code)
             current_preview = self._preview_effect(workspace, pending.message)
             actual_hash = self._candidate_hash(workspace, pending.message, current_preview)
@@ -88,9 +159,7 @@ class EffectRuntimeMixin:
 
     def reject(self, pending_id: str) -> dict[str, Any]:
             """Discard one staged effect without executing it."""
-            pending = self.pending.pop(pending_id, None)
-            if pending is None:
-                raise ProtocolError("unknown or already-consumed pending approval")
+            pending = self._consume_pending(pending_id)
             return {
                 "status": "REJECTED",
                 "request_id": pending.message.id,
@@ -100,9 +169,7 @@ class EffectRuntimeMixin:
 
     def relay_approve(self, pending_id: str) -> dict[str, Any]:
             """Execute one staged effect and return feedback without invoking ChatGPT."""
-            pending = self.pending.pop(pending_id, None)
-            if pending is None:
-                raise ProtocolError("unknown or already-consumed pending approval")
+            pending = self._consume_pending(pending_id)
             workspace = self.registry.get(pending.workspace_code)
             current_preview = self._preview_effect(workspace, pending.message)
             actual_hash = self._candidate_hash(workspace, pending.message, current_preview)
@@ -162,7 +229,7 @@ class EffectRuntimeMixin:
             preview = self._preview_effect(workspace, message)
             pending_id = str(uuid.uuid4())
             candidate_hash = self._candidate_hash(workspace, message, preview)
-            self.pending[pending_id] = PendingEffect(
+            pending = PendingEffect(
                 pending_id=pending_id,
                 workspace_code=workspace.code,
                 message=message,
@@ -171,6 +238,8 @@ class EffectRuntimeMixin:
                 preview=preview,
                 continuation=continuation,
             )
+            self.pending_effect_store.put(pending_id, pending.durable_dict())
+            self.pending[pending_id] = pending
             return {
                 "pending_id": pending_id,
                 "request_id": message.id,

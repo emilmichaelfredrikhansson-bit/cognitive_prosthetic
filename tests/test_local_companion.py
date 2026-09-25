@@ -36,6 +36,7 @@ class LocalCompanionTests(unittest.TestCase):
             self.assertEqual(env["BOB_CANONICAL_REF"], "feat/bob-core-v1")
             self.assertTrue(env["BOB_PROCESS_SUPERVISOR_PATH"].endswith("process_supervisor.json"))
             self.assertTrue(env["BOB_CONTINUATION_STORE_PATH"].endswith("blocked_continuations.json"))
+            self.assertTrue(env["BOB_PENDING_EFFECT_STORE_PATH"].endswith("pending_effects.json"))
 
     def test_local_launcher_rejects_non_loopback_bindings(self):
         env = {

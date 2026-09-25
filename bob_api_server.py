@@ -110,6 +110,11 @@ def module_graph():
     return jsonify({"success": True, **result})
 
 
+@app.get("/bob/approvals")
+def approvals():
+    return jsonify({"success": True, **runtime.approval_status()})
+
+
 @app.post("/bob/approve")
 def approve():
     data = request.get_json(force=True) or {}

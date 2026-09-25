@@ -86,6 +86,10 @@ def build_env(env_file: Path) -> dict[str, str]:
         "BOB_CONTINUATION_STORE_PATH",
         str(ROOT / ".bob" / "runtime" / "blocked_continuations.json"),
     )
+    env.setdefault(
+        "BOB_PENDING_EFFECT_STORE_PATH",
+        str(ROOT / ".bob" / "runtime" / "pending_effects.json"),
+    )
     assert_local_only(env)
     return env
 
