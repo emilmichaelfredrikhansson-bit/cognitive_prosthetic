@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import ipaddress
 import os
+import socket
 import subprocess
 import sys
 import time
@@ -74,6 +75,27 @@ def build_env(env_file: Path) -> dict[str, str]:
     env.setdefault("CHATGPT_BRIDGE_TIMEOUT_SECONDS", "420")
     assert_local_only(env)
     return env
+
+
+def assert_runtime_ports_free(env: dict[str, str]) -> None:
+    """Fail closed if another local Bob/bridge already owns the loopback ports."""
+    for host_key, port_key, label in (
+        ("BOB_HOST", "BOB_PORT", "Bob API"),
+        ("CHATGPT_BRIDGE_HOST", "CHATGPT_BRIDGE_PORT", "ChatGPT bridge"),
+    ):
+        host = (env.get(host_key) or "127.0.0.1").strip()
+        port = int(env.get(port_key) or ("5002" if port_key == "BOB_PORT" else "5001"))
+        family = socket.AF_INET6 if ":" in host else socket.AF_INET
+        probe = socket.socket(family, socket.SOCK_STREAM)
+        try:
+            probe.bind((host, port))
+        except OSError as exc:
+            raise RuntimeError(
+                f"{label} loopback port {host}:{port} is already in use; "
+                "another Bob Local Companion may already be running"
+            ) from exc
+        finally:
+            probe.close()
 
 
 def configured_project_url(env: dict[str, str]) -> str:
@@ -173,6 +195,8 @@ def main() -> int:
         print(f"Bob cannot find a ChatGPT browser profile at: {profile}")
         print("Run: python bob_local.py --login")
         return 2
+
+    assert_runtime_ports_free(env)
 
     bob_api: subprocess.Popen | None = None
     bridge: subprocess.Popen | None = None

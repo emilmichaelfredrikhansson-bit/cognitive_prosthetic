@@ -62,6 +62,47 @@ result_queue = queue.Queue()
 is_ready = False
 startup_error = None
 browser_thread = None
+runtime_error = None
+browser_generation = 0
+
+def is_browser_closed_error(value):
+    """Classify Playwright target/context closure as recoverable browser loss."""
+    text = str(value or "").casefold()
+    markers = (
+        "target page, context or browser has been closed",
+        "target closed",
+        "page has been closed",
+        "page is closed",
+        "context has been closed",
+        "browser has been closed",
+        "browser is closed",
+    )
+    return any(marker in text for marker in markers)
+
+
+def browser_result_needs_recovery(result):
+    return bool(
+        isinstance(result, dict)
+        and not result.get("success")
+        and is_browser_closed_error(result.get("error"))
+    )
+
+
+def task_allows_transparent_browser_retry(task_type):
+    """Only context-independent browser tasks may be retried after session loss."""
+    return task_type in {"cognition_request", "new_chat", "show_ui"}
+
+
+def browser_session_is_live(page, browser_context):
+    """Actively probe Chromium from the Playwright-owning worker thread."""
+    try:
+        if page is None or browser_context is None or page.is_closed():
+            return False
+        page.evaluate("() => true")
+        return True
+    except Exception:
+        return False
+
 
 def validate_chatgpt_project_url(url):
     """Require an explicit non-root ChatGPT target for Bob cognition."""
@@ -117,9 +158,99 @@ def show_companion_ui(chatgpt_page, url):
     return {"success": True, "url": companion.url, "reused": False}
 
 
+def set_browser_state(ready, error=None):
+    """Publish worker-owned browser liveness without exposing Playwright cross-thread."""
+    global is_ready, runtime_error
+    is_ready = bool(ready)
+    runtime_error = None if ready else (str(error) if error else "browser unavailable")
+
+
+def close_browser_context(browser_context):
+    if browser_context is None:
+        return
+    try:
+        browser_context.close()
+    except Exception:
+        pass
+
+
+def launch_browser_session(playwright, profile_path):
+    """Launch, project-bind, permission-bind, and authenticate one browser session."""
+    global browser_generation
+    browser_context = playwright.chromium.launch_persistent_context(
+        profile_path,
+        headless=False,
+        viewport={"width": 1280, "height": 900},
+        args=[
+            '--disable-blink-features=AutomationControlled',
+            '--disable-dev-shm-usage',
+            '--no-sandbox'
+        ]
+    )
+    page = browser_context.pages[0] if browser_context.pages else browser_context.new_page()
+
+    project_url = validate_chatgpt_project_url(CHATGPT_TARGET_URL)
+    logging.info(f"🌐 Navigating to dedicated ChatGPT project: {BOB_CHATGPT_PROJECT_NAME}")
+    page.goto(project_url, wait_until="domcontentloaded", timeout=30000)
+    time.sleep(3)
+
+    origin_parts = urlsplit(page.url)
+    origin = f"{origin_parts.scheme}://{origin_parts.netloc}"
+    try:
+        browser_context.grant_permissions(
+            ["clipboard-read", "clipboard-write"],
+            origin=origin,
+        )
+    except Exception as exc:
+        logging.warning(f"Could not pre-grant clipboard permissions: {exc}")
+
+    textarea = find_textarea(page, timeout=12)
+    if not textarea:
+        close_browser_context(browser_context)
+        raise RuntimeError(
+            "ChatGPT chat input was not found. The session may need login "
+            "or the ChatGPT UI selectors may have changed."
+        )
+
+    browser_generation += 1
+    generation = browser_generation
+
+    def mark_context_closed():
+        if generation == browser_generation:
+            set_browser_state(False, "browser context closed")
+
+    def mark_page_closed():
+        if generation == browser_generation:
+            set_browser_state(False, "ChatGPT page closed")
+
+    try:
+        browser_context.on("close", lambda _context=None: mark_context_closed())
+        page.on("close", lambda _page=None: mark_page_closed())
+    except Exception:
+        pass
+
+    set_browser_state(True)
+    logging.info(f"✅ Chat interface ready! browser_generation={generation}")
+    return browser_context, page
+
+
+def execute_browser_task(page, task):
+    task_type = task.get('type')
+    if task_type == 'send_message':
+        return send_message(page, task['prompt'])
+    if task_type == 'cognition_request':
+        fresh = start_new_chat(page)
+        return send_message(page, task['prompt']) if fresh.get("success") else fresh
+    if task_type == 'new_chat':
+        return start_new_chat(page)
+    if task_type == 'show_ui':
+        return show_companion_ui(page, task.get('url') or BOB_COMPANION_UI_URL)
+    return {"success": False, "error": f"unknown browser task: {task_type}"}
+
+
 def browser_worker():
-    """Dedicated thread for all browser operations"""
-    global is_ready, startup_error
+    """Dedicated thread for all browser operations with bounded self-recovery."""
+    global is_ready, startup_error, runtime_error
 
     profile_path = load_profile_path()
 
@@ -133,104 +264,115 @@ def browser_worker():
 
     playwright = None
     browser_context = None
+    page = None
     try:
         playwright = sync_playwright().start()
-
-        browser_context = playwright.chromium.launch_persistent_context(
-            profile_path,
-            headless=False,
-            viewport={"width": 1280, "height": 900},
-            args=[
-                '--disable-blink-features=AutomationControlled',
-                '--disable-dev-shm-usage',
-                '--no-sandbox'
-            ]
-        )
-
-        page = browser_context.pages[0] if browser_context.pages else browser_context.new_page()
-
-        project_url = validate_chatgpt_project_url(CHATGPT_TARGET_URL)
-        logging.info(f"🌐 Navigating to dedicated ChatGPT project: {BOB_CHATGPT_PROJECT_NAME}")
-        page.goto(project_url, wait_until="domcontentloaded", timeout=30000)
-        time.sleep(3)
-
-        origin_parts = urlsplit(page.url)
-        origin = f"{origin_parts.scheme}://{origin_parts.netloc}"
         try:
-            browser_context.grant_permissions(
-                ["clipboard-read", "clipboard-write"],
-                origin=origin,
-            )
-        except Exception as e:
-            logging.warning(f"Could not pre-grant clipboard permissions: {e}")
-    except Exception as e:
-        startup_error = f"Browser failed to start: {e}"
-        logging.error(f"❌ {startup_error}")
-        # Don't strand a Chromium process if we got partway through startup.
-        for closer in (getattr(browser_context, 'close', None),
-                       getattr(playwright, 'stop', None)):
-            try:
-                if closer:
-                    closer()
-            except Exception:
-                pass
-        return
-
-    # Check if the authenticated chat interface is actually usable.
-    try:
-        textarea = find_textarea(page, timeout=12)
-        if not textarea:
-            startup_error = (
-                "ChatGPT chat input was not found. The session may need login "
-                "or the ChatGPT UI selectors may have changed."
-            )
+            browser_context, page = launch_browser_session(playwright, profile_path)
+            startup_error = None
+        except Exception as exc:
+            startup_error = f"Browser failed to start: {exc}"
+            set_browser_state(False, startup_error)
             logging.error(f"❌ {startup_error}")
-            browser_context.close()
-            playwright.stop()
             return
-        is_ready = True
-        logging.info("✅ Chat interface ready!")
-    except Exception as e:
-        startup_error = f"ChatGPT readiness check failed: {e}"
-        logging.error(f"❌ {startup_error}")
-        browser_context.close()
-        playwright.stop()
-        return
 
-    # Process tasks from queue
-    while True:
-        try:
-            task = task_queue.get()
+        # Process tasks from queue. A dead Playwright target gets one bounded
+        # browser-session recovery + retry; ordinary model/capture failures do not.
+        while True:
+            try:
+                task = task_queue.get(timeout=1.0)
+            except queue.Empty:
+                if not browser_session_is_live(page, browser_context):
+                    set_browser_state(False, "browser liveness heartbeat failed")
+                    close_browser_context(browser_context)
+                    browser_context = None
+                    page = None
+                    try:
+                        browser_context, page = launch_browser_session(
+                            playwright, profile_path
+                        )
+                        logging.info("♻️ Browser session recovered by idle heartbeat")
+                    except Exception as exc:
+                        set_browser_state(False, f"browser recovery failed: {exc}")
+                continue
 
-            if task is None:  # Shutdown signal
+            if task is None:
                 break
 
-            task_type = task.get('type')
+            result = None
+            for attempt in range(2):
+                if page is None or not is_ready:
+                    try:
+                        close_browser_context(browser_context)
+                        browser_context, page = launch_browser_session(playwright, profile_path)
+                        logging.info("♻️ Browser session recovered before task retry")
+                    except Exception as exc:
+                        set_browser_state(False, f"browser recovery failed: {exc}")
+                        result = {"success": False, "error": runtime_error}
+                        break
 
-            if task_type == 'send_message':
-                result = send_message(page, task['prompt'])
-                result_queue.put(result)
+                try:
+                    if page.is_closed():
+                        result = {
+                            "success": False,
+                            "error": "ChatGPT page is closed",
+                        }
+                    else:
+                        result = execute_browser_task(page, task)
+                except Exception as exc:
+                    result = {"success": False, "error": str(exc)}
 
-            elif task_type == 'cognition_request':
-                fresh = start_new_chat(page)
-                result = send_message(page, task['prompt']) if fresh.get("success") else fresh
-                result_queue.put(result)
+                if browser_result_needs_recovery(result) and attempt == 0:
+                    task_type = task.get("type")
+                    logging.warning(
+                        f"Browser target lost during {task_type}; "
+                        "restarting persistent context once"
+                    )
+                    set_browser_state(False, result.get("error"))
+                    close_browser_context(browser_context)
+                    browser_context = None
+                    page = None
 
-            elif task_type == 'new_chat':
-                result = start_new_chat(page)
-                result_queue.put(result)
+                    if not task_allows_transparent_browser_retry(task_type):
+                        try:
+                            browser_context, page = launch_browser_session(
+                                playwright, profile_path
+                            )
+                            logging.info(
+                                "♻️ Browser transport recovered; stateful task not retried"
+                            )
+                        except Exception as exc:
+                            set_browser_state(
+                                False,
+                                f"browser recovery failed: {exc}",
+                            )
+                        result = {
+                            "success": False,
+                            "error": (
+                                "Stateful ChatGPT session was lost. Browser transport "
+                                "was recovered, but the request was not retried because "
+                                "prior conversation context cannot be assumed."
+                            ),
+                        }
+                        break
+                    continue
+                break
 
-            elif task_type == 'show_ui':
-                result = show_companion_ui(page, task.get('url') or BOB_COMPANION_UI_URL)
-                result_queue.put(result)
-
-        except Exception as e:
-            logging.error(f"Error in browser worker: {e}")
-            result_queue.put({"success": False, "error": str(e)})
-
-    # Cleanup
-    browser_context.close()
-    playwright.stop()
+            result_queue.put(result or {
+                "success": False,
+                "error": "browser task produced no result",
+            })
+    except Exception as exc:
+        set_browser_state(False, f"browser worker failed: {exc}")
+        logging.error(f"Error in browser worker: {exc}")
+    finally:
+        set_browser_state(False, runtime_error or "browser worker stopped")
+        close_browser_context(browser_context)
+        if playwright is not None:
+            try:
+                playwright.stop()
+            except Exception:
+                pass
 
 def find_textarea(page, timeout=10):
     """Find the chat textarea"""
@@ -247,6 +389,8 @@ def find_textarea(page, timeout=10):
     ]
 
     while time.time() - start_time < timeout:
+        if page.is_closed():
+            raise RuntimeError("ChatGPT page is closed")
         for selector in selectors:
             try:
                 elements = page.locator(selector).all()
@@ -371,15 +515,18 @@ def assistant_copy_candidates(page):
 
 
 def wait_for_new_assistant_copy(page, baseline_assistant_count, timeout=180):
-    """Wait for a completed *assistant* turn, not the user's own Copy control."""
+    """Wait for completion, but surface a dead Playwright target immediately."""
     deadline = time.time() + timeout
     while time.time() < deadline:
         try:
+            if page.is_closed():
+                raise RuntimeError("ChatGPT page is closed")
             if assistant_count(page) > baseline_assistant_count:
                 if assistant_copy_candidates(page):
                     return True
-        except Exception:
-            pass
+        except Exception as exc:
+            if is_browser_closed_error(exc):
+                raise
         time.sleep(0.5)
     return False
 
@@ -511,11 +658,20 @@ def start_new_chat(page):
     except Exception as e:
         return {"success": False, "error": str(e)}
 
+def browser_worker_alive():
+    return bool(browser_thread is not None and browser_thread.is_alive())
+
+
+def bridge_can_accept_tasks():
+    """A live worker may recover a dead browser session on the next task."""
+    return startup_error is None and browser_worker_alive()
+
+
 @app.route('/chat', methods=['POST'])
 def chat():
     """Send a prompt to ChatGPT"""
-    if not is_ready:
-        return jsonify({"success": False, "error": "Server not ready"}), 503
+    if not bridge_can_accept_tasks():
+        return jsonify({"success": False, "error": startup_error or runtime_error or "Server not ready"}), 503
 
     data = request.get_json()
     if not data or 'prompt' not in data:
@@ -541,8 +697,8 @@ def chat():
 @app.route('/cognition', methods=['POST'])
 def cognition():
     """Run one stateless cognition request in a fresh ChatGPT conversation."""
-    if not is_ready:
-        return jsonify({"success": False, "error": "Server not ready"}), 503
+    if not bridge_can_accept_tasks():
+        return jsonify({"success": False, "error": startup_error or runtime_error or "Server not ready"}), 503
 
     data = request.get_json()
     if not data or 'prompt' not in data:
@@ -565,8 +721,8 @@ def cognition():
 @app.route('/new-chat', methods=['POST'])
 def new_chat():
     """Start a new chat"""
-    if not is_ready:
-        return jsonify({"success": False, "error": "Server not ready"}), 503
+    if not bridge_can_accept_tasks():
+        return jsonify({"success": False, "error": startup_error or runtime_error or "Server not ready"}), 503
 
     task_queue.put({'type': 'new_chat'})
 
@@ -582,8 +738,8 @@ def new_chat():
 @app.route('/show-ui', methods=['POST'])
 def show_ui():
     """Bring the local Bob companion UI to the front in the managed browser."""
-    if not is_ready:
-        return jsonify({"success": False, "error": "Server not ready"}), 503
+    if not bridge_can_accept_tasks():
+        return jsonify({"success": False, "error": startup_error or runtime_error or "Server not ready"}), 503
     data = request.get_json(silent=True) or {}
     target = data.get("url") or BOB_COMPANION_UI_URL
     try:
@@ -600,17 +756,24 @@ def show_ui():
 
 @app.route('/health', methods=['GET'])
 def health():
-    """Health check"""
-    if startup_error:
+    """Health check that fails closed when the worker/browser is not usable."""
+    worker_alive = browser_worker_alive()
+    ready = bool(is_ready and worker_alive and startup_error is None)
+    if not ready:
+        error = startup_error or runtime_error or (
+            "browser worker is not running" if not worker_alive else "browser not ready"
+        )
         return jsonify({
-            "status": "error",
+            "status": "error" if startup_error or not worker_alive else "recovering",
             "ready": False,
-            "error": startup_error
+            "error": error,
+            "browser_generation": browser_generation,
         }), 503
 
     return jsonify({
-        "status": "running" if is_ready else "initializing",
-        "ready": is_ready
+        "status": "running",
+        "ready": True,
+        "browser_generation": browser_generation,
     }), 200
 
 @app.route('/status', methods=['GET'])
@@ -618,7 +781,10 @@ def status():
     """Server status"""
     return jsonify({
         "server": "running",
-        "browser_ready": is_ready,
+        "browser_ready": bool(is_ready and browser_worker_alive()),
+        "browser_worker_alive": browser_worker_alive(),
+        "browser_generation": browser_generation,
+        "runtime_error": runtime_error,
         "profile_path": load_profile_path(),
         "project_name": BOB_CHATGPT_PROJECT_NAME,
         "project_url_configured": bool(CHATGPT_TARGET_URL),
