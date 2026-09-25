@@ -104,6 +104,22 @@ class SelfDevelopmentQueueTests(unittest.TestCase):
             with self.assertRaisesRegex(ProtocolError, "requires reconciliation"):
                 queue.requeue("bind")
 
+    def test_restart_can_resume_externally_reconciled_bound_run(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp, "selfdev.json")
+            queue = make_queue(path)
+            queue.enqueue(goal="resume", leases=["work:resume"], item_id="resume")
+            queue.claim_next()
+            queue.bind_execution_run("resume", "run-123")
+
+            restarted = make_queue(path)
+            interrupted = restarted.snapshot()["items"][0]
+            self.assertEqual(interrupted["state"], "INTERRUPTED")
+            resumed = restarted.resume_reconciled_execution("resume", "run-123")
+            self.assertEqual(resumed["state"], "ACTIVE")
+            self.assertEqual(resumed["execution_run_id"], "run-123")
+            self.assertEqual(resumed["attempt_count"], 1)
+
     def test_blocked_unbound_item_can_requeue_explicitly(self):
         with tempfile.TemporaryDirectory() as tmp:
             queue = make_queue(Path(tmp, "selfdev.json"))

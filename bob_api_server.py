@@ -7,6 +7,7 @@ from pathlib import Path
 from flask import Flask, jsonify, request, send_from_directory
 from bob.driver import BobRuntime
 from bob.errors import BobError
+from bob.selfdev_execution import SelfDevelopmentExecution
 from bob.worktree_coordination import RepositoryCoordinatorRegistry
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -31,6 +32,12 @@ execution_registry = RepositoryCoordinatorRegistry.from_json(
     max_parallel_runs_per_repository=int(
         os.environ.get("BOB_MAX_PARALLEL_RUNS_PER_REPOSITORY", "3")
     ),
+)
+if runtime.selfdev_queue is None:
+    raise RuntimeError("Bob API requires BOB self-development queue state")
+selfdev_execution = SelfDevelopmentExecution(
+    runtime.selfdev_queue,
+    execution_registry.coordinator_for_workspace("BOB"),
 )
 
 
@@ -158,6 +165,19 @@ def self_development_enqueue():
         ),
     )
     return jsonify({"success": True, "item": item})
+
+
+@app.post("/bob/self-development/claim")
+def self_development_claim():
+    data = request.get_json(force=True) or {}
+    result = selfdev_execution.claim_next(base_ref=str(data["base_ref"]))
+    return jsonify({"success": True, **result})
+
+
+@app.post("/bob/self-development/items/<item_id>/reconcile")
+def self_development_reconcile(item_id):
+    result = selfdev_execution.reconcile_item(str(item_id))
+    return jsonify({"success": True, **result})
 
 
 @app.post("/bob/read")

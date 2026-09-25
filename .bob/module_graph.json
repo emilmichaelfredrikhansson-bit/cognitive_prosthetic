@@ -180,7 +180,9 @@
       "producers": [
         "BOB_EXECUTION_LEDGER"
       ],
-      "consumers": [],
+      "consumers": [
+        "BOB_SELF_DEVELOPMENT_EXECUTION"
+      ],
       "invariants": [
         "Coordinator verifies local Git origin and bound canonical ref before opening repository state.",
         "Every active mutating run has an isolated branch/worktree.",
@@ -205,7 +207,7 @@
       "producers": [],
       "consumers": [
         "BOB_RUNTIME_ORCHESTRATION",
-        "BOB_EXECUTION_LEDGER"
+        "BOB_SELF_DEVELOPMENT_EXECUTION"
       ],
       "invariants": [
         "Queue state is bound to exact repository identity and canonical ref.",
@@ -213,6 +215,34 @@
         "ACTIVE work becomes INTERRUPTED on restart instead of being replayed.",
         "Bound execution work must be reconciled before a self-development item is requeued.",
         "Self-development state never grants effect authority or performs promotion."
+      ],
+      "status": "WORKING"
+    },
+    {
+      "id": "BOB_SELF_DEVELOPMENT_EXECUTION",
+      "purpose": "Bind self-development intent to existing repo-scoped execution runs/worktrees with explicit restart reconciliation and no promotion authority.",
+      "source_paths": [
+        "bob/selfdev_execution.py"
+      ],
+      "test_paths": [
+        "tests/test_selfdev_execution.py"
+      ],
+      "contract_paths": [
+        "docs/BOB_SELF_DEVELOPMENT_EXECUTION_V1.md"
+      ],
+      "producers": [
+        "BOB_SELF_DEVELOPMENT_STATE",
+        "BOB_WORKTREE_COORDINATION"
+      ],
+      "consumers": [
+        "BOB_RUNTIME_ORCHESTRATION"
+      ],
+      "invariants": [
+        "Every claimed item binds at most one lane=selfdev execution run with matching selfdev_item_id authority metadata.",
+        "Claim requires an explicit base ref and copies semantic leases into the existing repository coordinator.",
+        "Restart reconciliation resumes the same live run without incrementing attempt_count or creating a duplicate run.",
+        "Ambiguous or conflicting queue/run bindings fail closed.",
+        "Self-development execution never integrates or promotes a candidate and records promotion_authority=NONE."
       ],
       "status": "WORKING"
     },

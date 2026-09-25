@@ -32,6 +32,11 @@ class LocalServerSurfaceTests(unittest.TestCase):
         self.assertIn("/bob/continuations/<continuation_id>/resume", rules)
         self.assertIn("/bob/self-development", rules)
         self.assertIn("/bob/self-development/items", rules)
+        self.assertIn("/bob/self-development/claim", rules)
+        self.assertIn(
+            "/bob/self-development/items/<item_id>/reconcile",
+            rules,
+        )
 
     def test_execution_coordination_routes_are_exposed(self):
         rules = {rule.rule for rule in bob_api_server.app.url_map.iter_rules()}

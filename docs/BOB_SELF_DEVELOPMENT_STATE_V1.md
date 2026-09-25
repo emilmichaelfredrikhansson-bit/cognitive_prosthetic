@@ -34,7 +34,7 @@ BLOCKED / INTERRUPTED
   -> terminal state
 ```
 
-The later background scheduler may claim queue items and create repository execution runs with `lane=selfdev`. The execution ledger remains authoritative for run/worktree/lease state.
+The separate self-development execution binding layer may explicitly claim queue items and create repository execution runs with `lane=selfdev`. It also performs explicit restart reconciliation of queue/run identity. The execution ledger remains authoritative for run/worktree/lease state. A later background scheduler may call that binding layer, but scheduling policy is not part of this state module.
 
 ## Boundary
 

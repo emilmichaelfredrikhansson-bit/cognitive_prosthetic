@@ -303,6 +303,33 @@ class SelfDevelopmentQueue:
             self._persist()
             return copy.deepcopy(item)
 
+    def resume_reconciled_execution(
+        self,
+        item_id: str,
+        run_id: str,
+    ) -> dict[str, Any]:
+        """Reactivate an interrupted/blocked item after external run reconciliation."""
+        run_id = str(run_id or "").strip()
+        if not run_id:
+            raise ProtocolError("reconciled execution run id must not be empty")
+        with self._lock:
+            item = self._require_item_locked(item_id)
+            if item["state"] not in RESUMABLE_STATES:
+                raise ProtocolError(
+                    "only BLOCKED/INTERRUPTED items can resume reconciled execution"
+                )
+            existing = item.get("execution_run_id")
+            if existing not in (None, run_id):
+                raise ProtocolError(
+                    f"self-development item already bound to execution run {existing}"
+                )
+            item["execution_run_id"] = run_id
+            item["state"] = ACTIVE_STATE
+            item["blocked_reason"] = None
+            item["updated_at"] = _now()
+            self._persist()
+            return copy.deepcopy(item)
+
     def block(self, item_id: str, reason: str) -> dict[str, Any]:
         reason = str(reason or "").strip()
         if not reason:
