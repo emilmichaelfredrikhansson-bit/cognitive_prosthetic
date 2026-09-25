@@ -20,6 +20,7 @@ DEFAULT_MAX_PARALLEL_RUNS_PER_REPOSITORY = 3
 DEFAULT_MAX_PARALLEL_RUNS = DEFAULT_MAX_PARALLEL_RUNS_PER_REPOSITORY
 
 TERMINAL_RUN_STATES = {"INTEGRATED", "FAILED", "CANCELLED"}
+PARKED_RUN_STATE = "PARKED"
 WORKER_SLOT_STATES = {"ACTIVE", "AWAITING_APPROVAL"}
 LEASE_HOLDING_STATES = {
     "ACTIVE",
@@ -27,7 +28,7 @@ LEASE_HOLDING_STATES = {
     "READY_FOR_INTEGRATION",
     "INTEGRATING",
 }
-RUN_STATES = TERMINAL_RUN_STATES | LEASE_HOLDING_STATES | {"QUEUED"}
+RUN_STATES = TERMINAL_RUN_STATES | LEASE_HOLDING_STATES | {"QUEUED", PARKED_RUN_STATE}
 COGNITION_TERMINAL_STATES = {"COMPLETE", "FAILED", "CANCELLED", "INTERRUPTED"}
 COGNITION_STATES = COGNITION_TERMINAL_STATES | {"RUNNING"}
 
@@ -148,6 +149,10 @@ class ExecutionLedger:
         data.setdefault("runs", {})
         data.setdefault("cognitions", {})
         data.setdefault("integration_queue", [])
+        for run in data["runs"].values():
+            run.setdefault("preempted_by_run_id", None)
+            run.setdefault("preempted_at", None)
+            run.setdefault("preemption_count", 0)
         data["max_parallel_runs_per_repository"] = self.max_parallel_runs
         data.pop("max_parallel_runs", None)
         return data
@@ -413,6 +418,39 @@ class ExecutionLedger:
             cognition["error"] = None if error is None else str(error)
             self._persist()
             return deepcopy(cognition)
+
+    def park_selfdev_run(self, run_id: str, *, reason: str) -> dict[str, Any]:
+        """Release a low-priority selfdev lease without terminating its run."""
+        reason = str(reason or "").strip()
+        if not reason:
+            raise ProtocolError("parking self-development requires a reason")
+        with self._lock:
+            run = self._require_run_locked(run_id)
+            if run.get("lane") != "selfdev":
+                raise ProtocolError("only selfdev runs can be parked")
+            if run["state"] != "ACTIVE":
+                raise ProtocolError("only ACTIVE selfdev runs can be parked")
+            for cognition_id in run.get("cognition_ids") or []:
+                cognition = self._state["cognitions"].get(cognition_id)
+                if cognition and cognition.get("state") == "RUNNING":
+                    raise ProtocolError("selfdev run cannot park with running cognition")
+            run["state"] = PARKED_RUN_STATE
+            run["blocked_reason"] = "PREEMPTED:" + reason
+            self._reconcile_queue_locked()
+            self._persist()
+            return deepcopy(run)
+
+    def resume_parked_run(self, run_id: str) -> dict[str, Any]:
+        """Requeue parked selfdev work; normal capacity/lease rules decide activation."""
+        with self._lock:
+            run = self._require_run_locked(run_id)
+            if run.get("lane") != "selfdev" or run["state"] != PARKED_RUN_STATE:
+                raise ProtocolError("only PARKED selfdev runs can resume")
+            run["state"] = "QUEUED"
+            run["blocked_reason"] = None
+            self._reconcile_queue_locked()
+            self._persist()
+            return deepcopy(run)
 
     def mark_awaiting_approval(self, run_id: str) -> dict[str, Any]:
         with self._lock:

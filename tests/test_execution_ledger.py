@@ -248,5 +248,48 @@ class ExecutionLedgerTests(unittest.TestCase):
             self.assertEqual(active["state"], "ACTIVE")
 
 
+    def test_parked_selfdev_releases_lease_for_interactive_work_and_resumes(self):
+        with tempfile.TemporaryDirectory() as root:
+            ledger = self.make_ledger(root)
+            selfdev = ledger.create_run(
+                run_id="run-selfdev", goal="background", workspace="BOB",
+                base_ref="feat/bob-core-v1", base_sha="base-sha",
+                branch="bob/run/run-selfdev", worktree_path="C:/tmp/run-selfdev",
+                leases=["path:bob/driver.py"], lane="selfdev",
+            )
+            self.assertEqual(selfdev["state"], "ACTIVE")
+            blocked = self.create(ledger, 2, lease="path:bob")
+            self.assertEqual(blocked["state"], "QUEUED")
+            parked = ledger.park_selfdev_run("run-selfdev", reason="interactive:run-2")
+            self.assertEqual(parked["state"], "PARKED")
+            self.assertEqual(ledger.get_run("run-2")["state"], "ACTIVE")
+            resumed = ledger.resume_parked_run("run-selfdev")
+            self.assertEqual(resumed["state"], "QUEUED")
+            self.assertEqual(resumed["blocked_reason"], "SCOPE_CONFLICT:run-2")
+            ledger.cancel_run("run-2", reason="interactive complete")
+            self.assertEqual(ledger.get_run("run-selfdev")["state"], "ACTIVE")
+
+    def test_only_idle_active_selfdev_can_be_parked(self):
+        with tempfile.TemporaryDirectory() as root:
+            ledger = self.make_ledger(root)
+            interactive = self.create(ledger, 1)
+            with self.assertRaises(ProtocolError):
+                ledger.park_selfdev_run(interactive["run_id"], reason="no")
+            selfdev = ledger.create_run(
+                run_id="run-selfdev", goal="background", workspace="BOB",
+                base_ref="feat/bob-core-v1", base_sha="base-sha",
+                branch="bob/run/run-selfdev", worktree_path="C:/tmp/run-selfdev",
+                leases=["work:selfdev"], lane="selfdev",
+            )
+            cognition = ledger.begin_cognition(selfdev["run_id"], purpose="busy")
+            with self.assertRaises(ProtocolError):
+                ledger.park_selfdev_run(selfdev["run_id"], reason="interactive")
+            ledger.finish_cognition(cognition["cognition_id"], success=True)
+            self.assertEqual(
+                ledger.park_selfdev_run(selfdev["run_id"], reason="interactive")["state"],
+                "PARKED",
+            )
+
+
 if __name__ == "__main__":
     unittest.main()

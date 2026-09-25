@@ -243,5 +243,26 @@ class SelfDevelopmentExecutionTests(unittest.TestCase):
                 bridge.claim_next(base_ref="")
 
 
+    def test_preempt_and_resume_preserves_item_attempt_and_run_identity(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            repo = init_repo(root)
+            queue = make_queue(root / "selfdev.json")
+            coordinator = make_execution(root, repo)
+            service = SelfDevelopmentExecution(queue, coordinator)
+            queue.enqueue(goal="background", leases=["path:bob/example.py"], item_id="preempt")
+            claimed = service.claim_next(base_ref="main")
+            run_id = claimed["run"]["run_id"]
+            attempt = claimed["item"]["attempt_count"]
+            parked = service.preempt_for_interactive("preempt", reason="operator work")
+            self.assertEqual(parked["run"]["state"], "PARKED")
+            reconciled = service.reconcile_item("preempt")
+            self.assertEqual(reconciled["action"], "PARKED_FOR_INTERACTIVE")
+            resumed = service.resume_preempted("preempt")
+            self.assertEqual(resumed["run"]["run_id"], run_id)
+            self.assertEqual(resumed["run"]["state"], "ACTIVE")
+            self.assertEqual(resumed["item"]["attempt_count"], attempt)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -3,12 +3,12 @@ from __future__ import annotations
 from typing import Any
 
 from .errors import ConfigurationError, ProtocolError
-from .execution_ledger import LEASE_HOLDING_STATES, TERMINAL_RUN_STATES
+from .execution_ledger import LEASE_HOLDING_STATES, PARKED_RUN_STATE, TERMINAL_RUN_STATES
 from .selfdev_queue import ACTIVE_STATE, RESUMABLE_STATES, SelfDevelopmentQueue
 from .worktree_coordination import ExecutionCoordinator
 
 
-LIVE_EXECUTION_STATES = LEASE_HOLDING_STATES | {"QUEUED"}
+LIVE_EXECUTION_STATES = LEASE_HOLDING_STATES | {"QUEUED", PARKED_RUN_STATE}
 
 
 class SelfDevelopmentExecution:
@@ -133,7 +133,11 @@ class SelfDevelopmentExecution:
             "action": (
                 "WAITING_EXECUTION_CAPACITY"
                 if run_state == "QUEUED"
-                else "LIVE_EXECUTION_RECONCILED"
+                else (
+                    "PARKED_FOR_INTERACTIVE"
+                    if run_state == PARKED_RUN_STATE
+                    else "LIVE_EXECUTION_RECONCILED"
+                )
             ),
             "item": item,
             "run": run,
@@ -215,6 +219,28 @@ class SelfDevelopmentExecution:
                 pass
             raise
         return {"action": "CLAIMED", "item": item, "run": run}
+
+    def preempt_for_interactive(self, item_id: str, *, reason: str) -> dict[str, Any]:
+        """Park idle ACTIVE selfdev execution so interactive work can take its leases."""
+        item = self._item(item_id)
+        run = self._validated_run(item, self._matching_runs(item["item_id"]))
+        if item["state"] != ACTIVE_STATE or run is None:
+            raise ProtocolError("only ACTIVE bound self-development can be preempted")
+        run = self.execution.park_selfdev_run(run["run_id"], reason=reason)
+        return {"action": "PARKED_FOR_INTERACTIVE", "item": item, "run": run}
+
+    def resume_preempted(self, item_id: str) -> dict[str, Any]:
+        """Resume a parked selfdev run through ordinary repo lease/capacity arbitration."""
+        item = self._item(item_id)
+        run = self._validated_run(item, self._matching_runs(item["item_id"]))
+        if run is None or run.get("state") != PARKED_RUN_STATE:
+            raise ProtocolError("self-development item has no parked execution run")
+        run = self.execution.resume_parked_run(run["run_id"])
+        return {
+            "action": "LIVE_EXECUTION_RECONCILED" if run["state"] == "ACTIVE" else "WAITING_EXECUTION_CAPACITY",
+            "item": item,
+            "run": run,
+        }
 
     def finish_item(
         self,

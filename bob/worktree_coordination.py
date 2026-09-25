@@ -323,6 +323,16 @@ class ExecutionCoordinator:
         self.ensure_active_worktrees()
         return result
 
+    def park_selfdev_run(self, run_id: str, *, reason: str) -> dict[str, Any]:
+        result = self.ledger.park_selfdev_run(run_id, reason=reason)
+        self.ensure_active_worktrees()
+        return result
+
+    def resume_parked_run(self, run_id: str) -> dict[str, Any]:
+        result = self.ledger.resume_parked_run(run_id)
+        self.ensure_active_worktrees()
+        return result
+
     def cancel_run(
         self,
         run_id: str,

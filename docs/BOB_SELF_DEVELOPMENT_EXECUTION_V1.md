@@ -47,6 +47,12 @@ The execution run is not replayed. Explicit reconciliation:
 
 Terminal execution state requires a later explicit lifecycle decision; it is not silently converted into `QUALIFIED`. Finishing a bound self-development item requires the execution run to be terminal first. `QUALIFIED` additionally requires a preserved cancelled run plus explicit verification evidence; the binding layer records the branch head and `promotion_authority=NONE` in the qualification receipt.
 
+## Interactive pre-emption
+
+Interactive work wins over low-priority self-development. An idle ACTIVE lane=selfdev run may enter durable PARKED state with a reason. PARKED holds no semantic lease and no worker slot, so normal ledger reconciliation can activate conflicting interactive work. A parked run keeps its branch, worktree identity, queue binding and attempt count. Resume moves the same run back through QUEUED; ordinary repository capacity and lease arbitration decide whether it becomes ACTIVE immediately.
+
+Pre-emption fails closed when the run is not self-development, is not ACTIVE, or has a running cognition. It never cancels, duplicates, integrates or promotes the candidate.
+
 ## Worktree and promotion boundary
 
 The existing `ExecutionCoordinator` creates the isolated branch/worktree and owns worktree validation.
