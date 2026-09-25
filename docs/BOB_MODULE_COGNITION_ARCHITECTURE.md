@@ -334,6 +334,26 @@ Therefore:
 
 > **Bob remembers the structure. ChatGPT thinks with the relevant slice.**
 
+## Knowledge-assisted module cognition
+
+The module graph tells Bob where the problem lives. The Knowledge Fabric tells Bob which prior verified experience may help solve it.
+
+For a bounded module problem, the Context Compiler may retrieve a small number of relevant:
+
+- verified patterns;
+- failure signatures;
+- playbooks;
+- decisions;
+- reference implementations;
+- source/evidence pointers;
+- known cognition failure-mode warnings.
+
+This retrieval is selective and budgeted inside the existing 20k target / 25k hard ceiling. A larger durable knowledge base must not enlarge the prompt by default.
+
+Fresh cognition should use current GitHub/provider/runtime reality to validate fit. A retrieved knowledge item is guidance with provenance, not a substitute for source truth and never an authority grant.
+
+The detailed contract is `docs/BOB_KNOWLEDGE_FABRIC_ARCHITECTURE.md`.
+
 ## Hierarchical compression
 
 For large systems Bob should maintain several resolution levels.
@@ -402,6 +422,14 @@ For Bob-designed systems, scale should normally come from:
 not from modules accumulating unbounded responsibility.
 
 > **Bob scales cognition through composability, not longer chats.**
+
+## Self-development use
+
+Bob should use the same module/stateless architecture for recursive self-development.
+
+Background self-development selects one bounded module/work problem, compiles a fresh cognition packet, experiments only in isolated authorized work state, verifies the result, and distills reusable learning. Interactive work has priority and may pre-empt the background lane at a safe checkpoint.
+
+Self-development must not use module repair or fresh cognition as a route to expand authority or promote itself into canonical state. The runtime/safety contract is `docs/BOB_RECURSIVE_SELF_IMPROVEMENT_ARCHITECTURE.md`.
 
 ## Recursive improvement
 
