@@ -563,11 +563,13 @@ Remaining qualification before the stateless vertical can be considered closed:
 - approval-bound effect staging/execution/verified read-back is **LIVE GREEN**, but one clean post-effect fresh continuation still remains to be live-qualified after the observed transient ChatGPT request-limit episode;
 - the former oversized runtime monolith has been manually decomposed into bounded runtime, effect-authority and stateless-module-runtime modules without changing the public `BobRuntime` API or widening authority;
 - this local repair is a **reference implementation**, not a self-hosting proof. When cognition is available again, run the genuine architecture-repair canary from pre-repair commit `c5102a9aacce349c9e5aded950daaa8c3ce825b1` in an isolated worktree/branch and require normal verification/approval before any integration.
-- repair commit `4533be665523a77ffaab29f7ed900e51f6253b8a` is pushed and exactly matches `origin/feat/bob-execution-ledger-v1`; the working branch is now 9 commits ahead / 0 behind canonical while `feat/bob-core-v1` remains unchanged at `098e6ac9f2adb47e7174c4db8ad2d0b1639d1279`.
+- repair commit `4533be665523a77ffaab29f7ed900e51f6253b8a` is the bounded-module reference implementation; after durability commit `5cffa6d8e5cc8f8c94680727ae776227cb3c0d5b`, the working branch is **10 commits ahead / 0 behind** canonical while `feat/bob-core-v1` remains unchanged at `098e6ac9f2adb47e7174c4db8ad2d0b1639d1279`.
 - Local Companion was stopped/restarted from the repaired head without issuing another cognition request. Bob API is running, bridge is `ready=true`, execution is **0 active / 0 integration queue**, exactly two supervisor-owned long-lived processes own ports 5002/5001, and live `POST /bob/module-graph` reported all eight modules `compliant=true` before the later persistence-only working-tree changes.
 - verified-effect continuation state is now written to `.bob/runtime/blocked_continuations.json` **before** post-effect cognition starts; a new `BobRuntime` loads it after restart, `/bob/continuations` exposes sanitized pending-resume metadata, and the regression test proves restart -> resume reaches DONE with the provider effect count still exactly one.
+- durability commit `5cffa6d8e5cc8f8c94680727ae776227cb3c0d5b` (`Persist blocked post-effect continuations`) is pushed exactly to `origin/feat/bob-execution-ledger-v1`; canonical remains unchanged.
+- Local Companion was then stopped/restarted from `5cffa6d…` without issuing cognition. Live read-only qualification: Bob API running; bridge `ready=true`; execution **0 active / 0 integration queue**; `GET /bob/continuations` HTTP 200 with `count=0`; exactly two supervisor-owned runtime process trees own ports 5002/5001; `POST /bob/module-graph` HTTP 200 with all eight modules `compliant=true` and the footprints below.
 
-Current deterministic `BOB_TOKEN_ESTIMATE_V1` measurement on the current working tree:
+Current authoritative live `BOB_TOKEN_ESTIMATE_V1` measurement on `5cffa6d…`:
 
 ```text
 BOB_RUNTIME_ORCHESTRATION 12,517   compliant (2,483 tokens headroom)
