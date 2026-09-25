@@ -27,6 +27,87 @@ This creates recursive **capability improvement**, not recursive authority. Auth
 
 A self-hosted Bob change should be easier to independently verify and roll back than an equivalent ordinary project change, not harder.
 
+## Background self-development runtime
+
+Recursive self-development is intended to run as a **low-priority background lane** while the operator PC is awake.
+
+It is not one giant long-lived reasoning process. Bob remains the durable coordinator and repeatedly invokes bounded fresh cognition:
+
+```text
+durable Bob state
+→ select bounded self-improvement problem
+→ compile context + relevant knowledge
+→ fresh ChatGPT cognition
+→ isolated implementation / experiment
+→ deterministic verification
+→ distill reusable result
+→ next bounded problem
+```
+
+The operator-directed lane and self-development lane are separate:
+
+```text
+INTERACTIVE LANE              SELF-DEVELOPMENT LANE
+high priority                 low priority
+operator-directed             background
+canonical work context        isolated worktree/branch
+wins on contention            yields at safe checkpoints
+```
+
+Interactive work always wins.
+
+Self-development should use a separate Git worktree/branch or equivalent isolated mutable state and explicit module/work-node leases. The two lanes must not unknowingly mutate the same semantic scope at once.
+
+Shutdown is ordinary. Continuity is reconstructed from GitHub/runtime/durable Bob state on the next start rather than from a surviving chat or process.
+
+The full contract is `docs/BOB_RECURSIVE_SELF_IMPROVEMENT_ARCHITECTURE.md`.
+
+## Self-development safety architecture
+
+The self-development safety model is defense in depth.
+
+Cognition never receives broad provider credentials directly. Proposed effects flow through Bob's semantic capability surface, workspace identity, scope/lease checks, branch/ref restrictions, stale-state/candidate binding, provider-side least-privilege permissions, deterministic verification and a separate promotion boundary.
+
+The unattended acceptance target is:
+
+> **Even a worst-plausible cognition decision must not be able to destroy or silently promote canonical Bob state.**
+
+Normal background self-development therefore excludes catastrophic administration capabilities such as repository deletion, protected-branch force push/deletion, repository/ruleset administration, secrets administration and unauthorized production mutation/deploy/spend.
+
+Self-development may autonomously experiment and checkpoint inside granted isolated branch authority. Promotion/merge into canonical state remains a distinct effect class.
+
+## Knowledge Fabric
+
+Bob's long-term answer to bounded model context is not ever-larger prompts.
+
+Bob maintains a potentially very large external `Knowledge Fabric` and lets the Context Compiler retrieve only the relevant slice for each fresh cognition request.
+
+Canonical knowledge classes include:
+
+- verified facts and decisions;
+- skills/playbooks;
+- patterns;
+- reference implementations and counterexamples;
+- failure signatures/debugging lessons;
+- eval cases and reusable invariants;
+- source/evidence pointers.
+
+Knowledge has provenance, freshness and a verification maturity level. Model output alone is never enough to promote a lesson into verified reusable guidance.
+
+Conceptually:
+
+```text
+module/work structure
++ current reality
++ relevant Knowledge Fabric
+→ bounded Context Compiler output
+→ fresh ChatGPT cognition
+```
+
+The 20k target / 25k hard ceiling remains unchanged. A larger Fabric should improve selection, not inflate every prompt.
+
+The full contract is `docs/BOB_KNOWLEDGE_FABRIC_ARCHITECTURE.md`.
+
 ## Structural offloading
 
 Bob is the durable structural memory of a large project.
