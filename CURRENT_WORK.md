@@ -620,6 +620,10 @@ The package regression loads the real `.bob/module_graph.json`, verifies unique 
 - Full deterministic verification after terminalization: **153/153 PASS**; `py_compile` and `git diff --check` PASS. All ten declared modules remain <=15k; new `BOB_SELF_DEVELOPMENT_EXECUTION` is **7,163 / 15,000**.
 - Because cognition is still not materializing submissions, the active local next step is Phase 3.75 semantic leases + interactive pre-emption. It must park/pre-empt low-priority selfdev work durably without losing intent, duplicating runs or adding promotion authority.
 
+- Commit 99e43c3 (Park self-development for interactive work) implements the first semantic-lease pre-emption primitive: idle ACTIVE selfdev runs can durably enter PARKED, releasing worker-slot and semantic-lease ownership so conflicting interactive work activates through the existing ledger. Resume reuses the same run/branch/worktree binding and returns through normal QUEUED lease/capacity arbitration; no attempt/run duplication and no promotion authority are added. Running cognition, non-selfdev lanes and non-ACTIVE states fail closed.
+- Deterministic verification for this tranche: 156/156 PASS, focused execution+selfdev 16/16 PASS, py_compile PASS and git diff --check PASS. Browser bridge read-only status remained healthy/idle; no cognition probe was sent.
+- Next local Phase 3.75 step: expose/qualify interactive-first pre-emption at the orchestration/API boundary, then implement explicit checkpoint/revert/discard semantics.
+
 ## NEXT_INTENDED_WORK
 
 1. Do not probe cognition repeatedly while ChatGPT is request-limited. Once requests are accepted again, stage a **distinct benign cleanup effect** (natural candidate: remove the approved canary marker), obtain explicit operator approval, and live-prove post-effect fresh continuation.
