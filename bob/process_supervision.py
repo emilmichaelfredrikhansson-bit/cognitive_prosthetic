@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ctypes
 import json
+import logging
 import os
 import signal
 import socket
@@ -199,13 +200,34 @@ class ProcessSupervisor:
             "updated_at": _now(),
         }
 
+    @property
+    def _backup_path(self) -> Path:
+        return self.state_path.with_name(self.state_path.name + ".bak")
+
+    @staticmethod
+    def _write_text_fsync(path: Path, payload: str) -> None:
+        with path.open("w", encoding="utf-8", newline="\n") as handle:
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+
     def _load(self) -> dict[str, Any]:
         if not self.state_path.exists():
             return self._empty_state()
         try:
             data = json.loads(self.state_path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as exc:
-            raise ConfigurationError(f"invalid process supervisor state: {exc}") from exc
+            if os.name != "nt" or not self._backup_path.exists():
+                raise ConfigurationError(f"invalid process supervisor state: {exc}") from exc
+            try:
+                data = json.loads(self._backup_path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as backup_exc:
+                raise ConfigurationError(
+                    f"invalid process supervisor state and backup: {backup_exc}"
+                ) from exc
+            logging.warning(
+                "Recovered ProcessSupervisor state from Windows fallback backup"
+            )
         if data.get("schema") != SCHEMA:
             raise ConfigurationError(
                 f"process supervisor schema mismatch: {data.get('schema')!r}"
@@ -228,7 +250,27 @@ class ProcessSupervisor:
                 handle.write(payload)
                 handle.flush()
                 os.fsync(handle.fileno())
-            os.replace(temp_name, self.state_path)
+            try:
+                os.replace(temp_name, self.state_path)
+            except PermissionError:
+                if os.name != "nt":
+                    raise
+                # Some Windows processes open JSON state with read/write sharing
+                # but without delete-sharing, so ReplaceFile/rename is denied even
+                # though an in-place write is allowed. Preserve the previous valid
+                # state first, then fsync + verify an exact direct write. Never
+                # silently continue if persistence cannot be proven exact.
+                if self.state_path.exists():
+                    previous = self.state_path.read_text(encoding="utf-8")
+                    self._write_text_fsync(self._backup_path, previous)
+                self._write_text_fsync(self.state_path, payload)
+                if self.state_path.read_text(encoding="utf-8") != payload:
+                    raise ConfigurationError(
+                        "Windows process supervisor fallback persistence verification failed"
+                    )
+                logging.warning(
+                    "ProcessSupervisor used verified Windows in-place persistence fallback"
+                )
         finally:
             try:
                 os.unlink(temp_name)

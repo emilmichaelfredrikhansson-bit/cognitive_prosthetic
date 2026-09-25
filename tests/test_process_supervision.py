@@ -1,3 +1,4 @@
+import json
 import os
 import socket
 import subprocess
@@ -186,6 +187,37 @@ class ProcessSupervisorTests(unittest.TestCase):
             self.assertEqual(current["state"], "FAILED")
             self.assertEqual(current["pid"], original_pid)
             self.assertEqual(current["restart_count"], 0)
+
+    def test_windows_persist_falls_back_when_replace_is_denied(self):
+        self.supervisor._state["persist_probe"] = "before"
+        self.supervisor._persist()
+        self.supervisor._state["persist_probe"] = "after"
+
+        with (
+            patch("bob.process_supervision.os.name", "nt"),
+            patch(
+                "bob.process_supervision.os.replace",
+                side_effect=PermissionError(5, "replace denied"),
+            ),
+        ):
+            self.supervisor._persist()
+
+        saved = json.loads(self.supervisor.state_path.read_text(encoding="utf-8"))
+        backup = json.loads(self.supervisor._backup_path.read_text(encoding="utf-8"))
+        self.assertEqual(saved["persist_probe"], "after")
+        self.assertEqual(backup["persist_probe"], "before")
+
+    def test_windows_load_recovers_valid_backup_when_main_state_is_invalid(self):
+        self.supervisor._persist()
+        valid = self.supervisor.state_path.read_text(encoding="utf-8")
+        self.supervisor._backup_path.write_text(valid, encoding="utf-8")
+        self.supervisor.state_path.write_text("{invalid", encoding="utf-8")
+
+        with patch("bob.process_supervision.os.name", "nt"):
+            recovered = self.supervisor._load()
+
+        self.assertEqual(recovered["schema"], "BOB_PROCESS_SUPERVISOR_V1")
+        self.assertIn("processes", recovered)
 
     def test_stop_owned_process_is_bounded_and_marks_stopped(self):
         record = self.supervisor.start(
