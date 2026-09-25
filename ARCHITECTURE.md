@@ -308,6 +308,43 @@ The Bob project currently uses **Project-only memory** as the V1 isolation setti
 
 The same-account model means normal human ChatGPT use can continue in parallel, but subscription/account usage limits are shared rather than multiplied.
 
+## ChatGPT Project Instructions as cognition bootloader
+
+The dedicated ChatGPT Project `Bob` uses a small, stable Project Instructions payload as Bob's **cognition bootloader**.
+
+Canonical payload:
+- `docs/BOB_CHATGPT_PROJECT_INSTRUCTIONS.md`
+- contract marker: `BOB_COGNITION_CONTRACT_VERSION=1`
+
+Project Instructions contain only invariants that should be present in nearly every Bob cognition call: role split, statelessness, source-truth rules, protocol, authority boundaries, module/context limits, Knowledge Fabric semantics, recursive self-development safety and operator communication behavior.
+
+They must **not** carry dynamic project state such as:
+- current branch/commit;
+- active bug/work item;
+- module status/footprints;
+- backlog;
+- runtime/provider state;
+- large reference material.
+
+Dynamic state belongs in Bob/GitHub/Knowledge Fabric and is compiled per cognition request.
+
+This gives Bob three distinct cognition-memory layers:
+
+```text
+Project Instructions
+= stable cognition bootloader
+
+Compiled Context
+= bounded dynamic world for this problem
+
+GitHub + Knowledge Fabric
+= large external source/reference universe opened selectively
+```
+
+Critical runtime invariants may still be repeated compactly in compiled context for defense in depth.
+
+The runtime should eventually compare its expected cognition-contract version with the configured Project Instructions version and fail closed on mismatch rather than silently operating against stale instructions.
+
 ## ChatGPT response capture
 
 Bob V1 treats ChatGPT's **visible Copy control followed by clipboard read** as the canonical assistant-response capture path.
