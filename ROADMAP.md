@@ -45,6 +45,8 @@ Exit criteria:
 - [x] loopback-only Bob API and ChatGPT bridge;
 - [x] dedicated persistent ChatGPT browser profile;
 - [x] same-account/dedicated-project cognition model canonicalized;
+- [x] exact stable Project Instructions bootloader canonicalized with `BOB_COGNITION_CONTRACT_VERSION=1`;
+- [ ] runtime verifies configured Project Instructions cognition-contract version and fails closed on stale/missing version;
 - [x] normal runtime fails closed without an explicit Bob ChatGPT Project URL;
 - [x] visible ChatGPT Copy -> clipboard canonicalized as V1 response capture;
 - [x] direct DOM extraction retained only as explicit legacy compatibility mode;
