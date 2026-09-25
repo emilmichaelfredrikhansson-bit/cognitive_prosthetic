@@ -124,6 +124,11 @@ def reject():
     return jsonify({"success": True, **result})
 
 
+@app.get("/bob/continuations")
+def continuations():
+    return jsonify({"success": True, **runtime.continuation_status()})
+
+
 @app.post("/bob/continuations/<continuation_id>/resume")
 def resume_continuation(continuation_id):
     result = runtime.resume_continuation(str(continuation_id))

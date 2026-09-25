@@ -93,6 +93,32 @@ class StatelessModuleRuntimeTests(unittest.TestCase):
             self.assertEqual(len(bridge.cognition_prompts), 3)
             self.assertNotIn(blocked["continuation_id"], runtime.blocked_continuations)
 
+    def test_effect_continuation_survives_runtime_restart_without_replay(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            make_workspace(tmp)
+            github = FakeGitHub()
+            first_bridge = FreshBridge([
+                '```bob\n{"type":"BOB.EFFECT","id":"e1","tool":"github.replace_file","args":{"path":"m.py","content":"print(2)\\n","branch":"dev","expected_sha":"sha-m.py"}}\n```',
+                RuntimeError("CHATGPT_TRANSIENT_UI:RATE_LIMITED"),
+            ])
+            first_runtime = BobRuntime(workspace_dir=tmp, bridge=first_bridge)
+            first_runtime.adapters = {"github": github}
+            staged = first_runtime.module_turn("X", "M", "Change module safely", ref="dev")
+            blocked = first_runtime.approve(staged["pending"][0]["pending_id"])
+            self.assertEqual(blocked["status"], "CONTINUATION_BLOCKED")
+            self.assertEqual(len(github.effects), 1)
+
+            second_bridge = FreshBridge([
+                '```bob\n{"type":"BOB.DONE","id":"d1","args":{"summary":"verified"}}\n```'
+            ])
+            second_runtime = BobRuntime(workspace_dir=tmp, bridge=second_bridge)
+            second_runtime.adapters = {"github": github}
+            self.assertEqual(second_runtime.continuation_status()["count"], 1)
+            resumed = second_runtime.resume_continuation(blocked["continuation_id"])
+            self.assertEqual(resumed["status"], "DONE")
+            self.assertEqual(len(github.effects), 1)
+            self.assertEqual(second_runtime.continuation_status()["count"], 0)
+
     def test_normal_module_effect_cannot_escape_manifest_scope(self):
         with tempfile.TemporaryDirectory() as tmp:
             make_workspace(tmp)

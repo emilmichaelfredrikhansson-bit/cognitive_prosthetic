@@ -65,6 +65,21 @@ class ModuleRuntimeMixin:
                 "modules": modules,
             }
 
+    def continuation_status(self) -> dict[str, Any]:
+            """Return sanitized durable continuation metadata without prompt/result bodies."""
+            items = []
+            for continuation_id, state in sorted(self.blocked_continuations.items()):
+                effect = state.get("effect") if isinstance(state.get("effect"), dict) else {}
+                items.append({
+                    "continuation_id": continuation_id,
+                    "workspace": state.get("workspace_code"),
+                    "module": state.get("module_id"),
+                    "ref": state.get("ref"),
+                    "effect_request_id": effect.get("request_id"),
+                    "effect_tool": effect.get("tool"),
+                })
+            return {"count": len(items), "continuations": items}
+
     def resume_continuation(self, continuation_id: str) -> dict[str, Any]:
             """Resume cognition after an already-executed effect without replaying it."""
             state = self.blocked_continuations.get(continuation_id)
@@ -78,6 +93,8 @@ class ModuleRuntimeMixin:
             state: dict[str, Any],
         ) -> dict[str, Any]:
             workspace = self.registry.get(str(state["workspace_code"]))
+            self.continuation_store.put(continuation_id, state)
+            self.blocked_continuations[continuation_id] = state
             try:
                 result = self._drive_module(
                     workspace,
@@ -88,6 +105,7 @@ class ModuleRuntimeMixin:
                 )
             except Exception as exc:
                 state["last_error"] = str(exc)
+                self.continuation_store.put(continuation_id, state)
                 self.blocked_continuations[continuation_id] = state
                 return {
                     "status": "CONTINUATION_BLOCKED",
@@ -98,6 +116,7 @@ class ModuleRuntimeMixin:
                     "error": str(exc),
                     "pending": [],
                 }
+            self.continuation_store.remove(continuation_id)
             self.blocked_continuations.pop(continuation_id, None)
             return result
 

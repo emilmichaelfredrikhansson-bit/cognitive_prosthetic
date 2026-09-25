@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import os
 import threading
+from pathlib import Path
 from typing import Any
 
 import requests
 
 from .context_compiler import ContextCompiler
+from .continuation_store import ContinuationStore
 from .errors import BobError, ConfigurationError, ProtocolError
 from .effect_runtime import EffectRuntimeMixin, PendingEffect
 from .module_runtime import ModuleRuntimeMixin
@@ -79,7 +81,13 @@ class BobRuntime(ModuleRuntimeMixin, EffectRuntimeMixin):
         self.bridge = bridge or ChatGPTBridge()
         self.adapters: dict[str, Any] = {}
         self.pending: dict[str, PendingEffect] = {}
-        self.blocked_continuations: dict[str, dict[str, Any]] = {}
+        workspace_path = Path(workspace_dir).expanduser().resolve()
+        runtime_root = workspace_path.parent if workspace_path.name.lower() == "workspaces" else workspace_path
+        continuation_path = os.environ.get("BOB_CONTINUATION_STORE_PATH") or str(
+            runtime_root / ".bob" / "runtime" / "blocked_continuations.json"
+        )
+        self.continuation_store = ContinuationStore(continuation_path)
+        self.blocked_continuations: dict[str, dict[str, Any]] = self.continuation_store.snapshot()
         self.initialized_workspace: str | None = None
         self.context_compiler = ContextCompiler()
         self._configure_adapters()

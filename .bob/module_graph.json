@@ -59,10 +59,12 @@
       "id": "BOB_STATELESS_MODULE_RUNTIME",
       "purpose": "Drive bounded module work through fresh cognition, durable READ continuation, approval-bound effects and architecture repair.",
       "source_paths": [
-        "bob/module_runtime.py"
+        "bob/module_runtime.py",
+        "bob/continuation_store.py"
       ],
       "test_paths": [
-        "tests/test_module_runtime.py"
+        "tests/test_module_runtime.py",
+        "tests/test_continuation_store.py"
       ],
       "contract_paths": [
         "docs/BOB_STATELESS_MODULE_RUNTIME_V1.md"
@@ -78,6 +80,7 @@
       "invariants": [
         "Every module cognition step is fresh.",
         "READ results recompile into durable continuation context.",
+        "Verified-effect continuation state is persisted before post-effect cognition and survives Bob restart.",
         "Post-effect cognition resume cannot replay an already-verified effect.",
         "Oversized modules cannot claim DONE before measured cap compliance."
       ],

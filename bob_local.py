@@ -82,6 +82,10 @@ def build_env(env_file: Path) -> dict[str, str]:
         "BOB_PROCESS_SUPERVISOR_PATH",
         str(ROOT / ".bob" / "runtime" / "process_supervisor.json"),
     )
+    env.setdefault(
+        "BOB_CONTINUATION_STORE_PATH",
+        str(ROOT / ".bob" / "runtime" / "blocked_continuations.json"),
+    )
     assert_local_only(env)
     return env
 
