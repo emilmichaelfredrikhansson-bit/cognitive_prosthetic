@@ -671,17 +671,43 @@ def assistant_copy_candidates(page):
 def wait_for_new_assistant_copy(page, baseline_assistant_count, timeout=180):
     """Wait for completion, but surface a dead Playwright target immediately."""
     deadline = time.time() + timeout
+    next_diagnostic_at = time.time()
+    last_diagnostic = None
     while time.time() < deadline:
         try:
             if page.is_closed():
                 raise RuntimeError("ChatGPT page is closed")
-            if assistant_count(page) > baseline_assistant_count:
+            current_assistant_count = assistant_count(page)
+            if current_assistant_count > baseline_assistant_count:
                 if assistant_copy_candidates(page):
                     return True
+            if time.time() >= next_diagnostic_at:
+                try:
+                    author_roles = page.locator("[data-message-author-role]").evaluate_all(
+                        "(els) => els.map((el) => el.getAttribute('data-message-author-role'))"
+                    )
+                    turn_copy_count = page.locator(
+                        'button[data-testid="copy-turn-action-button"]'
+                    ).count()
+                    conversation_turn_count = page.locator(
+                        '[data-testid*="conversation-turn"]'
+                    ).count()
+                    last_diagnostic = {
+                        "baseline_assistant": baseline_assistant_count,
+                        "assistant": current_assistant_count,
+                        "author_roles": author_roles[-8:],
+                        "turn_copy": turn_copy_count,
+                        "conversation_turn": conversation_turn_count,
+                    }
+                    logging.info("Capture wait diagnostic: %s", last_diagnostic)
+                except Exception as diag_exc:
+                    logging.info("Capture wait diagnostic failed: %s", diag_exc)
+                next_diagnostic_at = time.time() + 15
         except Exception as exc:
             if is_browser_closed_error(exc):
                 raise
         time.sleep(0.5)
+    logging.error("Capture wait timed out; last_diagnostic=%s", last_diagnostic)
     return False
 
 

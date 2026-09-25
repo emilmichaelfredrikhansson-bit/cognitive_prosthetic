@@ -63,7 +63,7 @@ The inherited ChatGPT browser bridge is a replaceable cognition transport. **Can
 
 `BOB_REPOSITORY_EXECUTION_AND_PROCESS_SUPERVISION_V1`
 
-Status: **IMPLEMENTED / DETERMINISTIC_GREEN / LIVE_EXECUTION_GREEN / LIVE_COGNITION_TRANSPORT_NOT_YET_QUALIFIED**.
+Status: **IMPLEMENTED / DETERMINISTIC_GREEN / LIVE_EXECUTION_GREEN / LIVE_COGNITION_TRANSPORT_GREEN**.
 
 Active local development branch for this tranche:
 - `feat/bob-execution-ledger-v1`
@@ -140,15 +140,21 @@ Live acceptance evidence:
 - acceptance runs were cancelled, acceptance worktrees removed, final Bob execution state returned to **0 active / 0 integration queue**;
 - RDC reported **no active terminal sessions** after cleanup.
 
-Known live limitation:
-- a minimal fresh browser cognition (`Reply with only this token: BOB_LIVE_COGNITION_OK`) was request-correlated and sent successfully, but visible-response/copy capture did not complete after more than three minutes. The bounded acceptance was aborted and the bridge/API were supervisor-restarted cleanly. This is a **cognition transport/capture qualification failure**, not an execution-ledger or process-supervision failure. Do not describe fresh browser cognition at this head as live-qualified until this is resolved.
+Fresh-cognition / visible-Copy live qualification:
+- the earlier 16:36 canary reached "message sent" but never reached the assistant-completion/Copy signal before operator abort; its exact root cause remains unproven;
+- the failure is **not reproducible on the current transport**: six bounded fresh-cognition probes completed successfully through the canonical visible Copy -> browser clipboard path, including Bob UI foreground / ChatGPT background operation;
+- returned tokens were exact and request-correlated; the final normal-runtime probe returned `BOB_FINAL_COPY_QUALIFIED` in 10.64 s with Bob API and bridge health green;
+- a three-request consecutive fresh-chat series completed 3/3 in 10.45-11.86 s, and the two preceding diagnostic/background probes also completed exactly;
+- `wait_for_new_assistant_copy` now emits bounded structural diagnostics every 15 s and records the final snapshot on timeout: assistant count, visible author roles, message-level Copy count and conversation-turn count. It logs no message content;
+- current executable verification after this hardening: `py_compile` PASS, focused Local Companion **18/18 PASS**, full suite **115/115 PASS**, `git diff --check` PASS;
+- treat the old stall as a historical intermittent transport/UI/model stall unless new evidence localizes it. If it recurs, the structural snapshot should distinguish "no assistant turn", "assistant without message-level Copy", and later capture/clipboard failure without guessing.
 
 Remaining work / boundaries:
-- diagnose and qualify the managed-browser visible Copy/capture hang with a minimal fresh cognition;
+- next live stateless-module qualification is a forced Bob-owned `BOB.READ -> BOB.RESULT -> recompile -> second fresh cognition` continuation;
 - SL/AB obtain independent repo coordinators only after their local repo paths are explicitly configured (for example through repository bindings); they do not consume Bob's slots;
 - a future `BOB_MACHINE_SCHEDULER` may impose a separate higher machine resource cap for CPU/RAM/browser/API pressure; it is not the repository safety cap and is not implemented here;
 - the browser transport remains one serialized Playwright worker, so three repository workers do not yet mean three simultaneous model generations;
-- do **not** resume the oversized `BOB_RUNTIME_ORCHESTRATION` recursive self-repair canary until the remaining live cognition transport qualification is closed.
+- the oversized `BOB_RUNTIME_ORCHESTRATION` recursive self-repair canary is no longer blocked by basic fresh-cognition Copy capture, but should follow the remaining READ/effect continuation qualification rather than skipping it.
 
 Previous completed/canonical work remains below.
 
@@ -200,7 +206,7 @@ The operator-PC Local Companion achieved the first real stateless-cognition proo
 - live runtime work discovered and fixed Windows stdio encoding, slow per-character prompt typing, locale-sensitive Copy capture, user-vs-assistant Copy ambiguity and Copy transport stripping markdown fences;
 - the live cognition review itself identified real protocol/documentation inconsistencies, which were then corrected and tested.
 
-This proves the architecture can close the loop in reality. It does **not** qualify later current head: subsequent implementation and canon commits require a fresh operator-PC suite/runtime rerun.
+This historical proof established that the architecture can close the loop in reality. The later execution-ledger head has now separately passed a fresh operator-PC full suite and basic fresh-cognition visible-Copy qualification; Bob-owned READ and approval-bound effect continuations still require their own current-head live qualification.
 
 Previous completed implementation/canon remains below for historical handoff continuity.
 
@@ -571,7 +577,7 @@ The graph still has explicit `coverage=PARTIAL`. Recursive self-development and 
 - Normal module effects remain one effect per fresh cognition request, manifest-owned path/ref constrained; architecture-repair scope is wider but still approval/authority/read-back bounded.
 - Ordinary `/bob/turn` is still stateful. Statelessness is executable through `/bob/module-turn`, not yet automatic for every operator message.
 - The live operator-PC proof covered module graph and a direct GitHub-grounded DONE turn; a Bob-owned READ continuation and approval-bound effect continuation still need live qualification.
-- Current branch head after later implementation/canon changes has **not** yet received a fresh operator-PC full-suite + managed-browser qualification.
+- Current execution-ledger branch has now received a fresh operator-PC full-suite (**115/115 PASS**) plus six successful basic fresh-cognition visible-Copy/clipboard probes; current-head Bob-owned READ continuation and approval-bound effect continuation remain unqualified live.
 - Remote Desktop Commander was offline at the latest reconciliation, so current-head local runtime state could not be re-read.
 - Self-development background runtime is canon, not implementation: no durable selfdev queue, separate worktree lifecycle, lease manager, background scheduler/pre-emption or promotion gate exists yet.
 - Knowledge Fabric is canon, not implementation: no item store/schema, maturity transitions, retrieval/ranking or compiler injection exists yet.
