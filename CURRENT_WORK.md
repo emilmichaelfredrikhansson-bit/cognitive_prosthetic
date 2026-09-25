@@ -558,26 +558,30 @@ The dedicated ChatGPT Project isolation tranche was then reconciled from its bra
 The first executable module graph + Context Compiler + fresh-cognition path is landed and its basic live `module-turn -> fresh ChatGPT -> GitHub re-ground -> BOB.DONE` path has been proven on the operator PC at exact earlier commit `008728c82138b6abb6ddfa5fe7e42d4b63c43242`.
 
 Remaining qualification before the stateless vertical can be considered closed:
-- current deterministic verification after architecture split + restart-durable continuation + pending-approval storage is **129/129 PASS**, focused approval/store/driver/local-server tests **43/43 PASS**, `py_compile` PASS and `git diff --check` PASS;
+- current deterministic verification after architecture split + restart-durable continuation/approval storage + verified snapshot optimization is **131/131 PASS**; focused approval/store/driver/local-server **43/43 PASS**; focused GitHub snapshot/module runtime **17/17 PASS**; `py_compile` PASS and `git diff --check` PASS;
 - Bob-owned `BOB.READ -> BOB.RESULT -> recompile -> second fresh cognition` is **LIVE GREEN**;
 - approval-bound effect staging/execution/verified read-back is **LIVE GREEN**, but one clean post-effect fresh continuation still remains to be live-qualified after the observed transient ChatGPT request-limit episode;
 - the former oversized runtime monolith has been manually decomposed into bounded runtime, effect-authority and stateless-module-runtime modules without changing the public `BobRuntime` API or widening authority;
 - this local repair is a **reference implementation**, not a self-hosting proof. When cognition is available again, run the genuine architecture-repair canary from pre-repair commit `c5102a9aacce349c9e5aded950daaa8c3ce825b1` in an isolated worktree/branch and require normal verification/approval before any integration.
-- repair commit `4533be665523a77ffaab29f7ed900e51f6253b8a` is the bounded-module reference implementation; after durability commit `5cffa6d8e5cc8f8c94680727ae776227cb3c0d5b`, the working branch is **10 commits ahead / 0 behind** canonical while `feat/bob-core-v1` remains unchanged at `098e6ac9f2adb47e7174c4db8ad2d0b1639d1279`.
+- repair commit `4533be665523a77ffaab29f7ed900e51f6253b8a` is the bounded-module reference implementation; subsequent durability and snapshot-hardening commits are recorded below. Canonical `feat/bob-core-v1` remains unchanged at `098e6ac9f2adb47e7174c4db8ad2d0b1639d1279`.
 - Local Companion was stopped/restarted from the repaired head without issuing another cognition request. Bob API is running, bridge is `ready=true`, execution is **0 active / 0 integration queue**, exactly two supervisor-owned long-lived processes own ports 5002/5001, and live `POST /bob/module-graph` reported all eight modules `compliant=true` before the later persistence-only working-tree changes.
 - verified-effect continuation state is now written to `.bob/runtime/blocked_continuations.json` **before** post-effect cognition starts; a new `BobRuntime` loads it after restart, `/bob/continuations` exposes sanitized pending-resume metadata, and the regression test proves restart -> resume reaches DONE with the provider effect count still exactly one.
 - durability commit `5cffa6d8e5cc8f8c94680727ae776227cb3c0d5b` (`Persist blocked post-effect continuations`) is pushed exactly to `origin/feat/bob-execution-ledger-v1`; canonical remains unchanged.
 - Local Companion was then stopped/restarted from `5cffa6d…` without issuing cognition. Live read-only qualification: Bob API running; bridge `ready=true`; execution **0 active / 0 integration queue**; `GET /bob/continuations` HTTP 200 with `count=0`; exactly two supervisor-owned runtime process trees own ports 5002/5001; `POST /bob/module-graph` HTTP 200 with all eight modules `compliant=true`.
 - pending approvals now have a separate durable `.bob/runtime/pending_effects.json` store. A staged effect is persisted before it is exposed to the operator; a restarted Bob reloads it; `GET /bob/approvals` returns the approval preview; approve/reject/relay consume the durable record before any effect can execute; restarted approvals are re-previewed/re-hashed against current provider state. Regression tests prove restart -> approval executes exactly once and restart + moved branch -> stale approval fails with zero effects.
+- approval durability is pushed at `8115692fe95db3fcecd247c85c4d9fe56b80ac90` (`Persist pending effect approvals`). Module-graph snapshot optimization is pushed at `eaad1e41f82c6f483cb45379295a2b258e82372f` (`Speed verified module graph snapshots`), which exactly matches `origin/feat/bob-execution-ledger-v1`.
+- Local Companion was cleanly restarted from `eaad1e4…` without cognition. Live read-only qualification: Bob API running; bridge `ready=true`; approvals `count=0`; continuations `count=0`; execution **0 active / 0 integration queue**; exactly two supervisor-owned process trees own 5002/5001; three consecutive `POST /bob/module-graph` calls returned HTTP 200 in **5.375 s / 4.960 s / 5.243 s** versus the prior ~18–36 s observed latency.
+- snapshot acceleration preserves identity: authenticated local Git is used only after GitHub repository identity is verified and the requested remote ref commit SHA exactly matches the local commit; stale local refs fall back to remote reads. Effect execution/read-back semantics are unchanged and remain remote/provider verified.
+- the working branch is **13 commits ahead / 0 behind** canonical; `feat/bob-core-v1` remains unchanged at `098e6ac9f2adb47e7174c4db8ad2d0b1639d1279`.
 
-Current authoritative live `BOB_TOKEN_ESTIMATE_V1` measurement on `5cffa6d…`:
+Current authoritative live `BOB_TOKEN_ESTIMATE_V1` measurement on `eaad1e4…`:
 
 ```text
 BOB_RUNTIME_ORCHESTRATION 12,716   compliant (2,284 tokens headroom)
 BOB_EFFECT_AUTHORITY       9,259   compliant (5,741 tokens headroom)
-BOB_STATELESS_MODULE_RUNTIME 10,250 compliant (4,750 tokens headroom)
+BOB_STATELESS_MODULE_RUNTIME 10,526 compliant (4,474 tokens headroom)
 BOB_PROTOCOL               4,169   compliant
-BOB_MODULE_COGNITION      13,062   compliant (1,938 tokens headroom)
+BOB_MODULE_COGNITION      13,103   compliant (1,897 tokens headroom)
 BOB_EXECUTION_LEDGER      13,041   compliant
 BOB_WORKTREE_COORDINATION  9,992   compliant
 BOB_PROCESS_SUPERVISION   13,661   compliant (1,339 tokens headroom)
@@ -602,8 +606,8 @@ The package now has a regression test that loads the real `.bob/module_graph.jso
 
 - The module graph has explicit `coverage=PARTIAL`; it is not yet a complete semantic map of Bob.
 - `BOB_TOKEN_ESTIMATE_V1` is deterministic `ceil(UTF-8 bytes / 3)`, not ChatGPT's exact tokenizer.
-- Every currently declared module is <=15,000 measured tokens. The largest is `BOB_PROCESS_SUPERVISION` at **13,661**, followed by `BOB_MODULE_COGNITION` at **13,062** and `BOB_EXECUTION_LEDGER` at **13,041**.
-- The former oversized `BOB_RUNTIME_ORCHESTRATION` is now **12,716 / 15,000** after extracting `BOB_EFFECT_AUTHORITY` (**9,259**, including durable approval storage/tests) and `BOB_STATELESS_MODULE_RUNTIME` (**10,250**, including durable blocked-continuation storage/tests).
+- Every currently declared module is <=15,000 measured tokens. The largest is `BOB_PROCESS_SUPERVISION` at **13,661**, followed by `BOB_MODULE_COGNITION` at **13,103** and `BOB_EXECUTION_LEDGER` at **13,041**.
+- The former oversized `BOB_RUNTIME_ORCHESTRATION` is now **12,716 / 15,000** after extracting `BOB_EFFECT_AUTHORITY` (**9,259**, including durable approval storage/tests) and `BOB_STATELESS_MODULE_RUNTIME` (**10,526**, including durable blocked-continuation storage/tests and verified graph-snapshot routing).
 - This repaired branch is a deterministic reference implementation, not evidence that Bob cognition can independently perform the same architecture repair. The live self-hosting proof remains pending on an isolated branch rooted at pre-repair commit `c5102a9aacce349c9e5aded950daaa8c3ce825b1`.
 - Normal module effects remain one effect per fresh cognition request, manifest-owned path/ref constrained; architecture-repair scope is wider but still approval/authority/read-back bounded.
 - Ordinary `/bob/turn` is still stateful. Statelessness is executable through `/bob/module-turn`, not yet automatic for every operator message.
