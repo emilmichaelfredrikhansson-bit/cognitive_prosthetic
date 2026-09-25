@@ -133,6 +133,7 @@ Exit criteria:
 - [ ] known cognition failure modes can be selectively injected as bounded warnings/checklists when evidence says they are relevant;
 - [ ] self-development reflection records expected outcome, observed outcome, verification evidence and reusable lessons;
 - [ ] one daytime unattended canary completes multiple self-improvement cycles without operator supervision, keeps/discards candidates correctly and produces a concise end-of-run digest;
+- [ ] bounded wall-clock work campaigns can target one or more repos (initially SL + AB) for e.g. 8 hours, with repo-isolated execution, per-repo concurrency, durable checkpoints, blocker parking/reallocation, hard deadline stop, operator-only merge/promotion and a final review digest;
 - [ ] one restart-resume canary proves self-development continuity without relying on a surviving ChatGPT conversation;
 - [ ] recursive improvement metrics exist for context cost, cognition calls, first-pass success, rework, failures prevented and operator interruptions.
 

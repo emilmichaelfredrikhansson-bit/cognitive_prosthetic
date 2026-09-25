@@ -623,8 +623,9 @@ The package now has a regression test that loads the real `.bob/module_graph.jso
 6. Continue Phase 3.75 foundations from the now-implemented durable self-development queue/state: isolated selfdev worktree/branch lifecycle -> semantic leases + interactive pre-emption -> checkpoint/revert/discard -> separate promotion gate.
 7. Implement Knowledge Fabric V1: item schema/provenance/freshness/maturity -> first distilled Bob failures/patterns/reference items -> bounded retrieval into Context Compiler -> retrieval/effectiveness metrics.
 8. Prove one daytime unattended multi-cycle canary and one PC restart/resume canary, producing a concise operator digest rather than background chatter.
-9. Product-vision/bootstrap, richer durable result distillation and reusable module/template extraction remain coupled follow-up work.
-10. DigitalOcean/mobile persistence remains V2 and is not a prerequisite.
+9. Implement bounded Bob work campaigns soon: operator can assign one or more repos (initial target: SL + AB) a wall-clock budget such as 8 hours; Bob autonomously selects safe queued work, uses repo-isolated runs/worktrees and per-repo concurrency, checkpoints durable progress, parks blocked work, stops starting new work at deadline, never auto-merges/promotes to canonical/main, and emits a final review/merge-candidate digest.
+10. Product-vision/bootstrap, richer durable result distillation and reusable module/template extraction remain coupled follow-up work.
+11. DigitalOcean/mobile persistence remains V2 and is not a prerequisite.
 
 ## OPEN_FINDINGS
 
