@@ -24,6 +24,61 @@ The long-term performance target is intentionally demanding: **drive projects in
 
 Bob is also designed to become **self-hosting**: Bob can use Bob's own bounded workflow to improve Bob. This is recursive capability improvement, never recursive authority expansion. See `PRODUCT_PRINCIPLES.md`.
 
+## Recursive self-improvement
+
+Bob's long-term self-hosting goal is not merely to generate more code. It is to make future cognition start from a progressively higher capability floor.
+
+The canonical loop is:
+
+```text
+observe current Bob reality
+→ select one bounded improvement
+→ compile current structure + relevant prior knowledge
+→ fresh ChatGPT cognition
+→ isolated experiment/change
+→ deterministic verification
+→ reflect + distill reusable learning
+→ qualified candidate
+→ next bounded improvement
+```
+
+Recursive development is intended to run quietly as a low-priority **daytime background lane** while the operator PC is awake. Interactive work always wins. Background mutation uses isolated worktree/branch state and semantic leases; promotion into canonical Bob remains a separate authority boundary.
+
+The safety target is mechanical: unattended cognition should remain incapable of repository deletion/administration, protected-branch force push/deletion, secrets administration or unauthorized production effects even if it makes a bad decision.
+
+See `docs/BOB_RECURSIVE_SELF_IMPROVEMENT_ARCHITECTURE.md`.
+
+## Knowledge Fabric
+
+Bob's answer to limited model context is **not** to paste an ever-growing encyclopedia into every prompt.
+
+Bob may accumulate a very large external body of verified patterns, playbooks, failure signatures, examples, reference implementations, decisions and source/evidence pointers. The Context Compiler selects only the smallest useful subset for the current bounded cognition task.
+
+```text
+large durable Knowledge Fabric
++ current module/work graph
++ current reality
+→ selective bounded Context Compiler
+→ fresh ChatGPT cognition
+```
+
+Most knowledge therefore costs zero cognition tokens until selected.
+
+Reusable knowledge is evidence-backed and provenance-aware. Model output alone is not verified knowledge. The maturity path is:
+
+```text
+OBSERVATION
+→ CANDIDATE_LESSON
+→ VERIFIED_PATTERN
+→ CANONICAL_PRACTICE
+```
+
+The compounding principle is:
+
+> **No good thought should need to be thought from zero twice.**
+
+See `docs/BOB_KNOWLEDGE_FABRIC_ARCHITECTURE.md`.
+
 ## Module-first cognition
 
 For Bob-designed software, the default development atom is a cognitively bounded module:
@@ -80,7 +135,9 @@ Start here:
 4. `AGENTS.md`
 5. `ARCHITECTURE.md`
 6. `ROADMAP.md`
-7. `docs/BOB_V1_PLAN.md`
+7. `docs/BOB_RECURSIVE_SELF_IMPROVEMENT_ARCHITECTURE.md`
+8. `docs/BOB_KNOWLEDGE_FABRIC_ARCHITECTURE.md`
+9. `docs/BOB_V1_PLAN.md`
 
 ## V1 scope
 
