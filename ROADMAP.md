@@ -118,6 +118,7 @@ Exit criteria:
 - [x] Knowledge Fabric architecture canonicalized;
 - [x] unattended safety objective canonicalized: worst-plausible cognition cannot destroy/promote canonical project state;
 - [ ] persistent self-development queue/state survives Bob/PC restart without chat continuity;
+- [ ] Windows Local Companion can start/resume background self-development on operator login/startup without foregrounding ChatGPT or disrupting ordinary computer use;
 - [ ] separate interactive and self-development lanes implemented; interactive lane pre-empts background work at safe checkpoints;
 - [ ] isolated self-development worktree/branch lifecycle implemented;
 - [ ] module/work-node lease coordination prevents concurrent mutation of the same semantic scope;
