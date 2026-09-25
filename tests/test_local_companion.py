@@ -234,6 +234,82 @@ class LocalCompanionTests(unittest.TestCase):
                 timeout=30,
             )
 
+    def test_submission_actuation_prefers_enabled_send_control(self):
+        class Button:
+            def __init__(self, enabled=True):
+                self.enabled = enabled
+                self.clicked = False
+
+            def is_visible(self):
+                return True
+
+            def is_enabled(self):
+                return self.enabled
+
+            def evaluate(self, _expression):
+                return '<button data-testid="send-button"></button>'
+
+            def click(self, timeout=None):
+                self.clicked = True
+
+        class Items:
+            def __init__(self, button):
+                self.button = button
+
+            def all(self):
+                return [self.button]
+
+        class Page:
+            def __init__(self, button):
+                self.button = button
+
+            def locator(self, _selector):
+                return Items(self.button)
+
+        class Textarea:
+            def __init__(self):
+                self.pressed = False
+
+            def press(self, _key):
+                self.pressed = True
+
+        button = Button()
+        textarea = Textarea()
+        with patch.object(
+            chatgpt_api_server,
+            "detect_chatgpt_transient_ui_error",
+            return_value=None,
+        ):
+            actuator = chatgpt_api_server.actuate_submission(Page(button), textarea)
+        self.assertEqual(actuator, "send_button")
+        self.assertTrue(button.clicked)
+        self.assertFalse(textarea.pressed)
+
+    def test_submission_actuation_refuses_visible_disabled_send_control(self):
+        class Button:
+            def is_visible(self):
+                return True
+
+            def is_enabled(self):
+                return False
+
+            def evaluate(self, _expression):
+                return '<button data-testid="send-button" disabled></button>'
+
+        class Items:
+            def all(self):
+                return [Button()]
+
+        class Page:
+            def locator(self, _selector):
+                return Items()
+
+        with (
+            patch.object(chatgpt_api_server, "detect_chatgpt_transient_ui_error", return_value=None),
+            self.assertRaisesRegex(RuntimeError, "SEND_CONTROL_DISABLED"),
+        ):
+            chatgpt_api_server.actuate_submission(Page(), object())
+
     def test_submission_materialization_accepts_new_conversation_state(self):
         class OpenPage:
             def is_closed(self):
@@ -276,6 +352,7 @@ class LocalCompanionTests(unittest.TestCase):
             patch.object(chatgpt_api_server, "assistant_count", return_value=0),
             patch.object(chatgpt_api_server, "user_message_count", return_value=0),
             patch.object(chatgpt_api_server, "conversation_turn_count", return_value=0),
+            patch.object(chatgpt_api_server, "actuate_submission", return_value="test_actuator"),
             patch.object(chatgpt_api_server, "wait_for_submission_materialization", return_value=None),
             patch.object(chatgpt_api_server.time, "sleep", return_value=None),
         ):

@@ -110,7 +110,8 @@ The bridge adds a dedicated traffic-control policy at that shared choke point:
 - visible `RATE_LIMITED` or `USAGE_LIMIT` UI states do not trigger transparent retry;
 - a transient-limit observation starts exponential cooldown using `CHATGPT_RATE_LIMIT_BACKOFF_SECONDS` (default 15,30,60,120 s), with bounded jitter;
 - successful ChatGPT writes reset the transient-limit streak;
-- after Enter, Bob requires observable user/conversation state within `CHATGPT_SUBMISSION_TIMEOUT_SECONDS` (default 12 s) before entering the long assistant-response wait;
+- Bob prefers ChatGPT's visible enabled send control; a visible disabled send control fails closed instead of being bypassed with Enter, while input-local Enter remains a selector-drift fallback when no send control is discoverable;
+- after submission actuation, Bob requires observable user/conversation state within `CHATGPT_SUBMISSION_TIMEOUT_SECONDS` (default 12 s) before entering the long assistant-response wait;
 - if no turn materializes, the request fails distinctly as `CHATGPT_SUBMISSION_FAILED:NO_CONVERSATION_TURN` rather than being misclassified as a multi-minute assistant timeout;
 - repository/Shell/provider work continues independently while cognition waits;
 - request diagnostics and `GET /status` expose only sanitized pacing/cooldown or turn-count metadata, never prompt or response content.

@@ -818,6 +818,53 @@ def detect_chatgpt_transient_ui_error(page):
     return None
 
 
+def find_send_button(page):
+    """Return an enabled visible ChatGPT send control, or report a disabled one."""
+    candidates = []
+    selectors = (
+        'button[data-testid="send-button"]',
+        'button[aria-label*="Send"]',
+        'button[aria-label*="send"]',
+        'button[aria-label*="Skicka"]',
+        'button[aria-label*="skicka"]',
+    )
+    for selector in selectors:
+        try:
+            candidates.extend(page.locator(selector).all())
+        except Exception:
+            continue
+    seen = set()
+    saw_disabled = False
+    for candidate in candidates:
+        try:
+            if not candidate.is_visible():
+                continue
+            key = candidate.evaluate("(el) => el.outerHTML")
+            if key in seen:
+                continue
+            seen.add(key)
+            if candidate.is_enabled():
+                return candidate, saw_disabled
+            saw_disabled = True
+        except Exception:
+            continue
+    return None, saw_disabled
+
+
+def actuate_submission(page, textarea):
+    transient_ui_error = detect_chatgpt_transient_ui_error(page)
+    if transient_ui_error:
+        raise RuntimeError(f"CHATGPT_TRANSIENT_UI:{transient_ui_error}")
+    send_button, saw_disabled = find_send_button(page)
+    if send_button is not None:
+        send_button.click(timeout=5000)
+        return "send_button"
+    if saw_disabled:
+        raise RuntimeError("CHATGPT_SUBMISSION_FAILED:SEND_CONTROL_DISABLED")
+    textarea.press("Enter")
+    return "input_enter"
+
+
 def user_message_count(page):
     try:
         return page.locator('[data-message-author-role="user"]').count()
@@ -950,15 +997,19 @@ def send_message(page, prompt_text):
         time.sleep(0.5)
 
         # Snapshot observable conversation state before submission. A successful
-        # Enter must materialize a user/conversation turn quickly; otherwise a
-        # response timeout would hide a distinct submission failure for minutes.
+        # submit action must materialize a user/conversation turn quickly; otherwise
+        # a response timeout would hide a distinct submission failure for minutes.
         baseline_assistant_count = assistant_count(page)
         baseline_user_count = user_message_count(page)
         baseline_turn_count = conversation_turn_count(page)
 
-        # Send
-        page.keyboard.press("Enter")
-        logging.info("✓ Enter submitted; verifying conversation materialization...")
+        # Prefer ChatGPT's visible enabled send control. A visible disabled
+        # control is an explicit fail-closed state; do not bypass it with Enter.
+        submission_actuator = actuate_submission(page, textarea)
+        logging.info(
+            "✓ Submission actuated via %s; verifying conversation materialization...",
+            submission_actuator,
+        )
         if not wait_for_submission_materialization(
             page,
             baseline_user_count=baseline_user_count,
