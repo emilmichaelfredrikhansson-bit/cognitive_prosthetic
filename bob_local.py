@@ -74,6 +74,7 @@ def build_env(env_file: Path) -> dict[str, str]:
     env.setdefault("CHATGPT_TARGET_URL", "")
     env.setdefault("CHATGPT_CAPTURE_MODE", "copy")
     env.setdefault("CHATGPT_RESPONSE_TIMEOUT_SECONDS", "360")
+    env.setdefault("CHATGPT_SUBMISSION_TIMEOUT_SECONDS", "12")
     env.setdefault("CHATGPT_BRIDGE_TIMEOUT_SECONDS", "600")
     env.setdefault("CHATGPT_FRESH_CHAT_MIN_INTERVAL_SECONDS", "10")
     env.setdefault("CHATGPT_TRAFFIC_JITTER_SECONDS", "3")
@@ -105,6 +106,7 @@ def build_env(env_file: Path) -> dict[str, str]:
 def assert_chatgpt_traffic_budget(env: dict[str, str]) -> None:
     try:
         response = float(env.get("CHATGPT_RESPONSE_TIMEOUT_SECONDS") or "360")
+        submission = float(env.get("CHATGPT_SUBMISSION_TIMEOUT_SECONDS") or "12")
         bridge = float(env.get("CHATGPT_BRIDGE_TIMEOUT_SECONDS") or "600")
         interval = float(env.get("CHATGPT_FRESH_CHAT_MIN_INTERVAL_SECONDS") or "10")
         jitter = float(env.get("CHATGPT_TRAFFIC_JITTER_SECONDS") or "3")
@@ -117,7 +119,9 @@ def assert_chatgpt_traffic_budget(env: dict[str, str]) -> None:
         raise RuntimeError("ChatGPT traffic-control timing values must be numeric") from exc
     if not backoff or any(value <= 0 for value in backoff):
         raise RuntimeError("CHATGPT_RATE_LIMIT_BACKOFF_SECONDS must contain positive values")
-    required = response + max(backoff) + interval + (2 * jitter) + 30
+    if not 1 <= submission <= 60:
+        raise RuntimeError("CHATGPT_SUBMISSION_TIMEOUT_SECONDS must be within 1..60")
+    required = response + submission + max(backoff) + interval + (2 * jitter) + 30
     if bridge < required:
         raise RuntimeError(
             "CHATGPT_BRIDGE_TIMEOUT_SECONDS is too small for the configured "

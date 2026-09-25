@@ -31,6 +31,7 @@ class LocalCompanionTests(unittest.TestCase):
             self.assertEqual(env["BOB_COMPANION_UI_URL"], "http://127.0.0.1:5002/")
             self.assertEqual(env["CHATGPT_CAPTURE_MODE"], "copy")
             self.assertEqual(env["CHATGPT_RESPONSE_TIMEOUT_SECONDS"], "360")
+            self.assertEqual(env["CHATGPT_SUBMISSION_TIMEOUT_SECONDS"], "12")
             self.assertEqual(env["CHATGPT_BRIDGE_TIMEOUT_SECONDS"], "600")
             self.assertEqual(env["CHATGPT_FRESH_CHAT_MIN_INTERVAL_SECONDS"], "10")
             self.assertEqual(env["CHATGPT_TRAFFIC_JITTER_SECONDS"], "3")
@@ -232,6 +233,58 @@ class LocalCompanionTests(unittest.TestCase):
                 baseline_assistant_count=0,
                 timeout=30,
             )
+
+    def test_submission_materialization_accepts_new_conversation_state(self):
+        class OpenPage:
+            def is_closed(self):
+                return False
+
+        page = OpenPage()
+        with (
+            patch.object(chatgpt_api_server, "detect_chatgpt_transient_ui_error", return_value=None),
+            patch.object(chatgpt_api_server, "user_message_count", return_value=1),
+            patch.object(chatgpt_api_server, "conversation_turn_count", return_value=1),
+            patch.object(chatgpt_api_server, "assistant_count", return_value=0),
+        ):
+            snapshot = chatgpt_api_server.wait_for_submission_materialization(
+                page,
+                baseline_user_count=0,
+                baseline_turn_count=0,
+                baseline_assistant_count=0,
+                timeout=1,
+            )
+        self.assertEqual(snapshot["user"], 1)
+        self.assertEqual(snapshot["conversation_turn"], 1)
+
+    def test_send_message_surfaces_distinct_submission_failure(self):
+        class Textarea:
+            def click(self):
+                return None
+
+            def fill(self, _value):
+                return None
+
+        class Keyboard:
+            def press(self, _key):
+                return None
+
+        class Page:
+            keyboard = Keyboard()
+
+        with (
+            patch.object(chatgpt_api_server, "find_textarea", return_value=Textarea()),
+            patch.object(chatgpt_api_server, "assistant_count", return_value=0),
+            patch.object(chatgpt_api_server, "user_message_count", return_value=0),
+            patch.object(chatgpt_api_server, "conversation_turn_count", return_value=0),
+            patch.object(chatgpt_api_server, "wait_for_submission_materialization", return_value=None),
+            patch.object(chatgpt_api_server.time, "sleep", return_value=None),
+        ):
+            result = chatgpt_api_server.send_message(Page(), "test")
+        self.assertFalse(result["success"])
+        self.assertEqual(
+            result["error"],
+            "CHATGPT_SUBMISSION_FAILED:NO_CONVERSATION_TURN",
+        )
 
     def test_wait_for_copy_surfaces_closed_page_immediately(self):
         class ClosedPage:

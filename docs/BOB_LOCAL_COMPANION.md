@@ -110,10 +110,12 @@ The bridge adds a dedicated traffic-control policy at that shared choke point:
 - visible `RATE_LIMITED` or `USAGE_LIMIT` UI states do not trigger transparent retry;
 - a transient-limit observation starts exponential cooldown using `CHATGPT_RATE_LIMIT_BACKOFF_SECONDS` (default 15,30,60,120 s), with bounded jitter;
 - successful ChatGPT writes reset the transient-limit streak;
+- after Enter, Bob requires observable user/conversation state within `CHATGPT_SUBMISSION_TIMEOUT_SECONDS` (default 12 s) before entering the long assistant-response wait;
+- if no turn materializes, the request fails distinctly as `CHATGPT_SUBMISSION_FAILED:NO_CONVERSATION_TURN` rather than being misclassified as a multi-minute assistant timeout;
 - repository/Shell/provider work continues independently while cognition waits;
-- request diagnostics and `GET /status` expose only sanitized pacing/cooldown metadata, never prompt or response content.
+- request diagnostics and `GET /status` expose only sanitized pacing/cooldown or turn-count metadata, never prompt or response content.
 
-This is intentionally conservative. The initial values are qualification defaults for the hypothesis that short fresh-chat bursts contribute to recurring `Too many requests` failures. They should be tuned only from measured live evidence.
+This is intentionally conservative. The initial values are qualification defaults for the hypothesis that short fresh-chat bursts contribute to recurring `Too many requests` failures. Submission materialization is tracked separately because live evidence has also shown prompts that appeared to be submitted but produced zero conversation turns. The two failure classes must not be conflated.
 
 ## Security and authority
 

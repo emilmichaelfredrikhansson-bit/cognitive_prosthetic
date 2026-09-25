@@ -80,6 +80,14 @@ def parse_backoff_seconds(value, default=(15.0, 30.0, 60.0, 120.0)):
 CHATGPT_RESPONSE_TIMEOUT_SECONDS = parse_timeout_seconds(
     os.environ.get("CHATGPT_RESPONSE_TIMEOUT_SECONDS")
 )
+CHATGPT_SUBMISSION_TIMEOUT_SECONDS = parse_nonnegative_seconds(
+    os.environ.get("CHATGPT_SUBMISSION_TIMEOUT_SECONDS"),
+    default=12.0,
+    name="CHATGPT_SUBMISSION_TIMEOUT_SECONDS",
+    maximum=60.0,
+)
+if CHATGPT_SUBMISSION_TIMEOUT_SECONDS < 1.0:
+    raise RuntimeError("CHATGPT_SUBMISSION_TIMEOUT_SECONDS must be at least 1 second")
 CHATGPT_FRESH_CHAT_MIN_INTERVAL_SECONDS = parse_nonnegative_seconds(
     os.environ.get("CHATGPT_FRESH_CHAT_MIN_INTERVAL_SECONDS"),
     default=10.0,
@@ -810,6 +818,65 @@ def detect_chatgpt_transient_ui_error(page):
     return None
 
 
+def user_message_count(page):
+    try:
+        return page.locator('[data-message-author-role="user"]').count()
+    except Exception:
+        return 0
+
+
+def conversation_turn_count(page):
+    try:
+        return page.locator('[data-testid*="conversation-turn"]').count()
+    except Exception:
+        return 0
+
+
+def wait_for_submission_materialization(
+    page,
+    *,
+    baseline_user_count,
+    baseline_turn_count,
+    baseline_assistant_count,
+    timeout,
+):
+    """Require observable conversation state after Enter before response waiting."""
+    deadline = time.time() + timeout
+    last_snapshot = {
+        "user": baseline_user_count,
+        "conversation_turn": baseline_turn_count,
+        "assistant": baseline_assistant_count,
+    }
+    while time.time() < deadline:
+        if page.is_closed():
+            raise RuntimeError("ChatGPT page is closed")
+        transient_ui_error = detect_chatgpt_transient_ui_error(page)
+        if transient_ui_error:
+            raise RuntimeError(f"CHATGPT_TRANSIENT_UI:{transient_ui_error}")
+        last_snapshot = {
+            "user": user_message_count(page),
+            "conversation_turn": conversation_turn_count(page),
+            "assistant": assistant_count(page),
+        }
+        if (
+            last_snapshot["user"] > baseline_user_count
+            or last_snapshot["conversation_turn"] > baseline_turn_count
+            or last_snapshot["assistant"] > baseline_assistant_count
+        ):
+            return last_snapshot
+        time.sleep(0.25)
+    logging.error(
+        "ChatGPT submission did not materialize; baseline=%s final=%s",
+        {
+            "user": baseline_user_count,
+            "conversation_turn": baseline_turn_count,
+            "assistant": baseline_assistant_count,
+        },
+        last_snapshot,
+    )
+    return None
+
+
 def wait_for_new_assistant_copy(page, baseline_assistant_count, timeout=180):
     """Wait for completion, but surface a dead Playwright target immediately."""
     deadline = time.time() + timeout
@@ -882,14 +949,28 @@ def send_message(page, prompt_text):
         textarea.fill(prompt_text)
         time.sleep(0.5)
 
-        # Track assistant turns before submission. User turns also expose Copy
-        # controls, so a raw page-level Copy count is not sufficient completion
-        # evidence.
+        # Snapshot observable conversation state before submission. A successful
+        # Enter must materialize a user/conversation turn quickly; otherwise a
+        # response timeout would hide a distinct submission failure for minutes.
         baseline_assistant_count = assistant_count(page)
+        baseline_user_count = user_message_count(page)
+        baseline_turn_count = conversation_turn_count(page)
 
         # Send
         page.keyboard.press("Enter")
-        logging.info("✓ Message sent, waiting for response...")
+        logging.info("✓ Enter submitted; verifying conversation materialization...")
+        if not wait_for_submission_materialization(
+            page,
+            baseline_user_count=baseline_user_count,
+            baseline_turn_count=baseline_turn_count,
+            baseline_assistant_count=baseline_assistant_count,
+            timeout=CHATGPT_SUBMISSION_TIMEOUT_SECONDS,
+        ):
+            return {
+                "success": False,
+                "error": "CHATGPT_SUBMISSION_FAILED:NO_CONVERSATION_TURN",
+            }
+        logging.info("✓ Submission materialized; waiting for response...")
 
         if CHATGPT_CAPTURE_MODE == "copy":
             if not wait_for_new_assistant_copy(
