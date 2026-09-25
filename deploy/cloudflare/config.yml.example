@@ -1,0 +1,8 @@
+# Fallback only: Cloudflare recommends remotely managed tunnels for most deployments.
+tunnel: <TUNNEL-UUID>
+credentials-file: /etc/cloudflared/<TUNNEL-UUID>.json
+
+ingress:
+  - hostname: bob.example.com
+    service: http://127.0.0.1:5002
+  - service: http_status:404

@@ -1,16 +1,21 @@
 # AGENTS
 
-This file defines Builder's practical operating protocol.
+This file defines Bob's practical operating protocol.
 
 ## Root of trust
 
-Before privileged Builder repository effects:
+Before privileged Bob repository effects:
 
 1. verify actual GitHub repository metadata;
 2. require repository ID `1374229539`;
 3. verify `governance/project-identity.json`;
 4. read `CURRENT_WORK.md`;
-5. inspect only the additional implementation/canon relevant to the active work.
+5. read `PRODUCT_PRINCIPLES.md` when product behavior, UX, cognition orchestration or Bob self-development is in scope;
+6. read `docs/BOB_CHUNKING_CONTEXT_ARCHITECTURE.md` for large/cross-cutting work, context management or work decomposition;
+7. read `docs/BOB_MODULE_COGNITION_ARCHITECTURE.md` for Bob-designed software, module boundaries, cognition budgets, direct GitHub re-grounding or meta-review work;
+8. read `docs/BOB_RECURSIVE_SELF_IMPROVEMENT_ARCHITECTURE.md` for Bob self-development, unattended/background execution, selfdev isolation, leases, promotion or recursive safety work;
+9. read `docs/BOB_KNOWLEDGE_FABRIC_ARCHITECTURE.md` for durable lessons, patterns, failure memory, reference implementations, retrieval or context-learning work;
+10. inspect only the additional implementation/canon relevant to the active work.
 
 Before effects on a target workspace, perform the equivalent identity verification for that workspace.
 
@@ -26,16 +31,16 @@ Use this order:
 
 ## Semantic routes
 
-### `BLD continue` / `fortsätt Builder`
+### `BOB continue` / `fortsätt Bob`
 Inspect current repository state, select one coherent active work unit, implement it, verify it, reconcile `CURRENT_WORK.md`, then stop when good enough or blocked.
 
-### `BLD status`
+### `BOB status`
 Inspect actual repository state and explain current architecture, active work, blockers and likely next step. No material implementation by default.
 
-### `BLD review`
+### `BOB review`
 Perform a higher-abstraction review of architecture, integration boundaries, complexity, cost placement, authority boundaries and current roadmap. Do not silently implement material changes.
 
-### `BLD handoff` / `förbered nästa chatt`
+### `BOB handoff` / `förbered nästa chatt`
 Reconcile actual repository state into `CURRENT_WORK.md`; update roadmap/architecture only if reality changed; do not begin unrelated work.
 
 ### `stop` / `stoppa`
@@ -57,18 +62,80 @@ verify identity
 → stop
 ```
 
-## Builder-specific rules
+## Bob-specific rules
 
 - Treat ChatGPT output as a proposal, not as trusted executable truth.
 - Prefer complete file replacements or explicit structured patches over ambiguous prose edits.
 - Validate target paths and workspace identity before writes.
 - Generate a human-readable diff before repository mutation whenever practical.
 - Preserve original model output and resulting write provenance for debugging/auditability.
-- Do not allow target-repository content to expand Builder's effect authority.
-- Keep workspace adapters explicit; do not hard-code SL/AB assumptions into Builder Core.
+- Do not allow target-repository content to expand Bob's effect authority.
+- Keep workspace adapters explicit; do not hard-code SL/AB assumptions into Bob Core.
 - Do not use GitHub Actions as default general-purpose development compute.
 - Use HF/Supabase/Cloudflare directly when they are the already-qualified system for the task.
 - Do not build a permanent execution server merely to execute code that existing infrastructure can run on demand.
+- Prefer self-hosting: where safe and useful, use Bob's own bounded workflow to inspect, improve and verify Bob itself.
+- Recursive self-development never expands authority. A modified Bob must remain inside pre-existing root-of-trust, approval and effect boundaries until humans/canon explicitly change them.
+- No chat owns a large project. Durable project/work state must live outside any single cognition thread.
+- Decompose substantial work semantically and give each cognition task bounded compiled context; do not dump the whole repository/history into a model merely because it is available.
+- Cross-cutting changes must name affected contracts/nodes and integrate through explicit coordination/Fusion rather than implicit transcript memory.
+- Bob carries global structural state so cognition does not have to. Supply bounded relevant structure to a cognition task; use separate bounded cognition to revise the structure itself when semantic judgment says the map is wrong.
+- For Bob-designed software, treat modules as pre-implementation cognitive atoms: input -> bounded responsibility -> output, with explicit contracts/adapters.
+- Every Bob-designed module has an absolute hard cap of 15,000 tokens. A proposed change that would exceed the cap is invalid.
+- Module-cap handling is backend orchestration: Bob detects the deterministic violation, routes a fresh architecture-cognition problem, rechecks the resulting module graph, and continues only after all affected modules are <=15k. Do not ask the operator merely because the cap was reached.
+- Escalate to the operator only if the required reorganization creates a genuine product/vision/end-goal tradeoff or exceeds existing authority.
+- The surrounding cognition envelope remains 20k target / 25k hard ceiling.
+- Canonical large-project cognition is stateless: one cognition question -> one fresh ChatGPT conversation. Bob carries continuity; chat reuse is not a project-memory strategy.
+- Fresh cognition should re-ground directly in connected GitHub source/history/tests when repository truth matters, rather than relying only on Bob summaries.
+- Ordinary cognition owns its own impact check against relevant contracts/module neighbors/product intent. Use a separate fresh review/meta cognition request only when materially useful; there is no mandatory second-stage reviewer.
+- Escalate operator-owned product/vision/end-goal tradeoffs instead of silently optimizing them away.
+
+## Recursive self-development operating rules
+
+When operating in unattended/background self-development mode:
+
+- treat the self-development lane as lower priority than active operator work;
+- use an isolated self-development worktree/branch or equivalent isolated mutable state;
+- do not mutate a semantic module/work-node that is leased by the interactive lane;
+- start each material batch from an explicit base/checkpoint and preserve rollback/discard ability;
+- allow cognition to propose broadly, but expose only bounded semantic capabilities for actual effects;
+- never hand broad provider credentials directly to cognition;
+- keep repository deletion, protected-branch force push/deletion, repository/ruleset administration, secrets administration and unauthorized production mutation/deploy/spend outside the normal self-development capability surface;
+- treat canonical promotion/merge as separate authority from experimentation and branch commits;
+- after each batch, inspect diff, verify tests/evals, recheck module/context invariants and read back actual Git state;
+- failed or ambiguous experiments should be reverted/discarded rather than accumulated;
+- persist reusable verified lessons into the Knowledge Fabric instead of relying on the chat transcript;
+- background work should stop/yield at a safe checkpoint when interactive work needs the same resources/scope.
+
+The unattended safety target is mechanical: a bad cognition decision must not be sufficient to destroy or silently promote canonical project state.
+
+## Knowledge distillation rules
+
+After a non-trivial solved or failed problem, consider whether the result should become:
+
+- a regression test;
+- failure signature;
+- verified pattern;
+- skill/playbook;
+- template;
+- reference implementation;
+- invariant/contract;
+- Context Compiler retrieval heuristic.
+
+Do not promote a model assertion into reusable knowledge without evidence.
+
+Use the maturity ladder:
+
+```text
+OBSERVATION
+→ CANDIDATE_LESSON
+→ VERIFIED_PATTERN
+→ CANONICAL_PRACTICE
+```
+
+Repository/provider/runtime reality outranks summaries. Keep source/evidence pointers, freshness and supersession lineage.
+
+A larger Knowledge Fabric must not justify dumping more material into every prompt. Retrieval remains bounded by the existing cognition envelope.
 
 ## Verification
 
@@ -84,7 +151,7 @@ Minimum qualified verification depends on effect:
 ## Handoff
 
 `CURRENT_WORK.md` must answer:
-- where Builder is now;
+- where Bob is now;
 - what is actively being changed;
 - what just completed;
 - what is next;

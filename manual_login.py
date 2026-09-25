@@ -22,6 +22,7 @@ from profile_config import (
 )
 
 LOGIN_TIMEOUT_SECONDS = 120
+CHATGPT_TARGET_URL = (os.environ.get("BOB_CHATGPT_PROJECT_URL") or os.environ.get("CHATGPT_TARGET_URL") or "https://chatgpt.com/").strip()
 
 
 def resolve_profile_path(argv):
@@ -67,7 +68,7 @@ def main():
         )
 
         page = browser.pages[0] if browser.pages else browser.new_page()
-        page.goto("https://chat.openai.com")
+        page.goto(CHATGPT_TARGET_URL)
 
         print("✓ Browser opened!")
         print("\n" + "=" * 60)
@@ -89,7 +90,7 @@ def main():
         browser.close()
 
     print("\n✅ Done! You can now start the server:")
-    print("   python3 chatgpt_api_server.py\n")
+    print("   python bob_local.py\n")
     print(f"(Profile path is stored in {CONFIG_FILENAME}; "
           f"override it with {ENV_VAR} or edit that file. "
           f"Default: ./{DEFAULT_PROFILE_NAME})\n")

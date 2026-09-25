@@ -1,6 +1,6 @@
 # Project Constitution
 
-This document is Builder's durable normative core.
+This document is Bob's durable normative core.
 
 ## Source of truth and handoff
 
@@ -12,7 +12,7 @@ This document is Builder's durable normative core.
 
 ## Product boundary
 
-Builder is an orchestration and development interface over existing systems.
+Bob is an orchestration and development interface over existing systems.
 
 It should not recreate mature infrastructure already supplied by:
 - ChatGPT for cognition and code generation;
@@ -27,14 +27,35 @@ The default architectural question is:
 
 ## Development model
 
-- Operator-present interactive development is the default.
+- Operator-present interactive development is the default for operator-directed work. Unattended self-development may run only inside an explicitly bounded self-development mode with isolated work state, least-privilege capabilities and no autonomous authority expansion.
 - Broad cognition is encouraged; external effects stay narrow.
 - Access is not authority.
 - Candidate model output is not automatically accepted code.
 - A proposed change becomes actionable only after identity checks, deterministic validation appropriate to the effect, and operator approval where required.
 - One semantic work item should have one active executor unless explicitly handed off or superseded.
 
-## Builder V1 contract
+## Recursive self-development boundary
+
+Bob may recursively improve its own capabilities, but self-development is never self-authorization.
+
+Unattended self-development must be structurally constrained so that a bad cognition decision cannot directly destroy or promote canonical project state.
+
+Minimum constitutional rules:
+
+- interactive work has priority over background self-development;
+- unattended mutation uses isolated work state such as a dedicated worktree/branch;
+- one semantic mutating scope has one active executor/lease;
+- provider credentials remain least-privilege and should independently deny catastrophic administration;
+- normal self-development capability does not include repository deletion, protected-branch force push/deletion, repository/ruleset administration, secrets administration or unauthorized production mutation/deploy/spend;
+- promotion/merge into canonical Bob state is a separate effect class from experimentation/branch work;
+- checkpoints, deterministic verification and rollback/discard are required around material self-development changes;
+- recursive changes may improve capability, context, knowledge and verification, but may not weaken root-of-trust, workspace isolation, approval classes or provider protections without explicit authorized canon.
+
+Canonical details live in `docs/BOB_RECURSIVE_SELF_IMPROVEMENT_ARCHITECTURE.md`.
+
+The Knowledge Fabric defined in `docs/BOB_KNOWLEDGE_FABRIC_ARCHITECTURE.md` is cognition support only. Knowledge never grants authority.
+
+## Bob V1 contract
 
 The V1 development loop is intentionally small:
 
@@ -48,7 +69,7 @@ target workspace
 → direct GitHub branch/commit/PR effect
 ```
 
-No always-on general-purpose Builder compute service is required for V1.
+No always-on general-purpose Bob compute service is required for V1.
 
 When code must actually execute, use existing qualified project infrastructure:
 - Hugging Face for portable tests, scripts, ML and batch compute;
@@ -86,7 +107,7 @@ Default:
 
 Each target project is a separate trust domain.
 
-A Builder workspace must bind at minimum:
+A Bob workspace must bind at minimum:
 - project name/code;
 - stable GitHub repository ID;
 - repository full name;
@@ -102,7 +123,7 @@ ChatGPT is a cognition provider, not the source of repository authority.
 
 The transport used to move prompts and model output may evolve independently from the development protocol.
 
-The current inherited implementation uses browser automation. The intended Builder design replaces DOM response extraction with a user-facing UI/accessibility copy path where practical, while keeping cognition transport behind an adapter boundary.
+The current inherited implementation uses browser automation. The intended Bob design replaces DOM response extraction with a user-facing UI/accessibility copy path where practical, while keeping cognition transport behind an adapter boundary.
 
 ## Good-enough rule
 

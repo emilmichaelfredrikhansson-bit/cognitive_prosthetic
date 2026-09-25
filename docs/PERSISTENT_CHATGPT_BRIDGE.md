@@ -1,21 +1,21 @@
-# Persistent ChatGPT Browser Bridge
+# Persistent ChatGPT Browser Bridge — V2
 
 ## Purpose
 
-Builder needs one persistent authenticated ChatGPT browser session so the same development cockpit can be used from both PC and mobile.
+Bob V1 deliberately runs the authenticated ChatGPT browser session on the operator's own PC. See `docs/BOB_LOCAL_COMPANION.md`.
 
-The target runtime is a small DigitalOcean host with a deliberately narrow responsibility:
+This document describes **V2**: moving that replaceable cognition transport to a persistent remote host so Bob can be used without the operator PC remaining online. The current candidate runtime is a small DigitalOcean host with a deliberately narrow responsibility:
 
-> keep the ChatGPT browser/session available and expose the Builder CognitionAdapter.
+> keep the ChatGPT browser/session available and expose the Bob CognitionAdapter.
 
-It is **not** the general-purpose Builder execution engine.
+It is **not** the general-purpose Bob execution engine.
 
 ## Target topology
 
 ```text
 PC / mobile
     ↓
-Cloudflare Builder UI/API
+Cloudflare Bob UI/API
     ↓
 authenticated cognition request
     ↓
@@ -42,6 +42,8 @@ DigitalOcean bridge:
 - return model output and transport provenance;
 - report browser/session/tunnel health.
 
+The browser-control HTTP service is loopback-only by default and exposes no permissive CORS surface. A later remote bridge must add an authenticated Bob-to-bridge transport before network exposure; changing the bind address alone is not authentication.
+
 It must not automatically gain:
 - arbitrary target-repository write authority;
 - merge/deploy authority;
@@ -53,7 +55,7 @@ It must not automatically gain:
 
 The bridge may route ChatGPT traffic through a secure tunnel terminating on the home network/router so the browser uses the selected home public IP.
 
-The tunnel is transport only. It does not grant or expand Builder authority.
+The tunnel is transport only. It does not grant or expand Bob authority.
 
 Implementation details should be selected during qualification based on:
 - router capabilities;
@@ -69,13 +71,13 @@ With the persistent bridge:
 
 ```text
 PC client     ┐
-              ├→ same Cloudflare Builder UI → same cognition bridge
+              ├→ same Cloudflare Bob UI → same cognition bridge
 Mobile client ┘
 ```
 
 The operator's PC does not need to remain online for normal use.
 
-A local PC bridge remains useful for development, diagnosis and fallback.
+The PC-local bridge is the canonical V1 runtime. In V2 it remains the development, diagnosis and fallback path.
 
 ## Failure model
 
@@ -89,15 +91,35 @@ If:
 
 then no candidate change set may advance into a GitHub write merely because the transport partially succeeded.
 
-Repository effects are downstream of a complete validated cognition result and explicit Builder approval.
+Repository effects are downstream of a complete validated cognition result and explicit Bob approval.
+
+## Runtime preflight
+
+Once least-privilege runtime credentials are installed as environment variables, run:
+
+```bash
+python -m bob.preflight --pretty
+```
+
+The command is read-only. It exits successfully only when:
+- both credential-bearing Python services are configured on loopback hosts; and
+- every selected workspace independently passes the existing Bob workspace qualification path.
+
+By default it checks every registered workspace. Use repeated `--workspace` flags for a bounded canary, for example:
+
+```bash
+python -m bob.preflight --workspace BOB --workspace SL --pretty
+```
+
+The report contains binding, capability and qualification metadata only. It must never print credential values. A preflight PASS proves configured provider identity/readability for that runtime; it does **not** prove the live ChatGPT browser/clipboard transport, the home-egress tunnel, or any write/deploy effect.
 
 ## Qualification sequence
 
-1. prove cognition adapter with local browser;
+1. qualify and use Bob V1 Local Companion with the local browser;
 2. provision DigitalOcean canary runtime;
 3. prove persistent login/session;
 4. prove accessibility/copy capture;
-5. add authenticated Builder-to-bridge transport;
+5. add authenticated Bob-to-bridge transport;
 6. establish home-network tunnel;
 7. verify selected egress;
 8. exercise restart/session-expiry/tunnel-failure paths;
@@ -107,4 +129,4 @@ Repository effects are downstream of a complete validated cognition result and e
 
 ## Non-goal
 
-Do not turn the DigitalOcean host into a second HF, Supabase, GitHub Actions runner, or general-purpose permanent Builder Core without a separately demonstrated need.
+Do not turn the DigitalOcean host into a second HF, Supabase, GitHub Actions runner, or general-purpose permanent Bob Core without a separately demonstrated need.

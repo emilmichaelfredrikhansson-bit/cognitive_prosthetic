@@ -1,8 +1,8 @@
-# Builder V1 Implementation Plan
+# Bob V1 Implementation Plan
 
 ## Objective
 
-Create the smallest production-useful Builder that can develop a real repository through ChatGPT-generated code while writing accepted changes directly to GitHub, preserving the existing SL/AB infrastructure model.
+Create the smallest production-useful Bob that can develop a real repository through ChatGPT-generated code while writing accepted changes directly to GitHub, preserving the existing SL/AB infrastructure model.
 
 V1 is successful when the operator can:
 
@@ -17,6 +17,38 @@ select workspace
 ```
 
 without using GitHub Actions as the coding/execution engine.
+
+## ChatGPT account/project contract
+
+V1 uses the operator's existing ChatGPT account/subscription through a dedicated Bob-managed browser profile. All automated cognition lives in one private ChatGPT Project named **Bob**, configured with Project-only memory when available. Normal Bob startup requires the exact project URL and must fail closed rather than target the generic ChatGPT home page or an unrelated personal chat.
+
+This isolates Bob's working conversations without requiring a second subscription. Account-level usage limits are still shared.
+
+## ChatGPT response-capture contract
+
+V1 uses the visible ChatGPT **Copy** action followed by clipboard read as the canonical response transport. Direct DOM extraction is retained only behind explicit `legacy_dom` compatibility mode and must not silently become the normal fallback. Windows UI Automation/accessibility is a deferred robustness option to investigate only if the canonical Copy path proves materially unreliable during live use.
+
+## Module/stateless cognition compatibility
+
+V1 must preserve a clean path toward the canonical large-project model in `docs/BOB_MODULE_COGNITION_ARCHITECTURE.md`.
+
+That model requires:
+
+- modules sized before implementation to fit with their immediate contract neighborhood;
+- 20k compiled-context target / 25k hard ceiling as initial defaults;
+- one fresh ChatGPT conversation per cognition question;
+- Bob-held continuity between cognition requests;
+- direct GitHub re-grounding plus an impact check inside ordinary cognition, with separate review/meta cognition only when materially useful.
+
+The bridge exposes a fresh `/cognition` primitive. Bob now also has a first self-contained module path: `/bob/module-turn` loads `BOB_MODULE_GRAPH_V1`, compiles `BOB_COMPILED_CONTEXT_V1`, and reconstructs each READ/approved-effect continuation into a fresh cognition request. The ordinary `/bob/turn` driver remains stateful until module routing becomes the default path.
+
+## Large-project continuity principle
+
+Even in V1, Bob must not evolve toward a design where one ChatGPT thread becomes the durable project brain.
+
+The canonical path for scaling is defined in `docs/BOB_CHUNKING_CONTEXT_ARCHITECTURE.md`: durable semantic project/work state, bounded compiled context per cognition task, explicit contracts/dependencies, distillation after work, and Fusion for cross-cutting convergence.
+
+The repo-native module graph and Context Compiler V1 are now landed with explicit partial graph coverage. Full project/workstream coverage, default routing and durable result distillation remain later V1 work; new design decisions must not make that expansion harder.
 
 ## Design principles
 
@@ -36,7 +68,7 @@ Goal: isolate browser transport from product logic.
 Create modules conceptually equivalent to:
 
 ```text
-builder/
+bob/
   cognition/
   workspaces/
   changesets/
@@ -71,7 +103,7 @@ Implement schema validation and identity verification.
 
 Acceptance:
 - a wrong repository ID fails closed;
-- SL and AB can be represented without Builder-specific code branches;
+- SL and AB can be represented without Bob-specific code branches;
 - no provider credentials are stored in workspace files.
 
 ## Work package 3 — Repository context reader
@@ -92,7 +124,7 @@ Acceptance:
 
 ## Work package 4 — Structured change-set contract
 
-Define `BUILDER_CHANGESET_V1`.
+Define `BOB_CHANGESET_V1`.
 
 Initial operations:
 - `create`;
@@ -140,7 +172,7 @@ Implement:
 Prefer a dedicated branch per semantic work unit.
 
 Acceptance:
-- end-to-end canary PR from a Builder-generated change set;
+- end-to-end canary PR from a Bob-generated change set;
 - duplicate/replay behavior is explicit;
 - partial failure is visible and recoverable;
 - no silent write to `main`.
@@ -149,7 +181,7 @@ Acceptance:
 
 Replace preferred response extraction path with a UI/accessibility copy transport while preserving the `CognitionAdapter` contract.
 
-First qualify the mechanism locally on Windows if useful, then run the production-oriented browser bridge on DigitalOcean.
+Qualify and use the mechanism locally on Windows as the canonical V1 runtime. DigitalOcean is a V2 transport option after local Bob has proven useful.
 
 Keep transport-specific failure separate from repository effect logic.
 
@@ -213,14 +245,14 @@ Add only the project operations that are actually needed.
 - explicit approval for material mutation.
 
 ### Cloudflare
-- Builder frontend deployment/status;
+- Bob frontend deployment/status;
 - target-project deploy/status when authorized.
 
 Provider adapters must not become new sources of authority.
 
-## Work package 12 — Cloudflare web UI
+## Work package 12 — Bob web UI
 
-Build the responsive operator surface after the GitHub development loop is proven.
+Build the responsive operator surface so V1 can run from the loopback Bob API on the operator PC. Cloudflare hosting is optional V2 remote-access infrastructure, not a V1 dependency.
 
 Views:
 - workspace selector;
@@ -232,50 +264,45 @@ Views:
 - PR/job/provider status;
 - provenance/audit.
 
-PC and mobile share one web application.
+V1 targets the operator PC. The same web product should remain portable to PC/mobile in V2.
 
-## Work package 13 — Persistent remote cognition bridge
+## Work package 13 — Local Companion runtime
 
-Goal: remove the requirement for the operator's PC to host the ChatGPT session.
+Goal: make V1 runnable as a normal local product on the operator's Windows PC.
 
 Target topology:
 
 ```text
-Cloudflare Builder UI/API
-→ authenticated CognitionAdapter call
-→ DigitalOcean persistent browser/session
-→ secure tunnel to home network/router
-→ ChatGPT via selected home-IP egress
+Bob UI foreground tab
+→ loopback Bob API
+→ loopback CognitionAdapter bridge
+→ ChatGPT background tab
 ```
 
-Responsibilities of the DigitalOcean component are intentionally narrow:
-- maintain the authenticated browser/session;
-- perform the UI/accessibility cognition transport;
-- report health/session state;
-- expose no generic shell/build authority to the UI.
-
-The home tunnel is an egress mechanism, not a Builder authority source.
-
 Acceptance:
-- cognition works from both PC and mobile through the same Builder UI;
-- no operator PC needs to remain online;
-- tunnel/browser restart is recoverable;
-- bridge failure cannot trigger repository writes;
-- GitHub/HF/Supabase/Cloudflare remain independently reachable when the cognition bridge is unavailable.
+- one setup command installs local dependencies;
+- one explicit first-run flow creates the authenticated ChatGPT profile using the operator's existing account;
+- the operator binds one private ChatGPT Project `Bob` with Project-only memory and an exact `BOB_CHATGPT_PROJECT_URL`;
+- normal startup refuses the generic ChatGPT home page, then launches Bob API + bridge and health-gates both;
+- Bob is brought to the foreground in the same managed browser;
+- ChatGPT remains available in the background for cognition;
+- non-loopback configuration fails closed;
+- transport failure cannot trigger repository writes.
 
-## Mobile cognition milestone
+## V2 remote milestone
 
-Once the Cloudflare UI and persistent DigitalOcean cognition bridge exist, PC and mobile become equivalent control clients for the normal Builder development loop.
+Only after V1 is useful in practice, move the replaceable cognition transport to a persistent remote host such as DigitalOcean and add authenticated mobile access.
 
 ## V1 completion definition
 
 V1 is complete when:
 - one canary and one real workspace can complete the GitHub development loop safely;
-- SL can use Builder for ordinary branch/PR development;
+- SL can use Bob for ordinary branch/PR development;
 - GitHub Actions are not required as the coding engine;
 - project identity and authority boundaries fail closed;
 - ChatGPT transport is replaceable;
-- existing HF/Supabase/Cloudflare infrastructure remains intact and separately authoritative.
+- existing HF/Supabase/Cloudflare infrastructure remains intact and separately authoritative;
+- the normal V1 product can run on the operator PC without DigitalOcean.
 
 ## First implementation slice
 
@@ -285,7 +312,7 @@ Start with exactly:
 workspace schema
 + GitHub identity verifier
 + bounded file reader
-+ BUILDER_CHANGESET_V1 parser
++ BOB_CHANGESET_V1 parser
 + diff renderer
 + branch/file/PR writer
 + canary tests

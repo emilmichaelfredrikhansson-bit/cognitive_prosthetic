@@ -1,8 +1,8 @@
 {
-  "schema": "BUILDER_PROJECT_IDENTITY_V1",
+  "schema": "BOB_PROJECT_IDENTITY_V1",
   "project": {
-    "name": "Builder",
-    "code": "BLD",
+    "name": "Bob",
+    "code": "BOB",
     "github_repository": "emilmichaelfredrikhansson-bit/cognitive_prosthetic",
     "github_repository_id": 1374229539
   },
@@ -33,7 +33,7 @@
     "cloudflare": {
       "enabled": true,
       "workspace_bound": true,
-      "role": "Builder frontend and project hosting/runtime surfaces"
+      "role": "Bob frontend and project hosting/runtime surfaces"
     },
     "digital_ocean": {
       "enabled": true,

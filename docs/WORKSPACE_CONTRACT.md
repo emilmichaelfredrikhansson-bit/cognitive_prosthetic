@@ -1,10 +1,10 @@
 # Workspace Contract
 
-A Builder workspace is the smallest unit of project identity, context routing and effect authority.
+A Bob workspace is the smallest unit of project identity, context routing and effect authority.
 
 ## Goals
 
-The same Builder Core must support Signal Lab, AutoBlog and future projects without project-specific branches in product code.
+The same Bob Core must support Signal Lab, AutoBlog and future projects without project-specific branches in product code.
 
 A workspace is configuration plus verified external identity. It is not a source of new authority.
 
@@ -14,7 +14,7 @@ Each workspace must bind:
 
 ```json
 {
-  "schema": "BUILDER_WORKSPACE_V1",
+  "schema": "BOB_WORKSPACE_V1",
   "project": {
     "name": "Signal Lab",
     "code": "SL"
@@ -74,7 +74,7 @@ Credentials do not belong in the workspace file.
 
 ## Effect policy
 
-A workspace may narrow Builder's global effect policy, never broaden it.
+A workspace may narrow Bob's global effect policy, never broaden it.
 
 Example:
 
@@ -93,7 +93,7 @@ Example:
 ```
 
 Runtime authority is the intersection of:
-- Builder global effect boundary;
+- Bob global effect boundary;
 - workspace policy;
 - current operator approval;
 - provider/repository identity verification.
@@ -116,13 +116,14 @@ A UI-selected workspace name is never sufficient proof of identity.
 
 Every candidate change set must bind:
 - workspace code;
-- stable repository ID;
-- base branch;
-- base commit SHA;
+- stable repository full name + ID;
+- default/base branch;
+- provider bindings and workspace effect policy;
+- relevant staged external state (for GitHub, branch/file commit identity);
 - exact candidate hash;
 - proposed operations.
 
-An approval is invalid if any of these change.
+Bob recomputes the binding immediately before execution. An approval is invalid if the workspace authority binding or relevant staged external state changes after staging. A branch move, file-SHA drift, provider rebinding or default-branch change therefore requires a fresh candidate/approval.
 
 ## Isolation invariant
 

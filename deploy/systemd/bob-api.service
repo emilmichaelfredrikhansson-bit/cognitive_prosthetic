@@ -1,0 +1,24 @@
+[Unit]
+Description=Bob API
+After=network-online.target chatgpt-bridge.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=bob
+Group=bob
+WorkingDirectory=/opt/bob/current
+EnvironmentFile=/etc/bob/bob.env
+Environment=BOB_HOST=127.0.0.1
+Environment=CHATGPT_BRIDGE_URL=http://127.0.0.1:5001
+ExecStart=/opt/bob/venv/bin/python /opt/bob/current/bob_api_server.py
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

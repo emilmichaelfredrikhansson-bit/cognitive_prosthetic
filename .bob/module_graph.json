@@ -1,0 +1,80 @@
+{
+  "schema": "BOB_MODULE_GRAPH_V1",
+  "workspace_code": "BOB",
+  "repository_id": 1374229539,
+  "coverage": "PARTIAL",
+  "modules": [
+    {
+      "id": "BOB_RUNTIME_ORCHESTRATION",
+      "purpose": "Coordinate Bob workspace turns, deterministic reads/effects, approvals and cognition continuation.",
+      "source_paths": [
+        "bob/driver.py",
+        "bob/workspaces.py"
+      ],
+      "test_paths": [
+        "tests/test_driver.py",
+        "tests/test_workspaces.py"
+      ],
+      "contract_paths": [],
+      "producers": [
+        "BOB_PROTOCOL"
+      ],
+      "consumers": [
+        "BOB_MODULE_COGNITION"
+      ],
+      "invariants": [
+        "External effects remain approval-bound and verified.",
+        "Workspace identity/authority remains fail-closed.",
+        "Legacy oversize must be decomposed before this module can be considered compliant."
+      ],
+      "status": "MIGRATION_REQUIRED"
+    },
+    {
+      "id": "BOB_PROTOCOL",
+      "purpose": "Define and parse the bounded machine-readable BOB message protocol.",
+      "source_paths": [
+        "bob/protocol.py"
+      ],
+      "test_paths": [
+        "tests/test_protocol.py"
+      ],
+      "contract_paths": [
+        "docs/BOB_PROTOCOL_V1.md"
+      ],
+      "producers": [],
+      "consumers": [
+        "BOB_RUNTIME_ORCHESTRATION"
+      ],
+      "invariants": [
+        "Protocol messages never expand authority."
+      ],
+      "status": "DONE"
+    },
+    {
+      "id": "BOB_MODULE_COGNITION",
+      "purpose": "Represent cognition-bounded modules, enforce the 15k cap and compile source-grounded fresh cognition packets.",
+      "source_paths": [
+        "bob/cognition_policy.py",
+        "bob/module_graph.py",
+        "bob/context_compiler.py"
+      ],
+      "test_paths": [
+        "tests/test_cognition_policy.py",
+        "tests/test_module_context.py"
+      ],
+      "contract_paths": [
+        "docs/BOB_MODULE_COGNITION_ARCHITECTURE.md"
+      ],
+      "producers": [
+        "BOB_RUNTIME_ORCHESTRATION"
+      ],
+      "consumers": [],
+      "invariants": [
+        "Every module remains <=15000 measured tokens.",
+        "One cognition question uses one fresh ChatGPT conversation.",
+        "GitHub remains implementation truth."
+      ],
+      "status": "WORKING"
+    }
+  ]
+}

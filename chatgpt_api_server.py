@@ -4,19 +4,53 @@ ChatGPT Web API Server (Thread-safe version)
 Uses a single dedicated thread for all Playwright operations
 """
 from flask import Flask, request, jsonify
-from flask_cors import CORS
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout
 import threading
 import queue
 import time
 import logging
 import os
+import re
+import ipaddress
 import sys
+from urllib.parse import urlsplit
 
 from profile_config import load_profile_path
 
+# Windows/remote shells may inherit a legacy code page such as cp1252. Bob's
+# human-facing logs contain Unicode, so make stdio encoding deterministic without
+# letting an unrenderable glyph crash the bridge process.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="backslashreplace")
+    except (AttributeError, ValueError):
+        pass
+
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+
+BOB_CHATGPT_PROJECT_NAME = os.environ.get("BOB_CHATGPT_PROJECT_NAME", "Bob").strip() or "Bob"
+BOB_CHATGPT_PROJECT_URL = os.environ.get("BOB_CHATGPT_PROJECT_URL", "").strip()
+CHATGPT_TARGET_URL = (BOB_CHATGPT_PROJECT_URL or os.environ.get("CHATGPT_TARGET_URL", "")).strip()
+CHATGPT_CAPTURE_MODE = os.environ.get("CHATGPT_CAPTURE_MODE", "copy").strip().lower()
+BOB_COMPANION_UI_URL = os.environ.get("BOB_COMPANION_UI_URL", "http://127.0.0.1:5002/").strip()
+
+def parse_timeout_seconds(value, default=360):
+    raw = str(value or "").strip()
+    if not raw:
+        return default
+    try:
+        timeout = int(raw)
+    except ValueError as exc:
+        raise RuntimeError("CHATGPT_RESPONSE_TIMEOUT_SECONDS must be an integer") from exc
+    if not 30 <= timeout <= 900:
+        raise RuntimeError("CHATGPT_RESPONSE_TIMEOUT_SECONDS must be between 30 and 900")
+    return timeout
+
+CHATGPT_RESPONSE_TIMEOUT_SECONDS = parse_timeout_seconds(
+    os.environ.get("CHATGPT_RESPONSE_TIMEOUT_SECONDS")
+)
+if CHATGPT_CAPTURE_MODE not in {"copy", "legacy_dom"}:
+    raise RuntimeError("CHATGPT_CAPTURE_MODE must be 'copy' or 'legacy_dom'")
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
@@ -28,6 +62,60 @@ result_queue = queue.Queue()
 is_ready = False
 startup_error = None
 browser_thread = None
+
+def validate_chatgpt_project_url(url):
+    """Require an explicit non-root ChatGPT target for Bob cognition."""
+    value = str(url or "").strip()
+    if not value:
+        raise ValueError("BOB_CHATGPT_PROJECT_URL must be configured for normal Bob runtime")
+    parts = urlsplit(value)
+    if parts.scheme != "https" or (parts.hostname or "").lower() not in {"chatgpt.com", "www.chatgpt.com"}:
+        raise ValueError("Bob ChatGPT project URL must be an https://chatgpt.com/ URL")
+    if parts.path in {"", "/"}:
+        raise ValueError("Bob must target a dedicated ChatGPT Project URL, not the ChatGPT home page")
+    return value
+
+
+def validate_companion_ui_url(url):
+    """Return a local companion URL or fail closed for non-loopback targets."""
+    value = str(url or "").strip()
+    if not value:
+        raise ValueError("BOB_COMPANION_UI_URL must not be empty")
+    parts = urlsplit(value)
+    if parts.scheme not in {"http", "https"} or not parts.hostname:
+        raise ValueError("companion UI URL must be an absolute http(s) URL")
+    host = parts.hostname.strip().lower()
+    if host != "localhost":
+        try:
+            if not ipaddress.ip_address(host).is_loopback:
+                raise ValueError("companion UI URL must use a loopback host")
+        except ValueError as exc:
+            if "loopback" in str(exc):
+                raise
+            raise ValueError("companion UI URL must use localhost or a loopback IP") from exc
+    return value
+
+
+def show_companion_ui(chatgpt_page, url):
+    """Open/focus Bob in the same persistent browser while keeping ChatGPT available."""
+    target = validate_companion_ui_url(url)
+    target_parts = urlsplit(target)
+    target_origin = f"{target_parts.scheme}://{target_parts.netloc}"
+    for candidate in chatgpt_page.context.pages:
+        try:
+            current = urlsplit(candidate.url)
+            current_origin = f"{current.scheme}://{current.netloc}"
+            if current_origin == target_origin:
+                candidate.goto(target, wait_until="domcontentloaded", timeout=15000)
+                candidate.bring_to_front()
+                return {"success": True, "url": candidate.url, "reused": True}
+        except Exception:
+            continue
+    companion = chatgpt_page.context.new_page()
+    companion.goto(target, wait_until="domcontentloaded", timeout=15000)
+    companion.bring_to_front()
+    return {"success": True, "url": companion.url, "reused": False}
+
 
 def browser_worker():
     """Dedicated thread for all browser operations"""
@@ -61,9 +149,20 @@ def browser_worker():
 
         page = browser_context.pages[0] if browser_context.pages else browser_context.new_page()
 
-        logging.info("🌐 Navigating to ChatGPT...")
-        page.goto("https://chat.openai.com", wait_until="domcontentloaded", timeout=30000)
+        project_url = validate_chatgpt_project_url(CHATGPT_TARGET_URL)
+        logging.info(f"🌐 Navigating to dedicated ChatGPT project: {BOB_CHATGPT_PROJECT_NAME}")
+        page.goto(project_url, wait_until="domcontentloaded", timeout=30000)
         time.sleep(3)
+
+        origin_parts = urlsplit(page.url)
+        origin = f"{origin_parts.scheme}://{origin_parts.netloc}"
+        try:
+            browser_context.grant_permissions(
+                ["clipboard-read", "clipboard-write"],
+                origin=origin,
+            )
+        except Exception as e:
+            logging.warning(f"Could not pre-grant clipboard permissions: {e}")
     except Exception as e:
         startup_error = f"Browser failed to start: {e}"
         logging.error(f"❌ {startup_error}")
@@ -77,18 +176,26 @@ def browser_worker():
                 pass
         return
 
-    # Check if chat interface is ready
+    # Check if the authenticated chat interface is actually usable.
     try:
-        textarea = find_textarea(page, timeout=10)
-        if textarea:
-            is_ready = True
-            logging.info("✅ Chat interface ready!")
-        else:
-            logging.warning("⚠️  Could not find textarea, but continuing...")
-            is_ready = True  # Try anyway
-    except Exception as e:
-        logging.warning(f"⚠️  Initial check failed: {e}, but continuing...")
+        textarea = find_textarea(page, timeout=12)
+        if not textarea:
+            startup_error = (
+                "ChatGPT chat input was not found. The session may need login "
+                "or the ChatGPT UI selectors may have changed."
+            )
+            logging.error(f"❌ {startup_error}")
+            browser_context.close()
+            playwright.stop()
+            return
         is_ready = True
+        logging.info("✅ Chat interface ready!")
+    except Exception as e:
+        startup_error = f"ChatGPT readiness check failed: {e}"
+        logging.error(f"❌ {startup_error}")
+        browser_context.close()
+        playwright.stop()
+        return
 
     # Process tasks from queue
     while True:
@@ -104,8 +211,17 @@ def browser_worker():
                 result = send_message(page, task['prompt'])
                 result_queue.put(result)
 
+            elif task_type == 'cognition_request':
+                fresh = start_new_chat(page)
+                result = send_message(page, task['prompt']) if fresh.get("success") else fresh
+                result_queue.put(result)
+
             elif task_type == 'new_chat':
                 result = start_new_chat(page)
+                result_queue.put(result)
+
+            elif task_type == 'show_ui':
+                result = show_companion_ui(page, task.get('url') or BOB_COMPANION_UI_URL)
                 result_queue.put(result)
 
         except Exception as e:
@@ -121,6 +237,7 @@ def find_textarea(page, timeout=10):
     start_time = time.time()
 
     selectors = [
+        '#prompt-textarea',
         'textarea[placeholder*="Message"]',
         'textarea[placeholder*="message"]',
         'textarea[data-id="root"]',
@@ -143,6 +260,130 @@ def find_textarea(page, timeout=10):
 
     return None
 
+def copy_candidates(scope):
+    """Return de-duplicated visible Copy controls across supported UI locales."""
+    candidates = []
+    selectors = [
+        'button[data-testid*="copy"]',
+        'button[aria-label*="Copy"]',
+        'button[aria-label*="copy"]',
+        'button[aria-label*="Kopiera"]',
+        'button[aria-label*="kopiera"]',
+        'button[title*="Copy"]',
+        'button[title*="copy"]',
+        'button[title*="Kopiera"]',
+        'button[title*="kopiera"]',
+    ]
+    for selector in selectors:
+        try:
+            candidates.extend(scope.locator(selector).all())
+        except Exception:
+            pass
+
+    try:
+        candidates.extend(scope.get_by_role(
+            "button",
+            name=re.compile(r"(copy|kopiera)", re.IGNORECASE),
+        ).all())
+    except Exception:
+        pass
+
+    seen = set()
+    visible = []
+    for candidate in candidates:
+        try:
+            if not candidate.is_visible():
+                continue
+            key = candidate.evaluate("(el) => el.outerHTML")
+        except Exception:
+            continue
+        if key not in seen:
+            seen.add(key)
+            visible.append(candidate)
+    return visible
+
+
+def assistant_count(page):
+    try:
+        return page.locator('[data-message-author-role="assistant"]').count()
+    except Exception:
+        return 0
+
+
+def assistant_copy_candidates(page):
+    """Return the newest assistant turn's message-level Copy control.
+
+    Code blocks can expose their own Copy/Kopiera button while the assistant is
+    still streaming. Prefer ChatGPT's turn-action copy button and exclude
+    controls explicitly labelled as code-copy fallbacks.
+    """
+    try:
+        messages = page.locator('[data-message-author-role="assistant"]')
+        count = messages.count()
+        if count < 1:
+            return []
+        message = messages.nth(count - 1)
+        for xpath in (
+            "xpath=ancestor::article[1]",
+            "xpath=ancestor::*[contains(@data-testid,'conversation-turn')][1]",
+        ):
+            try:
+                container = message.locator(xpath)
+                if not container.count():
+                    continue
+
+                preferred = []
+                try:
+                    preferred = container.locator(
+                        'button[data-testid="copy-turn-action-button"]'
+                    ).all()
+                except Exception:
+                    pass
+                preferred = [
+                    item for item in preferred
+                    if item.is_visible() and item.is_enabled()
+                ]
+                if preferred:
+                    return preferred
+
+                fallbacks = []
+                for candidate in copy_candidates(container):
+                    try:
+                        if not candidate.is_enabled():
+                            continue
+                        label = " ".join(filter(None, [
+                            candidate.get_attribute("aria-label"),
+                            candidate.get_attribute("title"),
+                            candidate.get_attribute("data-testid"),
+                        ])).lower()
+                    except Exception:
+                        label = ""
+                    if "code" in label or "kod" in label:
+                        continue
+                    fallbacks.append(candidate)
+                if fallbacks:
+                    return fallbacks
+            except Exception:
+                pass
+    except Exception:
+        pass
+    return []
+
+
+def wait_for_new_assistant_copy(page, baseline_assistant_count, timeout=180):
+    """Wait for a completed *assistant* turn, not the user's own Copy control."""
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        try:
+            if assistant_count(page) > baseline_assistant_count:
+                if assistant_copy_candidates(page):
+                    return True
+        except Exception:
+            pass
+        time.sleep(0.5)
+    return False
+
+
 def send_message(page, prompt_text):
     """Send message and get response"""
     try:
@@ -157,62 +398,45 @@ def send_message(page, prompt_text):
         textarea.click()
         time.sleep(0.3)
 
-        # Clear and type message
-        textarea.fill("")
-        time.sleep(0.2)
-        textarea.type(prompt_text, delay=20)
+        # Fill the complete prompt atomically. Compiled Bob contexts can be
+        # thousands of characters; per-character typing can exceed Playwright's
+        # action timeout before the message is even submitted.
+        textarea.fill(prompt_text)
         time.sleep(0.5)
+
+        # Track assistant turns before submission. User turns also expose Copy
+        # controls, so a raw page-level Copy count is not sufficient completion
+        # evidence.
+        baseline_assistant_count = assistant_count(page)
 
         # Send
         page.keyboard.press("Enter")
         logging.info("✓ Message sent, waiting for response...")
 
-        time.sleep(3)
+        if CHATGPT_CAPTURE_MODE == "copy":
+            if not wait_for_new_assistant_copy(
+                page,
+                baseline_assistant_count,
+                timeout=CHATGPT_RESPONSE_TIMEOUT_SECONDS,
+            ):
+                logging.error("No completed assistant Copy/Kopiera control appeared before timeout")
+                return {
+                    "success": False,
+                    "error": "Timed out waiting for completed assistant response"
+                }
+            logging.info("✓ Response complete (assistant Copy/Kopiera control visible)")
+        else:
+            # Explicit legacy mode keeps a bounded time-based compatibility path.
+            time.sleep(8)
 
-        # Wait for response completion
-        try:
-            # Wait for stop button to appear
-            page.wait_for_selector(
-                'button[aria-label*="Stop"], button[aria-label*="stop"]',
-                timeout=5000,
-                state='visible'
-            )
-            logging.info("✓ Response started...")
-
-            # Wait for it to disappear (response complete)
-            page.wait_for_selector(
-                'button[aria-label*="Stop"], button[aria-label*="stop"]',
-                timeout=180000,
-                state='hidden'
-            )
-            logging.info("✓ Response complete!")
-        except:
-            logging.warning("Stop button not detected, using time-based wait...")
-            time.sleep(5)
-
-        time.sleep(1.5)
-
-        # Extract response
-        response_text = None
-
-        # Try multiple extraction methods
-        try:
-            messages = page.locator('[data-message-author-role="assistant"]').all()
-            if messages:
-                response_text = messages[-1].inner_text()
-        except:
-            pass
+        # Capture response through the visible Copy action by default.
+        response_text = capture_response(page)
 
         if not response_text:
-            try:
-                articles = page.locator('article').all()
-                if len(articles) >= 2:
-                    response_text = articles[-1].inner_text()
-            except:
-                pass
-
-        if not response_text:
-            return {"success": False, "error": "Could not extract response"}
+            return {
+                "success": False,
+                "error": f"Could not capture response using mode: {CHATGPT_CAPTURE_MODE}"
+            }
 
         logging.info(f"📥 Got response ({len(response_text)} chars)")
 
@@ -226,11 +450,57 @@ def send_message(page, prompt_text):
         logging.error(f"❌ Error: {e}")
         return {"success": False, "error": str(e)}
 
+def capture_response(page):
+    """Capture the last assistant response.
+
+    Default path clicks ChatGPT's visible Copy control and reads the browser
+    clipboard. Direct DOM text extraction exists only as an explicit legacy
+    compatibility mode.
+    """
+    if CHATGPT_CAPTURE_MODE == "copy":
+        candidates = assistant_copy_candidates(page)
+        for candidate in reversed(candidates):
+            try:
+                if not candidate.is_visible():
+                    continue
+                # ChatGPT's floating action toolbar can transiently overlay the
+                # message-level Copy button even after it is visible/enabled.
+                # Force the click on the already-qualified button rather than
+                # failing on pointer-interception geometry.
+                candidate.click(timeout=5000, force=True)
+                time.sleep(0.4)
+                copied = page.evaluate("navigator.clipboard.readText()")
+                if isinstance(copied, str) and copied.strip():
+                    return copied.strip()
+            except Exception as exc:
+                logging.warning(f"Assistant Copy control failed: {exc}")
+                continue
+        logging.error(
+            f"Could not copy newest assistant turn; candidates={len(candidates)}"
+        )
+        return None
+
+    # Explicit compatibility escape hatch only.
+    try:
+        messages = page.locator('[data-message-author-role="assistant"]').all()
+        if messages:
+            return messages[-1].inner_text().strip()
+    except Exception:
+        pass
+    try:
+        articles = page.locator("article").all()
+        if len(articles) >= 2:
+            return articles[-1].inner_text().strip()
+    except Exception:
+        pass
+    return None
+
+
 def start_new_chat(page):
     """Start a new chat"""
     try:
         logging.info("🔄 Starting new chat...")
-        page.goto("https://chat.openai.com", wait_until="domcontentloaded")
+        page.goto(validate_chatgpt_project_url(CHATGPT_TARGET_URL), wait_until="domcontentloaded")
         time.sleep(3)
 
         textarea = find_textarea(page, timeout=10)
@@ -260,13 +530,37 @@ def chat():
 
     # Wait for result (with timeout)
     try:
-        result = result_queue.get(timeout=200)  # 200 second timeout
+        result = result_queue.get(timeout=CHATGPT_RESPONSE_TIMEOUT_SECONDS + 30)
         if result.get('success'):
             return jsonify(result), 200
         else:
             return jsonify(result), 500
     except queue.Empty:
         return jsonify({"success": False, "error": "Request timed out"}), 504
+
+@app.route('/cognition', methods=['POST'])
+def cognition():
+    """Run one stateless cognition request in a fresh ChatGPT conversation."""
+    if not is_ready:
+        return jsonify({"success": False, "error": "Server not ready"}), 503
+
+    data = request.get_json()
+    if not data or 'prompt' not in data:
+        return jsonify({"success": False, "error": "Missing 'prompt' field"}), 400
+
+    prompt = data['prompt']
+    if not isinstance(prompt, str) or not prompt.strip():
+        return jsonify({"success": False, "error": "Prompt must be non-empty string"}), 400
+
+    task_queue.put({'type': 'cognition_request', 'prompt': prompt})
+    try:
+        result = result_queue.get(timeout=CHATGPT_RESPONSE_TIMEOUT_SECONDS + 30)
+        if result.get('success'):
+            return jsonify(result), 200
+        return jsonify(result), 500
+    except queue.Empty:
+        return jsonify({"success": False, "error": "Request timed out"}), 504
+
 
 @app.route('/new-chat', methods=['POST'])
 def new_chat():
@@ -284,6 +578,25 @@ def new_chat():
             return jsonify(result), 500
     except queue.Empty:
         return jsonify({"success": False, "error": "Request timed out"}), 504
+
+@app.route('/show-ui', methods=['POST'])
+def show_ui():
+    """Bring the local Bob companion UI to the front in the managed browser."""
+    if not is_ready:
+        return jsonify({"success": False, "error": "Server not ready"}), 503
+    data = request.get_json(silent=True) or {}
+    target = data.get("url") or BOB_COMPANION_UI_URL
+    try:
+        target = validate_companion_ui_url(target)
+    except ValueError as exc:
+        return jsonify({"success": False, "error": str(exc)}), 400
+    task_queue.put({"type": "show_ui", "url": target})
+    try:
+        result = result_queue.get(timeout=30)
+        return jsonify(result), 200 if result.get("success") else 500
+    except queue.Empty:
+        return jsonify({"success": False, "error": "Request timed out"}), 504
+
 
 @app.route('/health', methods=['GET'])
 def health():
@@ -307,9 +620,15 @@ def status():
         "server": "running",
         "browser_ready": is_ready,
         "profile_path": load_profile_path(),
+        "project_name": BOB_CHATGPT_PROJECT_NAME,
+        "project_url_configured": bool(CHATGPT_TARGET_URL),
+        "capture_mode": CHATGPT_CAPTURE_MODE,
+        "companion_ui_url": BOB_COMPANION_UI_URL,
         "endpoints": {
-            "chat": "POST /chat",
+            "chat": "POST /chat (legacy/stateful continuation)",
+            "cognition": "POST /cognition (fresh chat per request)",
             "new_chat": "POST /new-chat",
+            "show_ui": "POST /show-ui",
             "health": "GET /health",
             "status": "GET /status"
         }
@@ -344,6 +663,7 @@ if __name__ == '__main__':
     print("="*60)
     print("\nEndpoints:")
     print("  POST http://localhost:5001/chat")
+    print("  POST http://localhost:5001/cognition")
     print("  POST http://localhost:5001/new-chat")
     print("  GET  http://localhost:5001/health")
     print("\nExample:")
@@ -353,7 +673,9 @@ if __name__ == '__main__':
     print("\n" + "="*60 + "\n")
 
     try:
-        app.run(host='0.0.0.0', port=5001, debug=False, threaded=True)
+        host = os.environ.get("CHATGPT_BRIDGE_HOST", "127.0.0.1").strip() or "127.0.0.1"
+        port = int(os.environ.get("CHATGPT_BRIDGE_PORT", "5001"))
+        app.run(host=host, port=port, debug=False, threaded=True)
     except KeyboardInterrupt:
         print("\n\n🛑 Shutting down...")
         task_queue.put(None)  # Signal shutdown

@@ -1,0 +1,45 @@
+{
+  "schema": "BOB_WORKSPACE_V1",
+  "project": {
+    "name": "Signal Lab",
+    "code": "SL"
+  },
+  "github": {
+    "repository": "emilmichaelfredrikhansson-bit/signal-lab-pro",
+    "repository_id": 1306946195,
+    "default_branch": "main"
+  },
+  "context": {
+    "entry_documents": [
+      "CURRENT_WORK.md",
+      "docs/SL_DEVELOPMENT_TRACKS.md",
+      "CURRENT_WORK_CORE.md",
+      "CURRENT_WORK_ML.md",
+      "AGENTS.md",
+      "PROJECT_IDENTITY.md"
+    ]
+  },
+  "providers": {
+    "supabase": {
+      "project_id": "ttycbqaueeaedcrtcpuw",
+      "organization_id": "wiibxuccedkxrvgruccq"
+    },
+    "hugging_face": {
+      "namespace": "Reallothesecond",
+      "account_id": "6a986fdd2e846637191b1c5e",
+      "identity_anchor_bucket": "Reallothesecond/signal-lab-storage"
+    },
+    "cloudflare": {
+      "account_id_env": "CLOUDFLARE_ACCOUNT_ID",
+      "identity_anchor_r2_bucket": "signal-lab-snapshots-prod",
+      "worker_script": "signal-lab-mission-control-preview"
+    }
+  },
+  "effects": {
+    "write_branch": true,
+    "open_pr": true,
+    "mutate_production_state": false,
+    "material_spend": false,
+    "deploy": false
+  }
+}
