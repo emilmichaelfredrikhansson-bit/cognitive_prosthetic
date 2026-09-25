@@ -19,6 +19,8 @@
 - Recursive self-improvement canon: `docs/BOB_RECURSIVE_SELF_IMPROVEMENT_ARCHITECTURE.md`
 - Knowledge Fabric canon: `docs/BOB_KNOWLEDGE_FABRIC_ARCHITECTURE.md`
 - Bob protocol: `docs/BOB_PROTOCOL_V1.md`
+- Effect authority: `docs/BOB_EFFECT_AUTHORITY_V1.md`
+- Stateless module runtime: `docs/BOB_STATELESS_MODULE_RUNTIME_V1.md`
 - Manual relay: `docs/BOB_MANUAL_RELAY_V1.md`
 - ChatGPT Project instructions: `docs/BOB_CHATGPT_PROJECT_INSTRUCTIONS.md`
 
@@ -556,48 +558,47 @@ The dedicated ChatGPT Project isolation tranche was then reconciled from its bra
 The first executable module graph + Context Compiler + fresh-cognition path is landed and its basic live `module-turn -> fresh ChatGPT -> GitHub re-ground -> BOB.DONE` path has been proven on the operator PC at exact earlier commit `008728c82138b6abb6ddfa5fe7e42d4b63c43242`.
 
 Remaining qualification before the stateless vertical can be considered closed:
-- reconciled current-head deterministic verification is now **119/119 PASS** after transient-limit/continuation hardening plus Windows supervisor persistence hardening;
-- Bob-owned `BOB.READ -> BOB.RESULT -> recompile -> second fresh cognition` is now **LIVE GREEN**;
-- approval-bound effect staging/execution/verified read-back is **LIVE GREEN**, but the post-effect fresh continuation is still blocked by the observed transient ChatGPT request-limit episode;
-- once ChatGPT accepts requests again, qualify the hardened path with a **distinct** benign approval-bound effect; if its post-effect cognition is transiently blocked, resume via its continuation ID without replaying that effect;
-- then use the oversized runtime module as the first end-to-end self-hosting architecture-repair canary.
+- current deterministic verification after the architecture split is **122/122 PASS**, `py_compile` PASS and `git diff --check` PASS;
+- Bob-owned `BOB.READ -> BOB.RESULT -> recompile -> second fresh cognition` is **LIVE GREEN**;
+- approval-bound effect staging/execution/verified read-back is **LIVE GREEN**, but one clean post-effect fresh continuation still remains to be live-qualified after the observed transient ChatGPT request-limit episode;
+- the former oversized runtime monolith has been manually decomposed into bounded runtime, effect-authority and stateless-module-runtime modules without changing the public `BobRuntime` API or widening authority;
+- this local repair is a **reference implementation**, not a self-hosting proof. When cognition is available again, run the genuine architecture-repair canary from pre-repair commit `c5102a9aacce349c9e5aded950daaa8c3ce825b1` in an isolated worktree/branch and require normal verification/approval before any integration.
 
-Current deterministic `BOB_TOKEN_ESTIMATE_V1` measurement on branch content after the new canon:
+Current deterministic `BOB_TOKEN_ESTIMATE_V1` measurement on the repaired working tree:
 
 ```text
+BOB_RUNTIME_ORCHESTRATION 12,341   compliant (2,659 tokens headroom)
+BOB_EFFECT_AUTHORITY       5,247   compliant
+BOB_STATELESS_MODULE_RUNTIME 7,228 compliant
 BOB_PROTOCOL               4,169   compliant
-BOB_MODULE_COGNITION      12,856   compliant (2,144 tokens headroom)
-BOB_RUNTIME_ORCHESTRATION 22,628   MIGRATION_REQUIRED
+BOB_MODULE_COGNITION      13,062   compliant (1,938 tokens headroom)
 BOB_EXECUTION_LEDGER      13,041   compliant
 BOB_WORKTREE_COORDINATION  9,992   compliant
 BOB_PROCESS_SUPERVISION   13,661   compliant (1,339 tokens headroom)
 ```
 
-`BOB_MODULE_COGNITION` was split before committing the continuation hardening: runtime-oriented tests moved to `tests/test_module_runtime.py` and are owned by `BOB_RUNTIME_ORCHESTRATION`. The cognition module is 12,856 / 15,000 with useful headroom; the already-oversized runtime module remains explicitly `MIGRATION_REQUIRED` at 22,628 tokens. `BOB_PROCESS_SUPERVISION` is 13,661 / 15,000 after the verified Windows persistence fallback.
-
-The graph still has explicit `coverage=PARTIAL`. Recursive self-development and Knowledge Fabric are canonical architecture/roadmap now, but their runtime modules, durable queue, worktree/lease machinery, knowledge store and retrieval pipeline are **not yet implemented**.
+The package now has a regression test that loads the real `.bob/module_graph.json`, verifies unique path ownership and asserts every declared module remains <=15,000 measured tokens. The graph still has explicit `coverage=PARTIAL`. Recursive self-development and Knowledge Fabric are canonical architecture/roadmap now, but their durable queue, background lifecycle and knowledge-store/retrieval runtime remain **not yet implemented**.
 
 ## NEXT_INTENDED_WORK
 
 1. Do not probe cognition repeatedly while ChatGPT is request-limited. Once requests are accepted again, stage a **distinct benign cleanup effect** (natural candidate: remove the approved canary marker), obtain explicit operator approval, and live-prove post-effect fresh continuation.
 2. If that fresh continuation hits a transient limit, verify `CONTINUATION_BLOCKED -> resume` works without a second Git effect; if it completes directly, record the normal green continuation path.
-3. Then use `BOB_RUNTIME_ORCHESTRATION` (>15k) as the first architecture-repair canary and return all affected target modules to <=15k without authority expansion.
-4. Split/reorganize `BOB_MODULE_COGNITION` before meaningful additional responsibility if projected growth would cross 15k.
-5. Make module selection/Context Compiler routing the default behind ordinary Bob chat.
-6. Add cognition-contract synchronization: runtime/preflight should detect stale/missing `BOB_COGNITION_CONTRACT_VERSION` in the configured Bob Project instructions and fail closed or require re-sync.
-7. Implement Phase 3.75 foundations in this order: durable self-development queue/state -> isolated selfdev worktree/branch lifecycle -> semantic leases + interactive pre-emption -> checkpoint/revert/discard -> separate promotion gate.
-8. Implement Knowledge Fabric V1: item schema/provenance/freshness/maturity -> first distilled Bob failures/patterns/reference items -> bounded retrieval into Context Compiler -> retrieval/effectiveness metrics.
-9. Prove one daytime unattended multi-cycle canary and one PC restart/resume canary, producing a concise operator digest rather than background chatter.
-10. Product-vision/bootstrap, richer durable result distillation and reusable module/template extraction remain coupled follow-up work.
-11. DigitalOcean/mobile persistence remains V2 and is not a prerequisite.
+3. Run the genuine self-hosting architecture-repair canary from pre-repair commit `c5102a9aacce349c9e5aded950daaa8c3ce825b1` in an isolated run/worktree branch. Bob must diagnose and repair the >15k runtime module from source reality; compare the result against invariants/tests, not against an exact textual solution, and do not promote automatically.
+4. Make module selection/Context Compiler routing the default behind ordinary Bob chat.
+5. Add cognition-contract synchronization: runtime/preflight should detect stale/missing `BOB_COGNITION_CONTRACT_VERSION` in the configured Bob Project instructions and fail closed or require re-sync.
+6. Implement Phase 3.75 foundations in this order: durable self-development queue/state -> isolated selfdev worktree/branch lifecycle -> semantic leases + interactive pre-emption -> checkpoint/revert/discard -> separate promotion gate.
+7. Implement Knowledge Fabric V1: item schema/provenance/freshness/maturity -> first distilled Bob failures/patterns/reference items -> bounded retrieval into Context Compiler -> retrieval/effectiveness metrics.
+8. Prove one daytime unattended multi-cycle canary and one PC restart/resume canary, producing a concise operator digest rather than background chatter.
+9. Product-vision/bootstrap, richer durable result distillation and reusable module/template extraction remain coupled follow-up work.
+10. DigitalOcean/mobile persistence remains V2 and is not a prerequisite.
 
 ## OPEN_FINDINGS
 
 - The module graph has explicit `coverage=PARTIAL`; it is not yet a complete semantic map of Bob.
 - `BOB_TOKEN_ESTIMATE_V1` is deterministic `ceil(UTF-8 bytes / 3)`, not ChatGPT's exact tokenizer.
-- `BOB_MODULE_COGNITION` is currently about **12,856 / 15,000** measured tokens after moving runtime-oriented stateless-continuation tests into the runtime module.
-- `BOB_RUNTIME_ORCHESTRATION` is about **22,628 / 15,000** and remains the intended architecture-repair canary; the increase is explicit rather than hiding runtime responsibility inside the cognition module.
-- `BOB_PROCESS_SUPERVISION` is about **13,661 / 15,000** after adding verified Windows replace-denial persistence fallback and recovery tests.
+- Every currently declared module is <=15,000 measured tokens. The largest is `BOB_PROCESS_SUPERVISION` at **13,661**, followed by `BOB_MODULE_COGNITION` at **13,062** and `BOB_EXECUTION_LEDGER` at **13,041**.
+- The former oversized `BOB_RUNTIME_ORCHESTRATION` is now **12,341 / 15,000** after extracting `BOB_EFFECT_AUTHORITY` (**5,247**) and `BOB_STATELESS_MODULE_RUNTIME` (**7,228**).
+- This repaired branch is a deterministic reference implementation, not evidence that Bob cognition can independently perform the same architecture repair. The live self-hosting proof remains pending on an isolated branch rooted at pre-repair commit `c5102a9aacce349c9e5aded950daaa8c3ce825b1`.
 - Normal module effects remain one effect per fresh cognition request, manifest-owned path/ref constrained; architecture-repair scope is wider but still approval/authority/read-back bounded.
 - Ordinary `/bob/turn` is still stateful. Statelessness is executable through `/bob/module-turn`, not yet automatic for every operator message.
 - The live operator-PC proof now covers module graph, direct DONE, and a full Bob-owned READ continuation through a second fresh cognition. Approval-bound effect execution + verified GitHub after-state is also live-proven; only its post-effect fresh cognition remains unclosed because ChatGPT stopped materializing the submitted turn during a transient request-limit episode.
@@ -612,7 +613,7 @@ The graph still has explicit `coverage=PARTIAL`. Recursive self-development and 
 
 ## FIRST_ACTION
 
-On the reconciled working branch, deterministic verification and Local Companion restart are complete. Do **not** send repeated cognition while ChatGPT is request-limited. When requests are accepted again, stage a **distinct benign cleanup effect** and require explicit operator approval; use that effect to live-qualify post-effect continuation / `CONTINUATION_BLOCKED` resume semantics without replaying the already-verified historical effect. Then use the >15k runtime module as the self-hosting repair canary before beginning Phase 3.75 runtime implementation.
+On the repaired working branch, deterministic architecture qualification is complete with every declared module <=15k and full suite green. Do **not** send repeated cognition while ChatGPT is request-limited. When requests are accepted again: first live-qualify one distinct benign post-effect continuation with explicit operator approval; then run the genuine self-hosting architecture-repair canary in an isolated worktree rooted at pre-repair commit `c5102a9aacce349c9e5aded950daaa8c3ce825b1`. No candidate may promote itself to canonical.
 
 ## HARD_BLOCKERS
 

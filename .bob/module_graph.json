@@ -6,29 +6,82 @@
   "modules": [
     {
       "id": "BOB_RUNTIME_ORCHESTRATION",
-      "purpose": "Coordinate Bob workspace turns, deterministic reads/effects, approvals and cognition continuation.",
+      "purpose": "Coordinate workspace identity, adapters, deterministic reads, legacy/manual relay and composition of bounded runtime capabilities.",
       "source_paths": [
         "bob/driver.py",
         "bob/workspaces.py"
       ],
       "test_paths": [
         "tests/test_driver.py",
-        "tests/test_workspaces.py",
-        "tests/test_module_runtime.py"
+        "tests/test_workspaces.py"
       ],
       "contract_paths": [],
+      "producers": [
+        "BOB_PROTOCOL",
+        "BOB_EFFECT_AUTHORITY",
+        "BOB_STATELESS_MODULE_RUNTIME"
+      ],
+      "consumers": [],
+      "invariants": [
+        "Workspace identity/authority remains fail-closed.",
+        "Runtime composition does not widen effect authority.",
+        "Deterministic reads and provider routing remain explicit."
+      ],
+      "status": "WORKING"
+    },
+    {
+      "id": "BOB_EFFECT_AUTHORITY",
+      "purpose": "Bind, preview, approve, execute and verify external effects without allowing cognition to widen authority.",
+      "source_paths": [
+        "bob/effect_runtime.py"
+      ],
+      "test_paths": [
+        "tests/test_effect_runtime.py"
+      ],
+      "contract_paths": [
+        "docs/BOB_EFFECT_AUTHORITY_V1.md"
+      ],
       "producers": [
         "BOB_PROTOCOL"
       ],
       "consumers": [
+        "BOB_RUNTIME_ORCHESTRATION",
+        "BOB_STATELESS_MODULE_RUNTIME"
+      ],
+      "invariants": [
+        "Effects remain approval-bound to exact workspace and staged provider state.",
+        "Changed staged reality invalidates approval.",
+        "Verified effects are never replayed merely to recover later cognition."
+      ],
+      "status": "WORKING"
+    },
+    {
+      "id": "BOB_STATELESS_MODULE_RUNTIME",
+      "purpose": "Drive bounded module work through fresh cognition, durable READ continuation, approval-bound effects and architecture repair.",
+      "source_paths": [
+        "bob/module_runtime.py"
+      ],
+      "test_paths": [
+        "tests/test_module_runtime.py"
+      ],
+      "contract_paths": [
+        "docs/BOB_STATELESS_MODULE_RUNTIME_V1.md"
+      ],
+      "producers": [
+        "BOB_PROTOCOL",
+        "BOB_EFFECT_AUTHORITY"
+      ],
+      "consumers": [
+        "BOB_RUNTIME_ORCHESTRATION",
         "BOB_MODULE_COGNITION"
       ],
       "invariants": [
-        "External effects remain approval-bound and verified.",
-        "Workspace identity/authority remains fail-closed.",
-        "Legacy oversize must be decomposed before this module can be considered compliant."
+        "Every module cognition step is fresh.",
+        "READ results recompile into durable continuation context.",
+        "Post-effect cognition resume cannot replay an already-verified effect.",
+        "Oversized modules cannot claim DONE before measured cap compliance."
       ],
-      "status": "MIGRATION_REQUIRED"
+      "status": "WORKING"
     },
     {
       "id": "BOB_PROTOCOL",
@@ -44,7 +97,9 @@
       ],
       "producers": [],
       "consumers": [
-        "BOB_RUNTIME_ORCHESTRATION"
+        "BOB_RUNTIME_ORCHESTRATION",
+        "BOB_EFFECT_AUTHORITY",
+        "BOB_STATELESS_MODULE_RUNTIME"
       ],
       "invariants": [
         "Protocol messages never expand authority."
@@ -67,7 +122,7 @@
         "docs/BOB_MODULE_COGNITION_ARCHITECTURE.md"
       ],
       "producers": [
-        "BOB_RUNTIME_ORCHESTRATION"
+        "BOB_STATELESS_MODULE_RUNTIME"
       ],
       "consumers": [],
       "invariants": [

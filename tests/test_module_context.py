@@ -119,7 +119,20 @@ class ModuleGraphTests(unittest.TestCase):
         self.assertEqual(estimate_tokens("abcd"), 2)
         self.assertEqual(estimate_tokens("abc"), estimate_tokens("abc"))
 
-
+    def test_packaged_module_graph_is_path_unique_and_bounded(self):
+        root = Path(__file__).resolve().parents[1]
+        data = json.loads((root / ".bob" / "module_graph.json").read_text(encoding="utf-8"))
+        graph = ModuleGraph.from_dict(data)
+        for module in graph.modules:
+            measured = sum(
+                estimate_tokens((root / path).read_text(encoding="utf-8"))
+                for path in module.owned_paths
+            )
+            self.assertLessEqual(
+                measured,
+                15_000,
+                f"{module.module_id} exceeds 15k: {measured}",
+            )
 
 
 if __name__ == "__main__":
