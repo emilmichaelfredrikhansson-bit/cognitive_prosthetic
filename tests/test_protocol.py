@@ -51,3 +51,4 @@ class ProtocolTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+# BOB_EFFECT_CANARY_20260925
