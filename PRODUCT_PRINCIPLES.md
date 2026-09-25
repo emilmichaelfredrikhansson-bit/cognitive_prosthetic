@@ -294,6 +294,54 @@ Impact checking belongs inside ordinary cognition by default. A separate review/
 
 The detailed canon is `docs/BOB_MODULE_COGNITION_ARCHITECTURE.md`.
 
+## 17. Recursive improvement must compound cognition, not merely activity
+
+The purpose of Bob self-development is to raise the starting capability of future cognition.
+
+A successful cognition cycle should leave behind durable value such as:
+
+- verified knowledge;
+- regression tests;
+- failure signatures;
+- reusable patterns;
+- skills/playbooks;
+- reference implementations;
+- improved module/context structure;
+- better Context Compiler selection;
+- stronger deterministic verification.
+
+The long-term goal is:
+
+> **Every verified solution should raise the floor for future relevant cognition.**
+
+Bob should therefore convert transient model work into permanent cognitive infrastructure rather than repeatedly rediscovering the same lessons.
+
+A useful shorthand is:
+
+> **No good thought should need to be thought from zero twice.**
+
+The canonical knowledge architecture is `docs/BOB_KNOWLEDGE_FABRIC_ARCHITECTURE.md`.
+
+A larger durable knowledge base must not automatically mean larger prompts. The desired direction is more external knowledge plus better selection into the same bounded cognition envelope.
+
+## 18. Unattended self-development is background work with stronger boundaries
+
+Bob should eventually be able to improve Bob quietly while the operator's computer is awake and the operator is doing unrelated work.
+
+The operator should not need to supervise continuous self-development chatter. Interactive work has priority; background self-development yields at safe checkpoints.
+
+Background recursive work must use isolated mutable state such as a dedicated worktree/branch and explicit module/work leases. It may explore, test, checkpoint and discard candidates inside granted authority, but promotion into canonical Bob state remains a separate authority boundary.
+
+The safety target is mechanical, not behavioral:
+
+> **Bob should be able to work unattended all day while remaining incapable of destroying the canonical project, even if cognition makes the worst plausible decision.**
+
+Catastrophic capabilities such as repository deletion, protected-branch force push, repository/ruleset administration, secrets changes and unauthorized production mutation should be absent from the normal self-development capability surface and independently denied by least-privilege provider credentials where possible.
+
+Recursive capability may compound. Recursive authority may not.
+
+The detailed runtime/safety canon is `docs/BOB_RECURSIVE_SELF_IMPROVEMENT_ARCHITECTURE.md`.
+
 ## Canonical summary
 
 > **Bob is a long-lived project work engine with a conversational interface.**
@@ -305,3 +353,5 @@ The detailed canon is `docs/BOB_MODULE_COGNITION_ARCHITECTURE.md`.
 > **Bob is designed to drive Signal Lab-scale projects or larger with less continuity, tooling and coordination friction than ordinary single-chat work.**
 >
 > **Power should increase behind the interface, not leak through it.**
+>
+> **Bob should turn verified cognition into reusable cognitive infrastructure while unattended capability remains mechanically unable to expand its own authority or destroy canonical project state.**
