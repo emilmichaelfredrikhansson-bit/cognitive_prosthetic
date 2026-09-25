@@ -379,6 +379,8 @@ ChatGPT (background tab in the same managed Chromium context)
 
 The local launcher starts both services, waits for health, then asks the bridge to bring the Bob tab to the front. The ChatGPT tab stays available for the cognition loop. Browser profile/session state is machine-local and is never repository authority.
 
+ChatGPT transport capacity is distinct from repository execution capacity. Repository coordinators may keep multiple independent runs active, but V1 browser writes cross one serialized Playwright worker. A transport-level traffic controller paces fresh-chat creation (default 10 s minimum plus 0..3 s jitter), applies bounded exponential cooldown after sanitized rate/usage-limit signals (default 15/30/60/120 s), and never turns a transient limit into an automatic cognition retry. Shell/provider/repository work remains free to continue while cognition waits. Client/bridge timeout budgets must cover both the model response budget and the maximum configured traffic-control wait.
+
 ### V2 — Persistent Remote
 
 After V1 is proven useful, the same replaceable cognition transport may move to DigitalOcean so the operator PC no longer needs to remain online and mobile can use the same Bob product. Remote access must add an authenticated transport boundary and must not expand workspace authority.

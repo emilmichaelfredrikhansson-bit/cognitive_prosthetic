@@ -57,7 +57,7 @@ class CognitionPolicyTests(unittest.TestCase):
         post.assert_called_once_with(
             "http://127.0.0.1:5001/cognition",
             json={"prompt": "bounded problem"},
-            timeout=420,
+            timeout=600,
         )
 
 

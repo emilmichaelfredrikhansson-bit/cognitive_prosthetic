@@ -172,6 +172,17 @@ Approval-bound effect canary / transient-limit finding on 2026-09-25:
 - read-only `/bob/execution` is HTTP 200 with **0 active runs / 0 integration queue**.
 - authoritative live branch measurements from `POST /bob/module-graph` after the persistence hardening are `BOB_PROTOCOL=4,169`, `BOB_MODULE_COGNITION=12,856`, `BOB_RUNTIME_ORCHESTRATION=22,628 MIGRATION_REQUIRED`, `BOB_EXECUTION_LEDGER=13,041`, `BOB_WORKTREE_COORDINATION=9,992`, `BOB_PROCESS_SUPERVISION=13,661`; all non-migration modules remain <=15k.
 
+ChatGPT traffic-control hardening on 2026-09-25:
+- V1 already had one serialized Playwright browser worker; the missing control was pacing/cooldown at that shared ChatGPT choke point, not another repository-worker cap;
+- `bob/chatgpt_traffic.py` now enforces one fail-closed ChatGPT write lane, fresh-chat spacing of at least 10 s plus 0..3 s jitter, and sanitized transient-limit cooldown of 15 -> 30 -> 60 -> 120 s plus jitter;
+- `RATE_LIMITED` / `USAGE_LIMIT` still fail the current cognition request and are never transparently retried; the cooldown applies to later ChatGPT writes while repository/Shell/provider work remains independent;
+- bridge request telemetry records sanitized pacing/backoff metadata, and `GET /status` exposes controller state without prompt/response content;
+- Local Companion validates that the bridge client timeout covers response time plus worst configured traffic-control wait; the default client budget is now 600 s for a 360 s response budget;
+- deterministic verification after the traffic-control change is **143/143 PASS**, focused traffic/Local Companion **25/25 PASS**, `py_compile` PASS and `git diff --check` PASS;
+- live two-request `/new-chat` qualification proved pacing: request 2 arrived only 3.313 s after the previous fresh-chat attempt, Bob inserted 7.095 s of wait (with 0.408 s jitter) and both starts completed successfully;
+- a subsequent live cognition canary began with a 19.140 s fresh-chat gap and zero cooldown, submitted the prompt, but still produced `assistant=0`, `author_roles=[]`, `turn_copy=0`, `conversation_turn=0` for >3 minutes with no detected `RATE_LIMITED`/`USAGE_LIMIT` surface. The canary was stopped by clean supervisor restart; it had no effects;
+- therefore fresh-chat burst pressure remains a plausible contributor to transient limits, but **it is not a sufficient explanation for the separate no-conversation-turn stall**. Do not collapse those failure classes. The next transport diagnostic should verify that submission creates a user/conversation turn within a short bounded interval and surface a distinct sanitized submission failure when it does not.
+
 Remaining work / boundaries:
 - full post-effect fresh continuation still needs one clean live completion after ChatGPT is accepting requests again; **do not replay the already-verified canary effect merely to recover cognition**. A distinct benign cleanup effect (for example removing the canary marker) can be separately staged/approved to qualify the hardened continuation path;
 - SL/AB obtain independent repo coordinators only after their local repo paths are explicitly configured (for example through repository bindings); they do not consume Bob's slots;

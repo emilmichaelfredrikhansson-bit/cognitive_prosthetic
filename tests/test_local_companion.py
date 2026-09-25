@@ -31,7 +31,10 @@ class LocalCompanionTests(unittest.TestCase):
             self.assertEqual(env["BOB_COMPANION_UI_URL"], "http://127.0.0.1:5002/")
             self.assertEqual(env["CHATGPT_CAPTURE_MODE"], "copy")
             self.assertEqual(env["CHATGPT_RESPONSE_TIMEOUT_SECONDS"], "360")
-            self.assertEqual(env["CHATGPT_BRIDGE_TIMEOUT_SECONDS"], "420")
+            self.assertEqual(env["CHATGPT_BRIDGE_TIMEOUT_SECONDS"], "600")
+            self.assertEqual(env["CHATGPT_FRESH_CHAT_MIN_INTERVAL_SECONDS"], "10")
+            self.assertEqual(env["CHATGPT_TRAFFIC_JITTER_SECONDS"], "3")
+            self.assertEqual(env["CHATGPT_RATE_LIMIT_BACKOFF_SECONDS"], "15,30,60,120")
             self.assertEqual(env["BOB_MAX_PARALLEL_RUNS_PER_REPOSITORY"], "3")
             self.assertEqual(env["BOB_CANONICAL_REF"], "feat/bob-core-v1")
             self.assertTrue(env["BOB_PROCESS_SUPERVISOR_PATH"].endswith("process_supervisor.json"))
@@ -89,6 +92,16 @@ class LocalCompanionTests(unittest.TestCase):
 
     def test_response_timeout_is_bounded_and_bridge_has_headroom(self):
         self.assertEqual(chatgpt_api_server.parse_timeout_seconds("360"), 360)
+        self.assertEqual(
+            chatgpt_api_server.parse_nonnegative_seconds(
+                "10", default=5, name="TEST_DELAY"
+            ),
+            10.0,
+        )
+        self.assertEqual(
+            chatgpt_api_server.parse_backoff_seconds("15,30,60,120"),
+            (15.0, 30.0, 60.0, 120.0),
+        )
         with self.assertRaises(RuntimeError):
             chatgpt_api_server.parse_timeout_seconds("29")
         with self.assertRaises(RuntimeError):
@@ -99,6 +112,17 @@ class LocalCompanionTests(unittest.TestCase):
             clear=False,
         ):
             self.assertEqual(ChatGPTBridge().timeout, 420)
+
+    def test_launcher_rejects_bridge_timeout_smaller_than_traffic_budget(self):
+        env = {
+            "CHATGPT_RESPONSE_TIMEOUT_SECONDS": "360",
+            "CHATGPT_BRIDGE_TIMEOUT_SECONDS": "420",
+            "CHATGPT_FRESH_CHAT_MIN_INTERVAL_SECONDS": "10",
+            "CHATGPT_TRAFFIC_JITTER_SECONDS": "3",
+            "CHATGPT_RATE_LIMIT_BACKOFF_SECONDS": "15,30,60,120",
+        }
+        with self.assertRaisesRegex(RuntimeError, "traffic-control budget"):
+            bob_local.assert_chatgpt_traffic_budget(env)
 
     def test_single_instance_gate_rejects_occupied_runtime_port(self):
         env = {

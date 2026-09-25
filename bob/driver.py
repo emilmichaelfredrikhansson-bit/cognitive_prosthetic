@@ -22,7 +22,7 @@ from .workspaces import Workspace, WorkspaceRegistry
 class ChatGPTBridge:
     def __init__(self, base_url: str | None = None, timeout: int | None = None):
         self.base_url = (base_url or os.environ.get("CHATGPT_BRIDGE_URL") or "http://127.0.0.1:5001").rstrip("/")
-        self.timeout = timeout or int(os.environ.get("CHATGPT_BRIDGE_TIMEOUT_SECONDS", "420"))
+        self.timeout = timeout or int(os.environ.get("CHATGPT_BRIDGE_TIMEOUT_SECONDS", "600"))
         self._lock = threading.Lock()
 
     @staticmethod
@@ -70,7 +70,7 @@ class ChatGPTBridge:
 
     def new_chat(self) -> None:
         with self._lock:
-            response = requests.post(self.base_url + "/new-chat", json={}, timeout=30)
+            response = requests.post(self.base_url + "/new-chat", json={}, timeout=self.timeout)
             response.raise_for_status()
 
 

@@ -16,6 +16,7 @@ import sys
 import uuid
 from urllib.parse import urlsplit
 
+from bob.chatgpt_traffic import ChatGPTTrafficController
 from profile_config import load_profile_path
 
 # Windows/remote shells may inherit a legacy code page such as cp1252. Bob's
@@ -47,8 +48,58 @@ def parse_timeout_seconds(value, default=360):
         raise RuntimeError("CHATGPT_RESPONSE_TIMEOUT_SECONDS must be between 30 and 900")
     return timeout
 
+
+def parse_nonnegative_seconds(value, *, default, name, maximum=600.0):
+    raw = str(value or "").strip()
+    if not raw:
+        return float(default)
+    try:
+        seconds = float(raw)
+    except ValueError as exc:
+        raise RuntimeError(f"{name} must be numeric") from exc
+    if not 0 <= seconds <= maximum:
+        raise RuntimeError(f"{name} must be between 0 and {maximum:g}")
+    return seconds
+
+
+def parse_backoff_seconds(value, default=(15.0, 30.0, 60.0, 120.0)):
+    raw = str(value or "").strip()
+    if not raw:
+        return tuple(default)
+    try:
+        values = tuple(float(part.strip()) for part in raw.split(",") if part.strip())
+    except ValueError as exc:
+        raise RuntimeError("CHATGPT_RATE_LIMIT_BACKOFF_SECONDS must be comma-separated numbers") from exc
+    if not values or any(item <= 0 or item > 600 for item in values):
+        raise RuntimeError("CHATGPT_RATE_LIMIT_BACKOFF_SECONDS values must be within 0..600")
+    if tuple(sorted(values)) != values:
+        raise RuntimeError("CHATGPT_RATE_LIMIT_BACKOFF_SECONDS must be non-decreasing")
+    return values
+
+
 CHATGPT_RESPONSE_TIMEOUT_SECONDS = parse_timeout_seconds(
     os.environ.get("CHATGPT_RESPONSE_TIMEOUT_SECONDS")
+)
+CHATGPT_FRESH_CHAT_MIN_INTERVAL_SECONDS = parse_nonnegative_seconds(
+    os.environ.get("CHATGPT_FRESH_CHAT_MIN_INTERVAL_SECONDS"),
+    default=10.0,
+    name="CHATGPT_FRESH_CHAT_MIN_INTERVAL_SECONDS",
+)
+CHATGPT_TRAFFIC_JITTER_SECONDS = parse_nonnegative_seconds(
+    os.environ.get("CHATGPT_TRAFFIC_JITTER_SECONDS"),
+    default=3.0,
+    name="CHATGPT_TRAFFIC_JITTER_SECONDS",
+)
+CHATGPT_RATE_LIMIT_BACKOFF_SECONDS = parse_backoff_seconds(
+    os.environ.get("CHATGPT_RATE_LIMIT_BACKOFF_SECONDS")
+)
+chatgpt_traffic = ChatGPTTrafficController(
+    fresh_chat_min_interval_seconds=CHATGPT_FRESH_CHAT_MIN_INTERVAL_SECONDS,
+    jitter_seconds=CHATGPT_TRAFFIC_JITTER_SECONDS,
+    backoff_seconds=CHATGPT_RATE_LIMIT_BACKOFF_SECONDS,
+)
+CHATGPT_TRAFFIC_TIMEOUT_HEADROOM_SECONDS = int(
+    chatgpt_traffic.max_single_task_wait_seconds + 30
 )
 if CHATGPT_CAPTURE_MODE not in {"copy", "legacy_dom"}:
     raise RuntimeError("CHATGPT_CAPTURE_MODE must be 'copy' or 'legacy_dom'")
@@ -112,6 +163,7 @@ def make_browser_task(task_type, *, request_id=None, tags=None, **payload):
             "finished_at": None,
             "tags": dict(tags or {}),
             "error": None,
+            "traffic": {},
         }
         _prune_request_registry_locked()
     task = {
@@ -140,6 +192,21 @@ def update_browser_request(task, state, *, error=None):
         if error is not None:
             item["error"] = str(error)
         _prune_request_registry_locked()
+
+
+def update_browser_request_traffic(task, metadata):
+    if not metadata:
+        return
+    request_id = task.get("_request_id")
+    if not request_id:
+        return
+    with request_registry_lock:
+        item = request_registry.get(request_id)
+        if item is None:
+            return
+        traffic = dict(item.get("traffic") or {})
+        traffic.update(dict(metadata))
+        item["traffic"] = traffic
 
 
 def deliver_browser_result(task, result):
@@ -395,9 +462,11 @@ def execute_browser_task(page, task):
     if task_type == 'send_message':
         return send_message(page, task['prompt'])
     if task_type == 'cognition_request':
+        update_browser_request_traffic(task, chatgpt_traffic.before_fresh_chat())
         fresh = start_new_chat(page)
         return send_message(page, task['prompt']) if fresh.get("success") else fresh
     if task_type == 'new_chat':
+        update_browser_request_traffic(task, chatgpt_traffic.before_fresh_chat())
         return start_new_chat(page)
     if task_type == 'show_ui':
         return show_companion_ui(page, task.get('url') or BOB_COMPANION_UI_URL)
@@ -456,6 +525,19 @@ def browser_worker():
                 break
 
             update_browser_request(task, "RUNNING")
+            task_type = task.get("type")
+            try:
+                update_browser_request_traffic(
+                    task,
+                    chatgpt_traffic.begin_task(task_type),
+                )
+            except Exception as exc:
+                deliver_browser_result(
+                    task,
+                    {"success": False, "error": f"ChatGPT traffic control failed: {exc}"},
+                )
+                continue
+
             result = None
             for attempt in range(2):
                 if page is None or not is_ready:
@@ -515,6 +597,10 @@ def browser_worker():
                     continue
                 break
 
+            update_browser_request_traffic(
+                task,
+                chatgpt_traffic.finish_task(task_type, result),
+            )
             deliver_browser_result(task, result)
     except Exception as exc:
         set_browser_state(False, f"browser worker failed: {exc}")
@@ -932,7 +1018,7 @@ def chat():
                 for key in ("run_id", "cognition_id")
                 if data.get(key) not in (None, "")
             },
-            timeout=CHATGPT_RESPONSE_TIMEOUT_SECONDS + 30,
+            timeout=CHATGPT_RESPONSE_TIMEOUT_SECONDS + CHATGPT_TRAFFIC_TIMEOUT_HEADROOM_SECONDS,
         )
     except ValueError as exc:
         return jsonify({"success": False, "error": str(exc)}), 409
@@ -959,7 +1045,7 @@ def cognition():
                 for key in ("run_id", "cognition_id")
                 if data.get(key) not in (None, "")
             },
-            timeout=CHATGPT_RESPONSE_TIMEOUT_SECONDS + 30,
+            timeout=CHATGPT_RESPONSE_TIMEOUT_SECONDS + CHATGPT_TRAFFIC_TIMEOUT_HEADROOM_SECONDS,
         )
     except ValueError as exc:
         return jsonify({"success": False, "error": str(exc)}), 409
@@ -981,7 +1067,7 @@ def new_chat():
                 for key in ("run_id", "cognition_id")
                 if data.get(key) not in (None, "")
             },
-            timeout=30,
+            timeout=CHATGPT_TRAFFIC_TIMEOUT_HEADROOM_SECONDS,
         )
     except ValueError as exc:
         return jsonify({"success": False, "error": str(exc)}), 409
@@ -1045,6 +1131,7 @@ def status():
         "browser_generation": browser_generation,
         "runtime_error": runtime_error,
         "requests": browser_request_status(),
+        "traffic_control": chatgpt_traffic.snapshot(),
         "profile_path": load_profile_path(),
         "project_name": BOB_CHATGPT_PROJECT_NAME,
         "project_url_configured": bool(CHATGPT_TARGET_URL),

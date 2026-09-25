@@ -100,6 +100,21 @@ This is the canonical V1 path. It deliberately avoids making ChatGPT DOM structu
 
 Windows UI Automation/accessibility remains a possible future hardening path if repeated live failures justify it; it is not required before V1 can ship or be useful.
 
+## ChatGPT traffic control
+
+The managed ChatGPT session is a shared external resource, separate from repository execution capacity. Bob may keep up to three active runs per repository, and different repositories may have independent coordinators, while all ChatGPT browser writes still pass through one serialized Playwright worker.
+
+The bridge adds a dedicated traffic-control policy at that shared choke point:
+
+- fresh-chat attempts are spaced by at least `CHATGPT_FRESH_CHAT_MIN_INTERVAL_SECONDS` (default 10 s) plus bounded random jitter (default 0..3 s);
+- visible `RATE_LIMITED` or `USAGE_LIMIT` UI states do not trigger transparent retry;
+- a transient-limit observation starts exponential cooldown using `CHATGPT_RATE_LIMIT_BACKOFF_SECONDS` (default 15,30,60,120 s), with bounded jitter;
+- successful ChatGPT writes reset the transient-limit streak;
+- repository/Shell/provider work continues independently while cognition waits;
+- request diagnostics and `GET /status` expose only sanitized pacing/cooldown metadata, never prompt or response content.
+
+This is intentionally conservative. The initial values are qualification defaults for the hypothesis that short fresh-chat bursts contribute to recurring `Too many requests` failures. They should be tuned only from measured live evidence.
+
 ## Security and authority
 
 Local does not mean unlimited.

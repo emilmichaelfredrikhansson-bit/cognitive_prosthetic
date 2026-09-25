@@ -74,7 +74,10 @@ def build_env(env_file: Path) -> dict[str, str]:
     env.setdefault("CHATGPT_TARGET_URL", "")
     env.setdefault("CHATGPT_CAPTURE_MODE", "copy")
     env.setdefault("CHATGPT_RESPONSE_TIMEOUT_SECONDS", "360")
-    env.setdefault("CHATGPT_BRIDGE_TIMEOUT_SECONDS", "420")
+    env.setdefault("CHATGPT_BRIDGE_TIMEOUT_SECONDS", "600")
+    env.setdefault("CHATGPT_FRESH_CHAT_MIN_INTERVAL_SECONDS", "10")
+    env.setdefault("CHATGPT_TRAFFIC_JITTER_SECONDS", "3")
+    env.setdefault("CHATGPT_RATE_LIMIT_BACKOFF_SECONDS", "15,30,60,120")
     env.setdefault("BOB_MAX_PARALLEL_RUNS_PER_REPOSITORY", "3")
     env.setdefault("BOB_CANONICAL_REF", "feat/bob-core-v1")
     env.setdefault("BOB_REPOSITORY_BINDINGS_JSON", "")
@@ -95,7 +98,31 @@ def build_env(env_file: Path) -> dict[str, str]:
         str(ROOT / ".bob" / "runtime" / "self_development.json"),
     )
     assert_local_only(env)
+    assert_chatgpt_traffic_budget(env)
     return env
+
+
+def assert_chatgpt_traffic_budget(env: dict[str, str]) -> None:
+    try:
+        response = float(env.get("CHATGPT_RESPONSE_TIMEOUT_SECONDS") or "360")
+        bridge = float(env.get("CHATGPT_BRIDGE_TIMEOUT_SECONDS") or "600")
+        interval = float(env.get("CHATGPT_FRESH_CHAT_MIN_INTERVAL_SECONDS") or "10")
+        jitter = float(env.get("CHATGPT_TRAFFIC_JITTER_SECONDS") or "3")
+        backoff = [
+            float(part.strip())
+            for part in (env.get("CHATGPT_RATE_LIMIT_BACKOFF_SECONDS") or "15,30,60,120").split(",")
+            if part.strip()
+        ]
+    except ValueError as exc:
+        raise RuntimeError("ChatGPT traffic-control timing values must be numeric") from exc
+    if not backoff or any(value <= 0 for value in backoff):
+        raise RuntimeError("CHATGPT_RATE_LIMIT_BACKOFF_SECONDS must contain positive values")
+    required = response + max(backoff) + interval + (2 * jitter) + 30
+    if bridge < required:
+        raise RuntimeError(
+            "CHATGPT_BRIDGE_TIMEOUT_SECONDS is too small for the configured "
+            f"response + traffic-control budget; need at least {required:g} seconds"
+        )
 
 
 def assert_runtime_ports_free(env: dict[str, str]) -> None:
