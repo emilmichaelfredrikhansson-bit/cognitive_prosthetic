@@ -167,7 +167,8 @@ Approval-bound effect canary / transient-limit finding on 2026-09-25:
 - restart qualification exposed a reproducible Windows `WinError 5` at `os.replace(temp,state)` before any owned process was signalled. File ACL/read-only checks were clean; direct fsynced writes to the same state file succeeded, localizing the problem to Windows replace/delete-sharing semantics rather than ownership or permissions.
 - with the verified Windows fallback active, the exact same `bob_local.py --stop` stopped **2 supervisor-owned Bob processes**; ports 5001/5002 became free; `bob_local.py --detach --no-open-ui` then restarted cleanly.
 - current runtime health is green without another cognition request: Bob API running, ChatGPT bridge `ready=true`, and supervisor state contains exactly two new `RUNNING` long-lived records with exact listener ownership for ports 5002/5001.
-- authoritative live branch measurements from `POST /bob/module-graph` after the persistence hardening are `BOB_PROTOCOL=4,169`, `BOB_MODULE_COGNITION=12,856`, `BOB_RUNTIME_ORCHESTRATION=22,628 MIGRATION_REQUIRED`, `BOB_PROCESS_SUPERVISION=13,661`; all non-migration modules remain <=15k.
+- read-only `/bob/execution` is HTTP 200 with **0 active runs / 0 integration queue**.
+- authoritative live branch measurements from `POST /bob/module-graph` after the persistence hardening are `BOB_PROTOCOL=4,169`, `BOB_MODULE_COGNITION=12,856`, `BOB_RUNTIME_ORCHESTRATION=22,628 MIGRATION_REQUIRED`, `BOB_EXECUTION_LEDGER=13,041`, `BOB_WORKTREE_COORDINATION=9,992`, `BOB_PROCESS_SUPERVISION=13,661`; all non-migration modules remain <=15k.
 
 Remaining work / boundaries:
 - full post-effect fresh continuation still needs one clean live completion after ChatGPT is accepting requests again; **do not replay the already-verified canary effect merely to recover cognition**. A distinct benign cleanup effect (for example removing the canary marker) can be separately staged/approved to qualify the hardened continuation path;
@@ -567,6 +568,8 @@ Current deterministic `BOB_TOKEN_ESTIMATE_V1` measurement on branch content afte
 BOB_PROTOCOL               4,169   compliant
 BOB_MODULE_COGNITION      12,856   compliant (2,144 tokens headroom)
 BOB_RUNTIME_ORCHESTRATION 22,628   MIGRATION_REQUIRED
+BOB_EXECUTION_LEDGER      13,041   compliant
+BOB_WORKTREE_COORDINATION  9,992   compliant
 BOB_PROCESS_SUPERVISION   13,661   compliant (1,339 tokens headroom)
 ```
 
