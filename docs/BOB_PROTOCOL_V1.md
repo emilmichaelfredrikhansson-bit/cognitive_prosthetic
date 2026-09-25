@@ -230,3 +230,4 @@ request
 ```
 
 No external effect is considered successful before verified reality feedback is available to the next relevant cognition step. In the canonical stateless path that step may be a new ChatGPT conversation.
+<!-- BOB_EFFECT_CONTINUATION_CANARY_20260925 -->
