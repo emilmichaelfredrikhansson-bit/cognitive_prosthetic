@@ -585,7 +585,7 @@ Remaining qualification before the stateless vertical can be considered closed:
 - snapshot acceleration preserves identity: authenticated local Git is used only after GitHub repository identity is verified and the requested remote ref commit SHA exactly matches the local commit; stale local refs fall back to remote reads. Effect execution/read-back semantics are unchanged and remain remote/provider verified.
 - the working branch is **23 commits ahead / 0 behind** canonical at `8de216dd4ccc868f9f650750df34ed4ab191a23f`; `feat/bob-core-v1` remains unchanged at `098e6ac9f2adb47e7174c4db8ad2d0b1639d1279`.
 
-Current authoritative `BOB_TOKEN_ESTIMATE_V1` measurement at `8de216dâ€¦`; graph-cap regression is green in the **153/153** full suite:
+Current authoritative `BOB_TOKEN_ESTIMATE_V1` measurement at `3bc3c02…`; graph-cap regression is green in the **181/181** full suite:
 
 ```text
 BOB_RUNTIME_ORCHESTRATION 13,344   compliant
@@ -597,8 +597,9 @@ BOB_EXECUTION_LEDGER      14,477   compliant (523 tokens headroom)
 BOB_WORKTREE_COORDINATION 10,122   compliant
 BOB_SELF_DEVELOPMENT_STATE 7,979   compliant
 BOB_SELF_DEVELOPMENT_EXECUTION 8,264 compliant
-BOB_SELF_DEVELOPMENT_SANDBOX 13,595 compliant (1,405 tokens headroom)
+BOB_SELF_DEVELOPMENT_SANDBOX 13,595 compliant
 BOB_SELF_DEVELOPMENT_PROMOTION 9,624 compliant
+BOB_WORK_CAMPAIGN_CONTROL 12,612 compliant
 BOB_PROCESS_SUPERVISION   13,661   compliant
 ```
 
@@ -639,6 +640,20 @@ The package regression loads the real `.bob/module_graph.json`, verifies unique 
 - Promotion review restart persistence is LIVE GREEN: after clean Local Companion restart the rejected proposal remains durable, execution is **0 active / 0 integration queue**, and canonical `feat/bob-core-v1` remains unchanged.
 - Phase 3.75 next local foundation is background scheduling/campaign control: durable bounded work windows, safe stop-at-deadline semantics and interactive-first parking, reusing existing repo coordinators rather than creating a second execution authority.
 
+## LATEST_CHECKPOINT_2026-09-26
+
+- Working branch is pushed through `3bc3c02` (`Add bounded work campaign control`); canonical `feat/bob-core-v1` remains unchanged at `098e6ac9f2adb47e7174c4db8ad2d0b1639d1279`.
+- `BOB_WORK_CAMPAIGN_CONTROL` is now a separate bounded module (**12,612 / 15,000**) owning durable campaign goal/targets/duration/deadline/admission/run bindings only. Existing repository coordinators still exclusively own run/worktree/lease/capacity state.
+- Campaign deadline semantics are fail-closed: reaching the wall-clock deadline changes RUNNING -> DEADLINE_REACHED and stops all new run admission. Already nonterminal work is not asynchronously killed mid-cognition/effect; it must reach a safe boundary for checkpoint/park/cancel by higher orchestration.
+- A deadline race between admission and durable run binding is closed: a just-created run is cancelled and left unbound if the campaign deadline closes in that narrow window.
+- Campaign runs use lane=campaign, normal per-repository cap/leases/worktrees, `promotion_authority=NONE` and `auto_merge=false`. Campaign state itself has no merge/promotion authority.
+- Deterministic qualification after campaign-control implementation: **181/181 PASS**, campaign-focused **7/7 PASS**, prior campaign+server surface **14/14 PASS**, `py_compile` PASS and `git diff --check` PASS. All declared modules remain <=15k; `BOB_EXECUTION_LEDGER` remains the tightest at **14,477 / 15,000**.
+- Live campaign canary is GREEN: `campaign-7f7576215263` targeted BOB, started with an absolute deadline, created isolated campaign run `run-8e233ad6a57f` as ACTIVE with no promotion authority, reconciled it, cancelled it at a safe boundary, and completed the campaign. Execution returned to **0 active / 0 integration queue**.
+- Live multi-repo safety check is GREEN: a planned SL+AB campaign refused START with `ProtocolError: campaign targets lack local repository bindings: AB,SL`; it was then cancelled as canary cleanup. Bob does not pretend those repos can run locally until explicit bindings exist.
+- Restart persistence is LIVE GREEN: after clean Local Companion stop/start, campaign counts remain **COMPLETED=1 / CANCELLED=1 / RUNNING=0**, execution remains **0 active / 0 integration queue**, and no cognition request was issued.
+- Important scope boundary: this proves durable wall-clock campaign control, **not yet an autonomous eight-hour worker**. Automatic safe task selection, repeated work admission, blocked-work reallocation, deadline checkpoint/parking and final operator digest remain to implement.
+- Next local tranche: campaign worker/orchestrator that consumes an explicit safe work backlog, admits bounded runs while before deadline/capacity, pauses at safe boundaries, and produces durable outcome/digest state without auto-merge/promotion.
+
 ## NEXT_INTENDED_WORK
 
 1. Do not probe cognition repeatedly while ChatGPT is request-limited. Once requests are accepted again, stage a **distinct benign cleanup effect** (natural candidate: remove the approved canary marker), obtain explicit operator approval, and live-prove post-effect fresh continuation.
@@ -674,7 +689,7 @@ The package regression loads the real `.bob/module_graph.json`, verifies unique 
 
 ## FIRST_ACTION
 
-Resume from pushed commit `9ea9b62` or later live head after reconciling concurrent operator work. Do **not** send another cognition probe merely to retest submission. Phase 3.75 isolated lifecycle + interactive-first checkpoint/revert/discard + separate promotion review is LIVE GREEN. Continue with **background scheduling/campaign control** using durable wall-clock budgets, interactive-first parking and existing repository coordinators; no second execution authority and no automatic promotion. If later independent evidence shows cognition submissions are accepted again, return to the distinct benign cleanup-effect continuation proof before the genuine self-hosting architecture-repair canary rooted at `c5102a9aacce349c9e5aded950daaa8c3ce825b1`. No candidate may promote itself to canonical.
+Resume from pushed commit `3bc3c02` or later live head after reconciling concurrent operator work. Do **not** send another cognition probe merely to retest submission. Phase 3.75 isolated selfdev lifecycle, interactive-first reversible sandbox, promotion review and durable work-campaign deadline/admission control are LIVE GREEN. Continue with the **campaign worker/orchestrator**: explicit durable work backlog -> safe admission through existing per-repo coordinators -> blocker/deadline parking at safe boundaries -> outcome/digest state. Do not add a second execution authority and do not auto-merge/promote. If independent evidence later shows cognition submissions are accepted again, return to the distinct benign cleanup-effect continuation proof before the genuine self-hosting architecture-repair canary rooted at `c5102a9aacce349c9e5aded950daaa8c3ce825b1`.
 
 ## HARD_BLOCKERS
 
