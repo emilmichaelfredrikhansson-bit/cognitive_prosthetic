@@ -419,35 +419,67 @@ class ExecutionLedger:
             self._persist()
             return deepcopy(cognition)
 
-    def park_selfdev_run(self, run_id: str, *, reason: str) -> dict[str, Any]:
-        """Release a low-priority selfdev lease without terminating its run."""
+    def _park_background_run(
+        self,
+        run_id: str,
+        *,
+        lane: str,
+        reason: str,
+        preempted_by_run_id: str | None = None,
+    ) -> dict[str, Any]:
         reason = str(reason or "").strip()
         if not reason:
-            raise ProtocolError("parking self-development requires a reason")
+            raise ProtocolError("parking background work requires a reason")
         with self._lock:
             run = self._require_run_locked(run_id)
-            if run.get("lane") != "selfdev":
-                raise ProtocolError("only selfdev runs can be parked")
+            if run.get("lane") != lane or lane not in {"selfdev", "campaign"}:
+                raise ProtocolError(f"only {lane} background runs can use this parking path")
             if run["state"] != "ACTIVE":
-                raise ProtocolError("only ACTIVE selfdev runs can be parked")
+                raise ProtocolError("only ACTIVE background runs can be parked")
             for cognition_id in run.get("cognition_ids") or []:
                 cognition = self._state["cognitions"].get(cognition_id)
                 if cognition and cognition.get("state") == "RUNNING":
-                    raise ProtocolError("selfdev run cannot park with running cognition")
+                    raise ProtocolError("background run cannot park with running cognition")
             run["state"] = PARKED_RUN_STATE
             run["blocked_reason"] = "PREEMPTED:" + reason
+            run["preempted_at"] = _now()
+            run["preempted_by_run_id"] = (
+                None if not preempted_by_run_id else str(preempted_by_run_id)
+            )
+            run["preemption_count"] = int(run.get("preemption_count") or 0) + 1
             self._reconcile_queue_locked()
             self._persist()
             return deepcopy(run)
 
+    def park_selfdev_run(self, run_id: str, *, reason: str) -> dict[str, Any]:
+        return self._park_background_run(run_id, lane="selfdev", reason=reason)
+
+    def park_campaign_run(
+        self,
+        run_id: str,
+        *,
+        reason: str,
+        preempted_by_run_id: str | None = None,
+    ) -> dict[str, Any]:
+        return self._park_background_run(
+            run_id,
+            lane="campaign",
+            reason=reason,
+            preempted_by_run_id=preempted_by_run_id,
+        )
+
     def resume_parked_run(self, run_id: str) -> dict[str, Any]:
-        """Requeue parked selfdev work; normal capacity/lease rules decide activation."""
+        """Requeue parked background work through normal capacity/lease arbitration."""
         with self._lock:
             run = self._require_run_locked(run_id)
-            if run.get("lane") != "selfdev" or run["state"] != PARKED_RUN_STATE:
-                raise ProtocolError("only PARKED selfdev runs can resume")
+            if (
+                run.get("lane") not in {"selfdev", "campaign"}
+                or run["state"] != PARKED_RUN_STATE
+            ):
+                raise ProtocolError("only PARKED background runs can resume")
             run["state"] = "QUEUED"
             run["blocked_reason"] = None
+            run["preempted_by_run_id"] = None
             self._reconcile_queue_locked()
             self._persist()
             return deepcopy(run)

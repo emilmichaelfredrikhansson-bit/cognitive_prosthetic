@@ -157,7 +157,8 @@
         "BOB_SELF_DEVELOPMENT_SANDBOX",
         "BOB_SELF_DEVELOPMENT_PROMOTION",
         "BOB_WORK_CAMPAIGN_CONTROL",
-        "BOB_WORK_CAMPAIGN_QUEUE"
+        "BOB_WORK_CAMPAIGN_QUEUE",
+        "BOB_WORK_CAMPAIGN_WORKER"
       ],
       "invariants": [
         "At most 3 active Bob runs occupy worker slots per repository ledger.",
@@ -165,7 +166,7 @@
         "One run has at most one RUNNING cognition.",
         "Every cognition has stable run_id/cognition_id/request_id correlation.",
         "Integration is FIFO, single-owner per repo and stale candidates require rebase/reverification.",
-        "PARKED selfdev runs hold neither worker slots nor semantic leases and can resume only through ordinary queue arbitration.",
+        "PARKED background runs hold neither worker slots nor semantic leases and selfdev/campaign runs resume only through ordinary queue arbitration.",
         "Ledger state never grants effect authority or performs promotion."
       ],
       "status": "WORKING"
@@ -190,7 +191,8 @@
         "BOB_SELF_DEVELOPMENT_SANDBOX",
         "BOB_SELF_DEVELOPMENT_PROMOTION",
         "BOB_WORK_CAMPAIGN_CONTROL",
-        "BOB_WORK_CAMPAIGN_QUEUE"
+        "BOB_WORK_CAMPAIGN_QUEUE",
+        "BOB_WORK_CAMPAIGN_WORKER"
       ],
       "invariants": [
         "Coordinator verifies local Git origin and bound canonical ref before opening repository state.",
@@ -344,7 +346,8 @@
       ],
       "consumers": [
         "BOB_RUNTIME_ORCHESTRATION",
-        "BOB_WORK_CAMPAIGN_QUEUE"
+        "BOB_WORK_CAMPAIGN_QUEUE",
+        "BOB_WORK_CAMPAIGN_WORKER"
       ],
       "invariants": [
         "Campaign start requires exact configured local repository bindings for every target workspace.",
@@ -375,7 +378,8 @@
         "BOB_WORKTREE_COORDINATION"
       ],
       "consumers": [
-        "BOB_RUNTIME_ORCHESTRATION"
+        "BOB_RUNTIME_ORCHESTRATION",
+        "BOB_WORK_CAMPAIGN_WORKER"
       ],
       "invariants": [
         "Capacity and blocker waiting remain in the campaign backlog rather than as execution runs that could activate after deadline.",
@@ -385,6 +389,39 @@
         "Successful work requires explicit verification evidence and records exact branch/head receipts with promotion_authority=NONE and auto_merge=false.",
         "Unexpected terminal execution never implies campaign-work success.",
         "Campaign queue never performs cognition, repository mutation, merge, push, PR or promotion."
+      ],
+      "status": "WORKING"
+    },
+    {
+      "id": "BOB_WORK_CAMPAIGN_WORKER",
+      "purpose": "Drive bounded repeated campaign work selection, safe-boundary checkpoint/parking, interactive-first pre-emption and final operator digest without owning execution or promotion.",
+      "source_paths": [
+        "bob/work_campaign_worker.py",
+        "bob/work_campaign_worker_api.py"
+      ],
+      "test_paths": [
+        "tests/test_work_campaign_worker.py"
+      ],
+      "contract_paths": [
+        "docs/BOB_WORK_CAMPAIGN_WORKER_V1.md"
+      ],
+      "producers": [
+        "BOB_WORK_CAMPAIGN_CONTROL",
+        "BOB_WORK_CAMPAIGN_QUEUE",
+        "BOB_EXECUTION_LEDGER",
+        "BOB_WORKTREE_COORDINATION"
+      ],
+      "consumers": [
+        "BOB_RUNTIME_ORCHESTRATION"
+      ],
+      "invariants": [
+        "Worker cycles select only explicit durable campaign backlog and admit work only through existing campaign/coordinator authority.",
+        "Safe-stop or interactive parking requires an exact campaign work-item/run binding, no running cognition, a clean isolated worktree and a durable head checkpoint.",
+        "Interactive priority may park idle campaign work but never kills running cognition or discards dirty/uncheckpointed progress.",
+        "Pre-empted campaign work resumes the same run/branch/worktree only while its campaign remains RUNNING and through normal lease/capacity arbitration.",
+        "Deadline closes admission; unsafe active work remains pending until a safe boundary and paused candidates stay visible in the digest.",
+        "Successful outcomes remain explicit queue decisions; terminal execution alone never implies success.",
+        "Worker never merges, pushes, opens PRs, integrates, promotes, widens provider authority or creates a second execution scheduler."
       ],
       "status": "WORKING"
     },

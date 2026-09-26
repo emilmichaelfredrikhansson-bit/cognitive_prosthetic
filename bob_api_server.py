@@ -17,6 +17,8 @@ from bob.work_campaigns import WorkCampaignManager
 from bob.work_campaign_api import create_work_campaign_blueprint
 from bob.work_campaign_queue import WorkCampaignQueue
 from bob.work_campaign_queue_api import create_work_campaign_queue_blueprint
+from bob.work_campaign_worker import WorkCampaignWorker
+from bob.work_campaign_worker_api import create_work_campaign_worker_blueprint
 from bob.worktree_coordination import RepositoryCoordinatorRegistry
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -90,6 +92,16 @@ work_campaign_queue = WorkCampaignQueue(
 )
 app.register_blueprint(
     create_work_campaign_queue_blueprint(work_campaign_queue)
+)
+work_campaign_worker = WorkCampaignWorker(
+    os.environ.get("BOB_WORK_CAMPAIGN_WORKER_PATH")
+    or BASE_DIR / ".bob" / "runtime" / "work_campaign_worker.json",
+    work_campaigns,
+    work_campaign_queue,
+    execution_registry,
+)
+app.register_blueprint(
+    create_work_campaign_worker_blueprint(work_campaign_worker)
 )
 
 
@@ -294,7 +306,16 @@ def execution_create_run():
             depends_on=[str(item) for item in (data.get("depends_on") or [])],
             authority=authority,
         )
-        return jsonify({"success": True, **result})
+        campaign_preemption = work_campaign_worker.preempt_for_interactive(
+            execution,
+            result["run"]["run_id"],
+        )
+        result["run"] = execution.ledger.get_run(result["run"]["run_id"])
+        return jsonify({
+            "success": True,
+            **result,
+            "campaign_preemption": campaign_preemption,
+        })
     result = execution.create_run(
         goal=str(data["goal"]),
         workspace=workspace_code,
@@ -411,12 +432,17 @@ def execution_integrated(run_id):
         canonical_ref=None if data.get("canonical_ref") in (None, "") else str(data["canonical_ref"]),
     )
     release = None
-    if (
-        result.get("lane") == "interactive"
-        and execution.repository_id == selfdev_execution.execution.repository_id
-    ):
-        release = selfdev_control.resume_after_interactive(run_id)
-    return jsonify({"success": True, "run": result, "preemption_release": release})
+    campaign_release = None
+    if result.get("lane") == "interactive":
+        if execution.repository_id == selfdev_execution.execution.repository_id:
+            release = selfdev_control.resume_after_interactive(run_id)
+        campaign_release = work_campaign_worker.resume_after_interactive(run_id)
+    return jsonify({
+        "success": True,
+        "run": result,
+        "preemption_release": release,
+        "campaign_preemption_release": campaign_release,
+    })
 
 
 @app.post("/bob/execution/runs/<run_id>/cancel")
@@ -428,12 +454,17 @@ def execution_cancel(run_id):
         reason=str(data.get("reason") or "cancelled"),
     )
     release = None
-    if (
-        result.get("lane") == "interactive"
-        and execution.repository_id == selfdev_execution.execution.repository_id
-    ):
-        release = selfdev_control.resume_after_interactive(run_id)
-    return jsonify({"success": True, "run": result, "preemption_release": release})
+    campaign_release = None
+    if result.get("lane") == "interactive":
+        if execution.repository_id == selfdev_execution.execution.repository_id:
+            release = selfdev_control.resume_after_interactive(run_id)
+        campaign_release = work_campaign_worker.resume_after_interactive(run_id)
+    return jsonify({
+        "success": True,
+        "run": result,
+        "preemption_release": release,
+        "campaign_preemption_release": campaign_release,
+    })
 
 
 @app.post("/bob/relay/start")
