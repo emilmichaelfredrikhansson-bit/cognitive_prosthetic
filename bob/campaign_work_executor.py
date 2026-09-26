@@ -371,11 +371,13 @@ class CampaignWorkExecutor:
                 workspace.effects.get("write_branch", False)
             ),
             "goal": item["goal"],
+            "round": int(record.get("round_count") or 0),
+            "continuation_results": list(record.get("results") or ()),
         }
-        prior = "\n\n".join(record.get("results") or [])
         return (
-            "You are fresh/stateless cognition for exactly one Bob campaign "
-            "work item. Bob owns continuity, identity, authority and effects.\n\n"
+            "You are one fresh/stateless cognition step inside an ongoing Bob "
+            "campaign work item. Do not restart the work. Bob supplies continuity, "
+            "identity, authority and effects below.\n\n"
             "EXECUTION ENVELOPE\n"
             + json.dumps(envelope, indent=2, sort_keys=True)
             + "\n\nHARD RULES\n"
@@ -391,6 +393,7 @@ class CampaignWorkExecutor:
             "expected_sha256.\n"
             "- BOB.DONE is advisory; Bob performs deterministic verification "
             "before successful completion.\n"
+            "- continuation_results already happened; do not treat them as requested work.\n"
             "- Use BOB.ASK only for a genuine operator decision.\n\n"
             "Return one raw JSON BOB object or one fenced BOB object. Examples:\n"
             '{"type":"BOB.READ","id":"r1","tool":"repo.read_file",'
@@ -398,8 +401,8 @@ class CampaignWorkExecutor:
             '{"type":"BOB.EFFECT","id":"e1","tool":"repo.replace_file",'
             '"args":{"path":"x.py","content":"...","expected_sha256":"..."}}\n'
             '{"type":"BOB.DONE","id":"d1","args":{"summary":"candidate ready"}}'
-            "\n\nDURABLE PRIOR RESULTS\n"
-            + (prior if prior else "(none; inspect repository reality first)")
+            "\n\nNEXT ACTION: Continue from continuation_results above. "
+            "Use a new id, never repeat a PASS READ, and advance toward the goal."
         )
 
     def _blocked(
@@ -530,6 +533,20 @@ class CampaignWorkExecutor:
                 )
 
             if message.type == "BOB.READ":
+                duplicate = any(
+                    f'"request_id": "{message.id}"' in result
+                    for result in record.get("results") or ()
+                )
+                if duplicate:
+                    return self._blocked(
+                        record,
+                        execution,
+                        cognition["cognition_id"],
+                        "BLOCKED_PROTOCOL",
+                        ProtocolError(
+                            "campaign cognition repeated completed BOB.READ id"
+                        ),
+                    )
                 try:
                     data = adapter.read(message)
                     result = make_result(

@@ -128,6 +128,75 @@ startup_error = None
 browser_thread = None
 runtime_error = None
 browser_generation = 0
+network_diagnostics = []
+MAX_NETWORK_DIAGNOSTICS = 40
+
+
+def sanitize_network_path(path):
+    segments = []
+    for segment in str(path or "").split("/"):
+        if not segment:
+            continue
+        if len(segment) > 24 or re.fullmatch(r"[0-9a-fA-F-]{20,}", segment):
+            segments.append(":id")
+        else:
+            segments.append(segment)
+    return "/" + "/".join(segments)
+
+
+def record_chatgpt_network_response(response):
+    """Keep bounded status-only ChatGPT/OpenAI network metadata; never bodies/headers."""
+    try:
+        parts = urlsplit(response.url)
+        host = (parts.hostname or "").lower()
+        if not (
+            host.endswith("chatgpt.com")
+            or host.endswith("openai.com")
+        ):
+            return
+        path = parts.path or "/"
+        if not any(
+            marker in path
+            for marker in (
+                "conversation",
+                "backend-api",
+                "sentinel",
+                "moderation",
+                "message",
+                "response",
+            )
+        ):
+            return
+        event = {
+            "at": round(time.time(), 3),
+            "host": host,
+            "path": sanitize_network_path(path),
+            "status": int(response.status),
+            "method": str(response.request.method),
+        }
+        network_diagnostics.append(event)
+        if len(network_diagnostics) > MAX_NETWORK_DIAGNOSTICS:
+            del network_diagnostics[:-MAX_NETWORK_DIAGNOSTICS]
+    except Exception:
+        return
+
+
+def backend_submission_accepted_since(since_at):
+    if since_at is None:
+        return False
+    for event in network_diagnostics:
+        if event.get("at", 0) < since_at:
+            continue
+        if event.get("method") != "POST":
+            continue
+        if not 200 <= int(event.get("status") or 0) < 300:
+            continue
+        if re.fullmatch(
+            r"/backend-api/(?:f/)?conversation",
+            str(event.get("path") or ""),
+        ):
+            return True
+    return False
 
 
 def _normalize_request_id(value=None):
@@ -457,6 +526,7 @@ def launch_browser_session(playwright, profile_path):
     try:
         browser_context.on("close", lambda _context=None: mark_context_closed())
         page.on("close", lambda _page=None: mark_page_closed())
+        page.on("response", record_chatgpt_network_response)
     except Exception:
         pass
 
@@ -478,6 +548,8 @@ def execute_browser_task(page, task):
         return start_new_chat(page)
     if task_type == 'show_ui':
         return show_companion_ui(page, task.get('url') or BOB_COMPANION_UI_URL)
+    if task_type == 'diagnostics':
+        return browser_diagnostic_snapshot(page)
     return {"success": False, "error": f"unknown browser task: {task_type}"}
 
 
@@ -762,6 +834,42 @@ def assistant_copy_candidates(page):
     return []
 
 
+def global_message_copy_candidates(page):
+    """Return visible message-level Copy controls without relying on message DOM roles."""
+    preferred = []
+    try:
+        preferred = page.locator(
+            'button[data-testid="copy-turn-action-button"]'
+        ).all()
+    except Exception:
+        preferred = []
+    preferred = [
+        item
+        for item in preferred
+        if item.is_visible() and item.is_enabled()
+    ]
+    if preferred:
+        return preferred
+
+    fallbacks = []
+    for candidate in copy_candidates(page):
+        try:
+            if not candidate.is_enabled():
+                continue
+            label = " ".join(filter(None, [
+                candidate.get_attribute("aria-label"),
+                candidate.get_attribute("title"),
+                candidate.get_attribute("data-testid"),
+            ])).strip().lower()
+        except Exception:
+            continue
+        if any(token in label for token in ("code", "kod", "link", "länk", "share", "dela")):
+            continue
+        if label in {"copy", "kopiera"} or "copy-turn" in label:
+            fallbacks.append(candidate)
+    return fallbacks
+
+
 CHATGPT_TRANSIENT_UI_PATTERNS = (
     (
         "RATE_LIMITED",
@@ -793,6 +901,7 @@ def detect_chatgpt_transient_ui_error(page):
         '[aria-live="polite"]',
         '[data-sonner-toast]',
         '[data-testid*="error"]',
+        '[class*="text-token-text-error"]',
     )
     visible_text = []
     for selector in selectors:
@@ -856,11 +965,11 @@ def actuate_submission(page, textarea):
     if transient_ui_error:
         raise RuntimeError(f"CHATGPT_TRANSIENT_UI:{transient_ui_error}")
     send_button, saw_disabled = find_send_button(page)
-    if send_button is not None:
-        send_button.click(timeout=5000)
-        return "send_button"
-    if saw_disabled:
+    if send_button is None and saw_disabled:
         raise RuntimeError("CHATGPT_SUBMISSION_FAILED:SEND_CONTROL_DISABLED")
+    # Enter is the last live-proven ChatGPT submission path. The visible send
+    # control remains a readiness/preflight signal, but clicking it has produced
+    # repeatable blank conversation-route transitions with no materialized turn.
     textarea.press("Enter")
     return "input_enter"
 
@@ -879,20 +988,155 @@ def conversation_turn_count(page):
         return 0
 
 
+def chatgpt_conversation_key(url):
+    """Return a sanitized conversation identifier from a ChatGPT URL."""
+    try:
+        parts = urlsplit(str(url or ""))
+    except Exception:
+        return None
+    if (parts.hostname or "").lower() not in {"chatgpt.com", "www.chatgpt.com"}:
+        return None
+    segments = [segment for segment in parts.path.split("/") if segment]
+    for index, segment in enumerate(segments[:-1]):
+        if segment == "c" and segments[index + 1]:
+            return segments[index + 1]
+    return None
+
+
+def composer_text_length(composer):
+    """Return composer text length without exposing or logging its content."""
+    try:
+        value = composer.evaluate(
+            """(el) => {
+                const tag = (el.tagName || '').toLowerCase();
+                if (tag === 'textarea' || tag === 'input') return el.value || '';
+                return el.innerText || el.textContent || '';
+            }"""
+        )
+    except Exception:
+        return None
+    return len(value) if isinstance(value, str) else None
+
+
+def populate_composer(page, composer, prompt_text):
+    """Populate ChatGPT's current editor using editor-appropriate input events."""
+    composer.click()
+    try:
+        meta = composer.evaluate(
+            """(el) => ({
+                tag: (el.tagName || '').toLowerCase(),
+                contenteditable: el.getAttribute('contenteditable')
+            })"""
+        )
+    except Exception:
+        meta = None
+
+    if isinstance(meta, dict) and meta.get("contenteditable") == "true":
+        # ChatGPT's newer rich editor is a contenteditable div. Keyboard insertion
+        # exercises the editor's input pipeline instead of mutating DOM text via fill().
+        composer.press("Control+A")
+        composer.press("Backspace")
+        page.keyboard.insert_text(prompt_text)
+        return "contenteditable_insert_text"
+
+    composer.fill(prompt_text)
+    return "fill"
+
+
+def browser_diagnostic_snapshot(page):
+    """Return sanitized structural browser state without message/UI text."""
+    composer = find_textarea(page, timeout=0.2)
+    send_button, saw_disabled_send = find_send_button(page)
+
+    composer_meta = None
+    if composer is not None:
+        try:
+            composer_meta = composer.evaluate(
+                """(el) => ({
+                    tag: (el.tagName || '').toLowerCase(),
+                    id: el.id || null,
+                    role: el.getAttribute('role'),
+                    data_testid: el.getAttribute('data-testid'),
+                    aria_label: el.getAttribute('aria-label'),
+                    contenteditable: el.getAttribute('contenteditable')
+                })"""
+            )
+        except Exception:
+            composer_meta = None
+
+    visible_composer_candidates = {}
+    for selector in (
+        "#prompt-textarea",
+        'textarea',
+        'div[contenteditable="true"]',
+    ):
+        visible = 0
+        try:
+            items = page.locator(selector)
+            for index in range(min(items.count(), 20)):
+                if items.nth(index).is_visible():
+                    visible += 1
+        except Exception:
+            visible = -1
+        visible_composer_candidates[selector] = visible
+
+    send_meta = None
+    if send_button is not None:
+        try:
+            send_meta = send_button.evaluate(
+                """(el) => ({
+                    tag: (el.tagName || '').toLowerCase(),
+                    data_testid: el.getAttribute('data-testid'),
+                    aria_label: el.getAttribute('aria-label')
+                })"""
+            )
+        except Exception:
+            send_meta = None
+
+    return {
+        "success": True,
+        "conversation_route": bool(
+            chatgpt_conversation_key(getattr(page, "url", None))
+        ),
+        "user_count": user_message_count(page),
+        "assistant_count": assistant_count(page),
+        "conversation_turn_count": conversation_turn_count(page),
+        "assistant_copy_ready": bool(assistant_copy_candidates(page)),
+        "composer_present": composer is not None,
+        "composer_length": (
+            composer_text_length(composer) if composer is not None else None
+        ),
+        "composer_meta": composer_meta,
+        "visible_composer_candidates": visible_composer_candidates,
+        "send_enabled": send_button is not None,
+        "send_disabled_visible": bool(saw_disabled_send and send_button is None),
+        "send_meta": send_meta,
+        "transient_ui": detect_chatgpt_transient_ui_error(page),
+        "network_recent": list(network_diagnostics[-20:]),
+    }
+
+
 def wait_for_submission_materialization(
     page,
     *,
     baseline_user_count,
     baseline_turn_count,
     baseline_assistant_count,
+    baseline_url=None,
+    composer=None,
+    baseline_composer_length=None,
+    baseline_network_at=None,
     timeout,
 ):
     """Require observable conversation state after Enter before response waiting."""
     deadline = time.time() + timeout
+    baseline_conversation_key = chatgpt_conversation_key(baseline_url)
     last_snapshot = {
         "user": baseline_user_count,
         "conversation_turn": baseline_turn_count,
         "assistant": baseline_assistant_count,
+        "conversation_transition": False,
+        "composer_cleared": False,
     }
     while time.time() < deadline:
         if page.is_closed():
@@ -900,15 +1144,37 @@ def wait_for_submission_materialization(
         transient_ui_error = detect_chatgpt_transient_ui_error(page)
         if transient_ui_error:
             raise RuntimeError(f"CHATGPT_TRANSIENT_UI:{transient_ui_error}")
+
+        current_conversation_key = chatgpt_conversation_key(
+            getattr(page, "url", None)
+        )
+        current_composer_length = (
+            composer_text_length(composer) if composer is not None else None
+        )
+        conversation_transition = bool(
+            current_conversation_key
+            and current_conversation_key != baseline_conversation_key
+        )
+        composer_cleared = bool(
+            baseline_composer_length
+            and current_composer_length == 0
+        )
+        backend_accepted = backend_submission_accepted_since(
+            baseline_network_at
+        )
         last_snapshot = {
             "user": user_message_count(page),
             "conversation_turn": conversation_turn_count(page),
             "assistant": assistant_count(page),
+            "conversation_transition": conversation_transition,
+            "composer_cleared": composer_cleared,
+            "backend_accepted": backend_accepted,
         }
         if (
             last_snapshot["user"] > baseline_user_count
             or last_snapshot["conversation_turn"] > baseline_turn_count
             or last_snapshot["assistant"] > baseline_assistant_count
+            or backend_accepted
         ):
             return last_snapshot
         time.sleep(0.25)
@@ -918,13 +1184,21 @@ def wait_for_submission_materialization(
             "user": baseline_user_count,
             "conversation_turn": baseline_turn_count,
             "assistant": baseline_assistant_count,
+            "conversation_present": bool(baseline_conversation_key),
+            "composer_populated": bool(baseline_composer_length),
         },
         last_snapshot,
     )
     return None
 
 
-def wait_for_new_assistant_copy(page, baseline_assistant_count, timeout=180):
+def wait_for_new_assistant_copy(
+    page,
+    baseline_assistant_count,
+    *,
+    baseline_copy_count=None,
+    timeout=180,
+):
     """Wait for completion, but surface a dead Playwright target immediately."""
     deadline = time.time() + timeout
     next_diagnostic_at = time.time()
@@ -946,6 +1220,12 @@ def wait_for_new_assistant_copy(page, baseline_assistant_count, timeout=180):
             if current_assistant_count > baseline_assistant_count:
                 if assistant_copy_candidates(page):
                     return True
+            current_global_copy = global_message_copy_candidates(page)
+            if (
+                baseline_copy_count is not None
+                and len(current_global_copy) > baseline_copy_count
+            ):
+                return True
             if time.time() >= next_diagnostic_at:
                 try:
                     author_roles = page.locator("[data-message-author-role]").evaluate_all(
@@ -986,47 +1266,125 @@ def send_message(page, prompt_text):
         if not textarea:
             return {"success": False, "error": "Could not find chat input"}
 
-        # Click and type
-        textarea.click()
-        time.sleep(0.3)
-
-        # Fill the complete prompt atomically. Compiled Bob contexts can be
-        # thousands of characters; per-character typing can exceed Playwright's
-        # action timeout before the message is even submitted.
-        textarea.fill(prompt_text)
+        # Populate through the current editor's real input path. Textareas can
+        # be filled atomically; ChatGPT's newer contenteditable editor needs
+        # keyboard insertion so the editor state and visible DOM stay aligned.
+        population_mode = populate_composer(page, textarea, prompt_text)
+        logging.info("✓ Composer populated via %s", population_mode)
         time.sleep(0.5)
 
         # Snapshot observable conversation state before submission. A successful
         # submit action must materialize a user/conversation turn quickly; otherwise
         # a response timeout would hide a distinct submission failure for minutes.
         baseline_assistant_count = assistant_count(page)
+        baseline_copy_count = len(global_message_copy_candidates(page))
         baseline_user_count = user_message_count(page)
         baseline_turn_count = conversation_turn_count(page)
+        baseline_url = getattr(page, "url", None)
+        baseline_composer_length = composer_text_length(textarea)
+        baseline_network_at = time.time()
 
-        # Prefer ChatGPT's visible enabled send control. A visible disabled
-        # control is an explicit fail-closed state; do not bypass it with Enter.
+        # Submit through the last live-proven Enter path. The visible send
+        # control is still checked as a fail-closed readiness signal.
         submission_actuator = actuate_submission(page, textarea)
         logging.info(
             "✓ Submission actuated via %s; verifying conversation materialization...",
             submission_actuator,
         )
-        if not wait_for_submission_materialization(
+        materialized = wait_for_submission_materialization(
             page,
             baseline_user_count=baseline_user_count,
             baseline_turn_count=baseline_turn_count,
             baseline_assistant_count=baseline_assistant_count,
+            baseline_url=baseline_url,
+            composer=textarea,
+            baseline_composer_length=baseline_composer_length,
+            baseline_network_at=baseline_network_at,
             timeout=CHATGPT_SUBMISSION_TIMEOUT_SECONDS,
-        ):
-            return {
-                "success": False,
-                "error": "CHATGPT_SUBMISSION_FAILED:NO_CONVERSATION_TURN",
-            }
+        )
+        if not materialized:
+            baseline_conversation_key = chatgpt_conversation_key(baseline_url)
+            current_conversation_key = chatgpt_conversation_key(
+                getattr(page, "url", None)
+            )
+            blank_project_transition = bool(
+                not baseline_conversation_key
+                and current_conversation_key
+                and user_message_count(page) == baseline_user_count
+                and conversation_turn_count(page) == baseline_turn_count
+                and assistant_count(page) == baseline_assistant_count
+            )
+            if blank_project_transition:
+                transient_ui_error = detect_chatgpt_transient_ui_error(page)
+                if transient_ui_error:
+                    raise RuntimeError(
+                        f"CHATGPT_TRANSIENT_UI:{transient_ui_error}"
+                    )
+                recovery_textarea = find_textarea(page, timeout=5)
+                recovery_length = (
+                    composer_text_length(recovery_textarea)
+                    if recovery_textarea is not None
+                    else None
+                )
+                if (
+                    recovery_textarea is not None
+                    and recovery_length is not None
+                    and recovery_length <= 1
+                ):
+                    logging.warning(
+                        "Blank project->conversation transition detected; "
+                        "performing one bounded same-prompt replay"
+                    )
+                    recovery_population_mode = populate_composer(
+                        page,
+                        recovery_textarea,
+                        prompt_text,
+                    )
+                    logging.info(
+                        "✓ Recovery composer populated via %s",
+                        recovery_population_mode,
+                    )
+                    time.sleep(0.5)
+                    baseline_assistant_count = assistant_count(page)
+                    baseline_user_count = user_message_count(page)
+                    baseline_turn_count = conversation_turn_count(page)
+                    recovery_baseline_url = getattr(page, "url", None)
+                    recovery_composer_length = composer_text_length(
+                        recovery_textarea
+                    )
+                    recovery_baseline_network_at = time.time()
+                    recovery_actuator = actuate_submission(
+                        page,
+                        recovery_textarea,
+                    )
+                    logging.info(
+                        "✓ Recovery submission actuated via %s; "
+                        "verifying conversation materialization...",
+                        recovery_actuator,
+                    )
+                    materialized = wait_for_submission_materialization(
+                        page,
+                        baseline_user_count=baseline_user_count,
+                        baseline_turn_count=baseline_turn_count,
+                        baseline_assistant_count=baseline_assistant_count,
+                        baseline_url=recovery_baseline_url,
+                        composer=recovery_textarea,
+                        baseline_composer_length=recovery_composer_length,
+                        baseline_network_at=recovery_baseline_network_at,
+                        timeout=CHATGPT_SUBMISSION_TIMEOUT_SECONDS,
+                    )
+            if not materialized:
+                return {
+                    "success": False,
+                    "error": "CHATGPT_SUBMISSION_FAILED:NO_CONVERSATION_TURN",
+                }
         logging.info("✓ Submission materialized; waiting for response...")
 
         if CHATGPT_CAPTURE_MODE == "copy":
             if not wait_for_new_assistant_copy(
                 page,
                 baseline_assistant_count,
+                baseline_copy_count=baseline_copy_count,
                 timeout=CHATGPT_RESPONSE_TIMEOUT_SECONDS,
             ):
                 logging.error("No completed assistant Copy/Kopiera control appeared before timeout")
@@ -1069,6 +1427,8 @@ def capture_response(page):
     """
     if CHATGPT_CAPTURE_MODE == "copy":
         candidates = assistant_copy_candidates(page)
+        if not candidates:
+            candidates = global_message_copy_candidates(page)
         for candidate in reversed(candidates):
             try:
                 if not candidate.is_visible():
@@ -1228,6 +1588,24 @@ def show_ui():
         )
     except ValueError as exc:
         return jsonify({"success": False, "error": str(exc)}), 400
+    return jsonify(result), status_code
+
+
+@app.route('/diagnostics', methods=['GET'])
+def diagnostics():
+    """Return sanitized structural ChatGPT browser state via the worker thread."""
+    if not bridge_can_accept_tasks():
+        return jsonify({
+            "success": False,
+            "error": startup_error or runtime_error or "Server not ready",
+        }), 503
+    try:
+        result, status_code = submit_browser_task(
+            "diagnostics",
+            timeout=10,
+        )
+    except ValueError as exc:
+        return jsonify({"success": False, "error": str(exc)}), 409
     return jsonify(result), status_code
 
 

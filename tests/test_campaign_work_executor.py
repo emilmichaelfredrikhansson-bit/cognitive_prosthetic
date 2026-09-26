@@ -74,7 +74,7 @@ def environment(root: Path, bridge, *, writes=False):
 
 def replace_from_read(prompt):
     match = re.search(
-        r'"content_sha256":\s*"([0-9a-f]{64})"',
+        r"content_sha256[^0-9a-f]+([0-9a-f]{64})",
         prompt,
     )
     if not match:
@@ -127,6 +127,9 @@ class CampaignWorkExecutorTests(unittest.TestCase):
             item = queue.snapshot(campaign["campaign_id"])["items"][0]
             self.assertEqual(item["state"], SUCCEEDED)
             self.assertEqual(len(bridge.calls), 2)
+            self.assertIn("NEXT ACTION: Continue", bridge.calls[1]["prompt"])
+            self.assertIn("request_id", bridge.calls[1]["prompt"])
+            self.assertIn("r1", bridge.calls[1]["prompt"])
             for call in bridge.calls:
                 self.assertEqual(call["run_id"], item["run_id"])
                 self.assertTrue(call["cognition_id"])
@@ -214,6 +217,30 @@ class CampaignWorkExecutorTests(unittest.TestCase):
                 bridge.calls[0]["cognition_id"]
             ]
             self.assertEqual(cognition["state"], "FAILED")
+
+    def test_duplicate_completed_read_blocks_without_reexecuting(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            repeated = message(
+                {
+                    "type": "BOB.READ",
+                    "id": "same-read",
+                    "tool": "repo.status",
+                    "args": {},
+                }
+            )
+            bridge = FakeBridge([repeated, repeated])
+            _, _, campaign, queue, _, executor = environment(root, bridge)
+            enqueue(queue, campaign)
+
+            outcome = executor.cycle(campaign["campaign_id"])["outcomes"][0]
+
+            self.assertEqual(outcome["status"], "BLOCKED_PROTOCOL")
+            self.assertIn("repeated completed BOB.READ id", outcome["error"])
+            self.assertEqual(len(bridge.calls), 2)
+            item = queue.snapshot(campaign["campaign_id"])["items"][0]
+            record = executor.snapshot()["items"][item["item_id"]]
+            self.assertEqual(len(record["results"]), 1)
 
     def test_safe_boundary_yields_to_queued_interactive(self):
         with tempfile.TemporaryDirectory() as tmp:

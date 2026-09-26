@@ -234,7 +234,118 @@ class LocalCompanionTests(unittest.TestCase):
                 timeout=30,
             )
 
-    def test_submission_actuation_prefers_enabled_send_control(self):
+    def test_transient_rate_limit_ui_is_detected_on_text_error_surface(self):
+        class Item:
+            def is_visible(self):
+                return True
+
+            def inner_text(self, timeout=None):
+                return "Too many requests. Please try again later."
+
+        class Items:
+            def __init__(self, values):
+                self.values = values
+
+            def count(self):
+                return len(self.values)
+
+            def nth(self, index):
+                return self.values[index]
+
+        class Page:
+            def locator(self, selector):
+                if selector == '[class*="text-token-text-error"]':
+                    return Items([Item()])
+                return Items([])
+
+        self.assertEqual(
+            chatgpt_api_server.detect_chatgpt_transient_ui_error(Page()),
+            "RATE_LIMITED",
+        )
+
+    def test_network_diagnostics_keep_only_sanitized_metadata(self):
+        class Request:
+            method = "POST"
+
+        class Response:
+            url = "https://chatgpt.com/backend-api/conversation/1234567890abcdef1234567890abcdef?secret=x"
+            status = 429
+            request = Request()
+
+        chatgpt_api_server.network_diagnostics.clear()
+        chatgpt_api_server.record_chatgpt_network_response(Response())
+        self.assertEqual(len(chatgpt_api_server.network_diagnostics), 1)
+        event = chatgpt_api_server.network_diagnostics[0]
+        self.assertEqual(event["status"], 429)
+        self.assertEqual(event["method"], "POST")
+        self.assertNotIn("secret", event["path"])
+        self.assertIn(":id", event["path"])
+
+    def test_browser_diagnostics_are_structural_and_sanitized(self):
+        class Composer:
+            def evaluate(self, _expression):
+                return "abc"
+
+        class Page:
+            url = "https://chatgpt.com/c/example"
+
+        with (
+            patch.object(chatgpt_api_server, "find_textarea", return_value=Composer()),
+            patch.object(chatgpt_api_server, "find_send_button", return_value=(object(), False)),
+            patch.object(chatgpt_api_server, "user_message_count", return_value=1),
+            patch.object(chatgpt_api_server, "assistant_count", return_value=0),
+            patch.object(chatgpt_api_server, "conversation_turn_count", return_value=1),
+            patch.object(chatgpt_api_server, "assistant_copy_candidates", return_value=[]),
+            patch.object(chatgpt_api_server, "detect_chatgpt_transient_ui_error", return_value="RATE_LIMITED"),
+        ):
+            snapshot = chatgpt_api_server.browser_diagnostic_snapshot(Page())
+
+        self.assertTrue(snapshot["success"])
+        self.assertTrue(snapshot["conversation_route"])
+        self.assertEqual(snapshot["user_count"], 1)
+        self.assertEqual(snapshot["composer_length"], 3)
+        self.assertTrue(snapshot["send_enabled"])
+        self.assertEqual(snapshot["transient_ui"], "RATE_LIMITED")
+        self.assertNotIn("prompt", snapshot)
+        self.assertNotIn("response", snapshot)
+
+    def test_populate_composer_uses_keyboard_insert_for_contenteditable(self):
+        class Composer:
+            def __init__(self):
+                self.pressed = []
+                self.clicked = 0
+
+            def click(self):
+                self.clicked += 1
+
+            def evaluate(self, _expression):
+                return {"tag": "div", "contenteditable": "true"}
+
+            def press(self, key):
+                self.pressed.append(key)
+
+            def fill(self, _value):
+                raise AssertionError("contenteditable must not use fill")
+
+        class Keyboard:
+            def __init__(self):
+                self.inserted = []
+
+            def insert_text(self, value):
+                self.inserted.append(value)
+
+        class Page:
+            keyboard = Keyboard()
+
+        composer = Composer()
+        page = Page()
+        mode = chatgpt_api_server.populate_composer(page, composer, "abc")
+
+        self.assertEqual(mode, "contenteditable_insert_text")
+        self.assertEqual(composer.pressed, ["Control+A", "Backspace"])
+        self.assertEqual(page.keyboard.inserted, ["abc"])
+
+    def test_submission_actuation_uses_enter_when_send_control_is_enabled(self):
         class Button:
             def __init__(self, enabled=True):
                 self.enabled = enabled
@@ -281,9 +392,9 @@ class LocalCompanionTests(unittest.TestCase):
             return_value=None,
         ):
             actuator = chatgpt_api_server.actuate_submission(Page(button), textarea)
-        self.assertEqual(actuator, "send_button")
-        self.assertTrue(button.clicked)
-        self.assertFalse(textarea.pressed)
+        self.assertEqual(actuator, "input_enter")
+        self.assertFalse(button.clicked)
+        self.assertTrue(textarea.pressed)
 
     def test_submission_actuation_refuses_visible_disabled_send_control(self):
         class Button:
@@ -332,6 +443,82 @@ class LocalCompanionTests(unittest.TestCase):
         self.assertEqual(snapshot["user"], 1)
         self.assertEqual(snapshot["conversation_turn"], 1)
 
+    def test_submission_materialization_accepts_verified_backend_post(self):
+        class OpenPage:
+            url = "https://chatgpt.com/g/g-example/project"
+
+            def is_closed(self):
+                return False
+
+        with (
+            patch.object(chatgpt_api_server, "detect_chatgpt_transient_ui_error", return_value=None),
+            patch.object(chatgpt_api_server, "user_message_count", return_value=0),
+            patch.object(chatgpt_api_server, "conversation_turn_count", return_value=0),
+            patch.object(chatgpt_api_server, "assistant_count", return_value=0),
+            patch.object(chatgpt_api_server, "backend_submission_accepted_since", return_value=True),
+        ):
+            snapshot = chatgpt_api_server.wait_for_submission_materialization(
+                OpenPage(),
+                baseline_user_count=0,
+                baseline_turn_count=0,
+                baseline_assistant_count=0,
+                baseline_network_at=123.0,
+                timeout=1,
+            )
+        self.assertTrue(snapshot["backend_accepted"])
+
+    def test_submission_materialization_does_not_accept_conversation_transition_alone(self):
+        class OpenPage:
+            url = "https://chatgpt.com/c/new-conversation"
+
+            def is_closed(self):
+                return False
+
+        with (
+            patch.object(chatgpt_api_server, "detect_chatgpt_transient_ui_error", return_value=None),
+            patch.object(chatgpt_api_server, "user_message_count", return_value=0),
+            patch.object(chatgpt_api_server, "conversation_turn_count", return_value=0),
+            patch.object(chatgpt_api_server, "assistant_count", return_value=0),
+        ):
+            snapshot = chatgpt_api_server.wait_for_submission_materialization(
+                OpenPage(),
+                baseline_user_count=0,
+                baseline_turn_count=0,
+                baseline_assistant_count=0,
+                baseline_url="https://chatgpt.com/g/g-example/project",
+                timeout=0.02,
+            )
+        self.assertIsNone(snapshot)
+
+    def test_submission_materialization_does_not_accept_composer_clear_alone(self):
+        class OpenPage:
+            url = "https://chatgpt.com/c/same-conversation"
+
+            def is_closed(self):
+                return False
+
+        class Composer:
+            def evaluate(self, _expression):
+                return ""
+
+        with (
+            patch.object(chatgpt_api_server, "detect_chatgpt_transient_ui_error", return_value=None),
+            patch.object(chatgpt_api_server, "user_message_count", return_value=0),
+            patch.object(chatgpt_api_server, "conversation_turn_count", return_value=0),
+            patch.object(chatgpt_api_server, "assistant_count", return_value=0),
+        ):
+            snapshot = chatgpt_api_server.wait_for_submission_materialization(
+                OpenPage(),
+                baseline_user_count=0,
+                baseline_turn_count=0,
+                baseline_assistant_count=0,
+                baseline_url="https://chatgpt.com/c/same-conversation",
+                composer=Composer(),
+                baseline_composer_length=4,
+                timeout=0.02,
+            )
+        self.assertIsNone(snapshot)
+
     def test_send_message_surfaces_distinct_submission_failure(self):
         class Textarea:
             def click(self):
@@ -362,6 +549,94 @@ class LocalCompanionTests(unittest.TestCase):
             result["error"],
             "CHATGPT_SUBMISSION_FAILED:NO_CONVERSATION_TURN",
         )
+
+    def test_send_message_replays_once_after_blank_project_transition(self):
+        class Textarea:
+            def __init__(self):
+                self.fills = []
+                self.clicks = 0
+
+            def click(self):
+                self.clicks += 1
+
+            def fill(self, value):
+                self.fills.append(value)
+
+        class Page:
+            url = "https://chatgpt.com/g/g-example/project"
+
+        page = Page()
+        initial = Textarea()
+        recovery = Textarea()
+        materialization_calls = []
+
+        def materialize(*_args, **_kwargs):
+            materialization_calls.append(True)
+            if len(materialization_calls) == 1:
+                page.url = "https://chatgpt.com/c/new-conversation"
+                return None
+            return {"user": 1, "conversation_turn": 1, "assistant": 0}
+
+        with (
+            patch.object(chatgpt_api_server, "find_textarea", side_effect=[initial, recovery]),
+            patch.object(chatgpt_api_server, "assistant_count", return_value=0),
+            patch.object(chatgpt_api_server, "user_message_count", return_value=0),
+            patch.object(chatgpt_api_server, "conversation_turn_count", return_value=0),
+            patch.object(chatgpt_api_server, "composer_text_length", side_effect=[4, 0, 4]),
+            patch.object(chatgpt_api_server, "actuate_submission", side_effect=["input_enter", "input_enter"]),
+            patch.object(chatgpt_api_server, "wait_for_submission_materialization", side_effect=materialize),
+            patch.object(chatgpt_api_server, "detect_chatgpt_transient_ui_error", return_value=None),
+            patch.object(chatgpt_api_server, "wait_for_new_assistant_copy", return_value=True),
+            patch.object(chatgpt_api_server, "capture_response", return_value="ok"),
+            patch.object(chatgpt_api_server.time, "sleep", return_value=None),
+        ):
+            result = chatgpt_api_server.send_message(page, "same prompt")
+
+        self.assertTrue(result["success"])
+        self.assertEqual(len(materialization_calls), 2)
+        self.assertEqual(initial.fills, ["same prompt"])
+        self.assertEqual(recovery.fills, ["same prompt"])
+
+    def test_wait_for_copy_accepts_new_global_message_copy_control(self):
+        class OpenPage:
+            def is_closed(self):
+                return False
+
+        with (
+            patch.object(chatgpt_api_server, "detect_chatgpt_transient_ui_error", return_value=None),
+            patch.object(chatgpt_api_server, "assistant_count", return_value=0),
+            patch.object(chatgpt_api_server, "global_message_copy_candidates", return_value=[object()]),
+        ):
+            self.assertTrue(
+                chatgpt_api_server.wait_for_new_assistant_copy(
+                    OpenPage(),
+                    baseline_assistant_count=0,
+                    baseline_copy_count=0,
+                    timeout=1,
+                )
+            )
+
+    def test_capture_response_falls_back_to_global_message_copy(self):
+        class Candidate:
+            def is_visible(self):
+                return True
+
+            def click(self, timeout=None, force=False):
+                return None
+
+        class Page:
+            def evaluate(self, _expression):
+                return "copied response"
+
+        with (
+            patch.object(chatgpt_api_server, "assistant_copy_candidates", return_value=[]),
+            patch.object(chatgpt_api_server, "global_message_copy_candidates", return_value=[Candidate()]),
+            patch.object(chatgpt_api_server.time, "sleep", return_value=None),
+        ):
+            self.assertEqual(
+                chatgpt_api_server.capture_response(Page()),
+                "copied response",
+            )
 
     def test_wait_for_copy_surfaces_closed_page_immediately(self):
         class ClosedPage:
