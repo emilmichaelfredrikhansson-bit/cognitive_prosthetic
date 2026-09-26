@@ -48,7 +48,7 @@ This preserves the operator's requested wall-clock budget without inventing unsa
 
 ## Execution binding
 
-Campaign work is created through the existing repository ExecutionCoordinator with lane=campaign.
+Campaign work is created through the existing repository ExecutionCoordinator with lane=campaign. A campaign admission is valid only when the resulting run becomes ACTIVE immediately. If capacity, lease or dependency rules would leave it QUEUED, campaign control cancels that run and refuses the admission; waiting work belongs in the campaign backlog rather than the execution ledger. This prevents pre-deadline queued work from silently starting after the campaign deadline.
 
 The run therefore inherits ordinary repository rules:
 - max three worker slots per repository;

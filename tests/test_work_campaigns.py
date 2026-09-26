@@ -288,11 +288,17 @@ class WorkCampaignTests(unittest.TestCase):
                     base_ref="main",
                     leases=[f"work:item-{index}"],
                 )["run"]
-                for index in range(4)
+                for index in range(3)
             ]
-            self.assertEqual([run["state"] for run in runs[:3]], ["ACTIVE"] * 3)
-            self.assertEqual(runs[3]["state"], "QUEUED")
-            self.assertEqual(runs[3]["blocked_reason"], "CAPACITY")
+            with self.assertRaisesRegex(ProtocolError, "CAPACITY"):
+                manager.create_run(
+                    campaign["campaign_id"],
+                    workspace_code="ONE",
+                    goal="task 4",
+                    base_ref="main",
+                    leases=["work:item-4"],
+                )
+            self.assertEqual([run["state"] for run in runs], ["ACTIVE"] * 3)
             for run in runs:
                 self.assertEqual(run["lane"], "campaign")
                 self.assertEqual(
@@ -300,8 +306,15 @@ class WorkCampaignTests(unittest.TestCase):
                     "NONE",
                 )
                 self.assertFalse(run["authority"]["auto_merge"])
+            snapshot = executions.coordinator_for_workspace("ONE").ledger.snapshot()
+            rejected = [
+                run for run in snapshot["runs"].values()
+                if run["goal"] == "task 4"
+            ]
+            self.assertEqual(len(rejected), 1)
+            self.assertEqual(rejected[0]["state"], "CANCELLED")
             summary = manager.run_states(campaign["campaign_id"])
-            self.assertEqual(summary["count"], 4)
+            self.assertEqual(summary["count"], 3)
 
     def test_cancel_closes_admission_but_does_not_kill_runs(self):
         with tempfile.TemporaryDirectory() as tmp:

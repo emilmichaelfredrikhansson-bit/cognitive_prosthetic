@@ -338,6 +338,15 @@ class WorkCampaignManager:
                 "workspace": target["workspace"],
             },
         )
+        if run["state"] != "ACTIVE":
+            blocked_reason = str(run.get("blocked_reason") or run["state"])
+            execution.cancel_run(
+                run["run_id"],
+                reason="CAMPAIGN_NOT_ADMITTED:" + blocked_reason,
+            )
+            raise ProtocolError(
+                "campaign run could not start immediately: " + blocked_reason
+            )
         binding = {
             "workspace": target["workspace"],
             "repository_id": target["repository_id"],
@@ -370,6 +379,7 @@ class WorkCampaignManager:
         with self._lock:
             campaign = copy.deepcopy(self._require_locked(campaign_id))
         discovered: list[dict[str, Any]] = []
+        bound_run_ids = {binding["run_id"] for binding in campaign["runs"]}
         for target in campaign["targets"]:
             try:
                 execution = self.executions.coordinator_for_workspace(
@@ -379,10 +389,15 @@ class WorkCampaignManager:
                 continue
             for run in execution.ledger.snapshot()["runs"].values():
                 authority = run.get("authority") or {}
-                if (
+                matches_campaign = (
                     run.get("lane") == "campaign"
                     and authority.get("campaign_id") == campaign_id
-                ):
+                )
+                recoverable = (
+                    run["run_id"] in bound_run_ids
+                    or run.get("state") not in TERMINAL_RUN_STATES
+                )
+                if matches_campaign and recoverable:
                     discovered.append({
                         "workspace": target["workspace"],
                         "repository_id": target["repository_id"],
