@@ -314,6 +314,7 @@ class WorkCampaignManager:
         base_ref: str,
         leases: list[str],
         depends_on: list[str] | None = None,
+        work_item_id: str | None = None,
     ) -> dict[str, Any]:
         campaign = self.admit(campaign_id, workspace_code)
         target = next(
@@ -336,6 +337,7 @@ class WorkCampaignManager:
                 "repository_id": target["repository_id"],
                 "repository": target["repository"],
                 "workspace": target["workspace"],
+                "work_item_id": str(work_item_id or "").strip() or None,
             },
         )
         if run["state"] != "ACTIVE":

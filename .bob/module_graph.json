@@ -156,7 +156,8 @@
         "BOB_WORKTREE_COORDINATION",
         "BOB_SELF_DEVELOPMENT_SANDBOX",
         "BOB_SELF_DEVELOPMENT_PROMOTION",
-        "BOB_WORK_CAMPAIGN_CONTROL"
+        "BOB_WORK_CAMPAIGN_CONTROL",
+        "BOB_WORK_CAMPAIGN_QUEUE"
       ],
       "invariants": [
         "At most 3 active Bob runs occupy worker slots per repository ledger.",
@@ -188,7 +189,8 @@
         "BOB_SELF_DEVELOPMENT_EXECUTION",
         "BOB_SELF_DEVELOPMENT_SANDBOX",
         "BOB_SELF_DEVELOPMENT_PROMOTION",
-        "BOB_WORK_CAMPAIGN_CONTROL"
+        "BOB_WORK_CAMPAIGN_CONTROL",
+        "BOB_WORK_CAMPAIGN_QUEUE"
       ],
       "invariants": [
         "Coordinator verifies local Git origin and bound canonical ref before opening repository state.",
@@ -341,7 +343,8 @@
         "BOB_WORKTREE_COORDINATION"
       ],
       "consumers": [
-        "BOB_RUNTIME_ORCHESTRATION"
+        "BOB_RUNTIME_ORCHESTRATION",
+        "BOB_WORK_CAMPAIGN_QUEUE"
       ],
       "invariants": [
         "Campaign start requires exact configured local repository bindings for every target workspace.",
@@ -350,6 +353,38 @@
         "Restart reconciliation may adopt exact lane=campaign runs bound by campaign_id without duplicating execution.",
         "Campaign state and runs record promotion_authority=NONE and auto_merge=false.",
         "Campaign control never merges, pushes, promotes, widens provider authority or invents a second execution scheduler."
+      ],
+      "status": "WORKING"
+    },
+    {
+      "id": "BOB_WORK_CAMPAIGN_QUEUE",
+      "purpose": "Persist explicit campaign work backlog, dependency/capacity admission, safe-stop requests and verified review digests above existing repository coordinators.",
+      "source_paths": [
+        "bob/work_campaign_queue.py",
+        "bob/work_campaign_queue_api.py"
+      ],
+      "test_paths": [
+        "tests/test_work_campaign_queue.py"
+      ],
+      "contract_paths": [
+        "docs/BOB_WORK_CAMPAIGN_QUEUE_V1.md"
+      ],
+      "producers": [
+        "BOB_WORK_CAMPAIGN_CONTROL",
+        "BOB_EXECUTION_LEDGER",
+        "BOB_WORKTREE_COORDINATION"
+      ],
+      "consumers": [
+        "BOB_RUNTIME_ORCHESTRATION"
+      ],
+      "invariants": [
+        "Capacity and blocker waiting remain in the campaign backlog rather than as execution runs that could activate after deadline.",
+        "Only RUNNING campaigns may admit dependency-ready work through existing repository coordinators.",
+        "Every admitted run is bound to its exact campaign work item ID; restart adopts at most one matching live run to close the admission-to-queue-persist crash window.",
+        "Deadline/cancellation convert unadmitted work to terminal backlog states and admitted work to STOP_REQUESTED without asynchronous mid-step killing.",
+        "Successful work requires explicit verification evidence and records exact branch/head receipts with promotion_authority=NONE and auto_merge=false.",
+        "Unexpected terminal execution never implies campaign-work success.",
+        "Campaign queue never performs cognition, repository mutation, merge, push, PR or promotion."
       ],
       "status": "WORKING"
     },

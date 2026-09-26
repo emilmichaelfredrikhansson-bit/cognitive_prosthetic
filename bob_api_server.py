@@ -15,6 +15,8 @@ from bob.selfdev_promotion import SelfDevelopmentPromotionGate
 from bob.selfdev_promotion_api import create_selfdev_promotion_blueprint
 from bob.work_campaigns import WorkCampaignManager
 from bob.work_campaign_api import create_work_campaign_blueprint
+from bob.work_campaign_queue import WorkCampaignQueue
+from bob.work_campaign_queue_api import create_work_campaign_queue_blueprint
 from bob.worktree_coordination import RepositoryCoordinatorRegistry
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -79,6 +81,15 @@ work_campaigns = WorkCampaignManager(
 )
 app.register_blueprint(
     create_work_campaign_blueprint(work_campaigns)
+)
+work_campaign_queue = WorkCampaignQueue(
+    os.environ.get("BOB_WORK_CAMPAIGN_QUEUE_PATH")
+    or BASE_DIR / ".bob" / "runtime" / "work_campaign_queue.json",
+    work_campaigns,
+    execution_registry,
+)
+app.register_blueprint(
+    create_work_campaign_queue_blueprint(work_campaign_queue)
 )
 
 
