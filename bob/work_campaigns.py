@@ -275,6 +275,54 @@ class WorkCampaignManager:
             self._persist()
             return copy.deepcopy(campaign)
 
+    def extend(
+        self,
+        campaign_id: str,
+        *,
+        additional_seconds: int,
+    ) -> dict[str, Any]:
+        self._reconcile_deadlines()
+        try:
+            additional_seconds = int(additional_seconds)
+        except (TypeError, ValueError) as exc:
+            raise ProtocolError(
+                "campaign additional_seconds must be an integer"
+            ) from exc
+        if additional_seconds < 1:
+            raise ProtocolError("campaign additional_seconds must be positive")
+
+        with self._lock:
+            campaign = self._require_locked(campaign_id)
+            if campaign["state"] not in {RUNNING, DEADLINE_REACHED}:
+                raise ProtocolError(
+                    "only RUNNING or DEADLINE_REACHED campaigns can extend"
+                )
+            total_duration = (
+                int(campaign.get("duration_seconds") or 0)
+                + additional_seconds
+            )
+            if total_duration > MAX_DURATION_SECONDS:
+                raise ProtocolError(
+                    f"campaign duration_seconds must remain <= {MAX_DURATION_SECONDS}"
+                )
+
+            now = self._now()
+            deadline = _parse_time(campaign.get("deadline_at"))
+            if campaign["state"] == RUNNING and deadline is not None:
+                base = deadline
+            else:
+                base = now
+
+            campaign["duration_seconds"] = total_duration
+            campaign["deadline_at"] = (
+                base + timedelta(seconds=additional_seconds)
+            ).isoformat()
+            campaign["state"] = RUNNING
+            campaign["deadline_reached_at"] = None
+            campaign["admission_closed_reason"] = None
+            self._persist()
+            return copy.deepcopy(campaign)
+
     def _target_for_locked(
         self,
         campaign: dict[str, Any],

@@ -162,6 +162,75 @@ class WorkCampaignTests(unittest.TestCase):
             completed = manager.complete(campaign["campaign_id"])
             self.assertEqual(completed["campaign"]["state"], COMPLETED)
 
+    def test_deadline_reached_campaign_can_extend_same_run(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            workspaces, executions = make_environment(root)
+            clock = FakeClock()
+            manager = WorkCampaignManager(
+                root / "campaigns.json",
+                workspaces,
+                executions,
+                clock=clock,
+            )
+            campaign = manager.create(
+                goal="continue same campaign",
+                workspace_codes=["ONE"],
+                duration_seconds=100,
+            )
+            manager.start(campaign["campaign_id"])
+            created = manager.create_run(
+                campaign["campaign_id"],
+                workspace_code="ONE",
+                goal="existing work",
+                base_ref="main",
+                leases=["work:existing"],
+            )
+            original_run_id = created["run"]["run_id"]
+
+            clock.advance(101)
+            expired = manager.snapshot()["campaigns"][0]
+            self.assertEqual(expired["state"], DEADLINE_REACHED)
+
+            extended = manager.extend(
+                campaign["campaign_id"],
+                additional_seconds=300,
+            )
+            self.assertEqual(extended["campaign_id"], campaign["campaign_id"])
+            self.assertEqual(extended["state"], RUNNING)
+            self.assertEqual(extended["duration_seconds"], 400)
+            self.assertEqual(
+                extended["deadline_at"],
+                (clock.value + timedelta(seconds=300)).isoformat(),
+            )
+            self.assertIsNone(extended["deadline_reached_at"])
+            self.assertIsNone(extended["admission_closed_reason"])
+            self.assertEqual(
+                [binding["run_id"] for binding in extended["runs"]],
+                [original_run_id],
+            )
+            run = executions.coordinator_for_workspace("ONE").ledger.get_run(
+                original_run_id
+            )
+            self.assertEqual(run["state"], "ACTIVE")
+            self.assertEqual(
+                manager.admit(campaign["campaign_id"], "ONE")["state"],
+                RUNNING,
+            )
+
+            manager.cancel(
+                campaign["campaign_id"],
+                reason="operator stop after extension test",
+            )
+            with self.assertRaisesRegex(
+                ProtocolError,
+                "RUNNING or DEADLINE_REACHED",
+            ):
+                manager.extend(
+                    campaign["campaign_id"],
+                    additional_seconds=60,
+                )
+
     def test_deadline_crossing_during_run_creation_cancels_unbound_run(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

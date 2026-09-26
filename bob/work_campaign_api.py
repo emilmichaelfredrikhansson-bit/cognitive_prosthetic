@@ -31,6 +31,15 @@ def create_work_campaign_blueprint(
         campaign = campaigns.start(str(campaign_id))
         return jsonify({"success": True, "campaign": campaign})
 
+    @blueprint.post("/bob/campaigns/<campaign_id>/extend")
+    def campaign_extend(campaign_id):
+        data = request.get_json(silent=True) or {}
+        campaign = campaigns.extend(
+            str(campaign_id),
+            additional_seconds=data.get("additional_seconds"),
+        )
+        return jsonify({"success": True, "campaign": campaign})
+
     @blueprint.post("/bob/campaigns/<campaign_id>/runs")
     def campaign_create_run(campaign_id):
         data = request.get_json(silent=True) or {}

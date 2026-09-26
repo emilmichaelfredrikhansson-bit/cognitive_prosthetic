@@ -91,6 +91,7 @@ class LocalServerSurfaceTests(unittest.TestCase):
         expected = {
             "/bob/campaigns",
             "/bob/campaigns/<campaign_id>/start",
+            "/bob/campaigns/<campaign_id>/extend",
             "/bob/campaigns/<campaign_id>/runs",
             "/bob/campaigns/<campaign_id>/reconcile",
             "/bob/campaigns/<campaign_id>/complete",

@@ -122,11 +122,14 @@ Self-hosting V2 / long-context finding:
 - round 32 then returned an already-completed benign `BOB.READ id=arch02-r27`. Bob correctly refused to re-execute it and blocked as `BLOCKED_PROTOCOL`, leaving the isolated branch clean and unchanged at `fab7f268...`;
 - this exposes a second long-running-work brittleness: duplicate READ ids are safe to suppress deterministically and should not require operator intervention, while duplicate/mismatched effects must remain fail-closed;
 - the working copy therefore moves prompt/framing text into `BOB_CAMPAIGN_COGNITION_CONTEXT` and converts an already-completed READ into a non-executing `repo.protocol` correction result, then continues fresh cognition. Effect authority/replay semantics are unchanged. Focused context **2/2**, executor **6/6**, package module-cap regression PASS, full suite **223/223 PASS** and `git diff --check` PASS;
-- current pushed executor footprint before this extraction was **14,997 / 15,000**, so the framing move is required architecture rather than cap relaxation.
+- current pushed executor footprint before this extraction was **14,997 / 15,000**, so the framing move is required architecture rather than cap relaxation;
+- benign duplicate-READ recovery was committed/pushed as `13f704e4f9fd13589afcdd77c7905f1bf9db6042`; Local Companion restart was healthy, but reality reconciliation then showed the same campaign had naturally reached its original one-hour wall-clock deadline at `2026-09-26T16:47:52Z`, while the exact run/effects remained intact;
+- campaign deadline continuation is now an explicit fail-closed operation rather than state surgery: only `RUNNING`/`DEADLINE_REACHED` campaigns can extend, total configured duration remains capped at seven days, the same campaign/run bindings are preserved, and cancelled/completed campaigns cannot be resurrected;
+- focused campaign **8/8**, queue **8/8**, worker **6/6**, server-surface **11/11**, module-cap regression and `py_compile` PASS; full suite **224/224 PASS** and `git diff --check` PASS.
 
 Still required before Priority A is complete:
-- checkpoint/push/restart the benign duplicate-READ recovery; no canonical/main promotion;
-- continue the **same** V2 run from clean isolated head `fab7f268...` and its three durable verified effects, across as many bounded slices as needed, until deterministic verification succeeds or a genuine fail-closed blocker/deadline occurs;
+- checkpoint/push/restart the same-campaign deadline-extension hardening; no canonical/main promotion;
+- extend and continue the **same** V2 campaign/run from clean isolated head `fab7f268...` and its three durable verified effects, across as many bounded slices as needed, until deterministic verification succeeds or another genuine fail-closed blocker/deadline occurs;
 - only after that self-hosting canary is green, close Priority A and proceed directly toward `FULL_REPLACEMENT_GATE`.
 
 ## LAST_COMPLETED
