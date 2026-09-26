@@ -99,10 +99,17 @@ Latest reconciled live qualification:
 - After reconciliation, the current working copy passes focused executor **6/6**, focused Local Companion **34/34**, full suite **218/218 PASS**, and `git diff --check`.
 - The earlier blocked/parked canaries remain durable evidence and must not be replayed merely as transport probes.
 
+Self-hosting architecture-repair qualification:
+- first genuine canary `campaign-d9a4105bb8ca` / `run-31a63f6970de` started from exact pre-repair base `c5102a9aacce349c9e5aded950daaa8c3ce825b1` with `promotion_authority=NONE`;
+- Bob used all 12 cognition rounds for repository evidence gathering, performed **0 effects**, left the isolated worktree clean at the exact base and failed only with `CAMPAIGN_EXECUTOR_ROUND_BUDGET_EXHAUSTED`;
+- this exposed a control-plane defect for large work: the 12-round slice was terminal instead of a resumable safe boundary;
+- the working copy now converts clean round-slice exhaustion into durable `ROUND_YIELD`: worker-owned checkpoint `executor-round-yield`, queue item remains `ADMITTED`, execution run remains `ACTIVE`, and a later executor cycle can continue from durable `continuation_results`;
+- dirty worktree exhaustion still fails closed as `RECOVERY_BLOCKED_DIRTY`; cognition/effect failures remain terminal/blocking under their existing rules;
+- module hard caps remain enforced without exception: executor/worker focused suites PASS, packaged module graph cap regression PASS, full suite **219/219 PASS**, `git diff --check` PASS.
+
 Still required before Priority A is complete:
-- checkpoint and push the reconciled working-branch implementation/handoff; no canonical/main promotion;
-- restart/reload from that checkpoint and prove V12 executor outcome plus sane execution state survive restart without replaying cognition/effects;
-- execute the planned genuine architecture-repair self-hosting canary from `c5102a9aacce349c9e5aded950daaa8c3ce825b1`, evaluating invariants/tests rather than an exact textual solution;
+- checkpoint/push/restart the round-yield hardening on the working branch; no canonical/main promotion;
+- rerun the same genuine architecture-repair problem from `c5102a9aacce349c9e5aded950daaa8c3ce825b1` and allow multiple executor cycles to continue across durable round yields until verified success, explicit blocker, campaign deadline or another real fail-closed condition;
 - only after that self-hosting canary is green, close Priority A and proceed directly toward `FULL_REPLACEMENT_GATE`.
 
 ## LAST_COMPLETED

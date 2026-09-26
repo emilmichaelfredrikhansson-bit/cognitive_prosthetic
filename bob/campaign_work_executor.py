@@ -740,20 +740,23 @@ class CampaignWorkExecutor:
                     "round budget exhausted with dirty worktree"
                 ),
             }
-        failed = self.queue.finish(
+        checkpoint = self.worker.checkpoint_round_yield(
             item["item_id"],
-            success=False,
-            reason="CAMPAIGN_EXECUTOR_ROUND_BUDGET_EXHAUSTED",
+            round_count=record["round_count"],
         )
         self._update(
             record,
-            status="FAILED",
-            outcome={"queue_state": failed["state"], "at": _now()},
+            status="ROUND_YIELD",
+            outcome={
+                "reason": "COGNITION_ROUND_SLICE_EXHAUSTED",
+                "checkpoint_id": checkpoint["checkpoint_id"],
+                "at": _now(),
+            },
         )
         return {
             "item_id": item["item_id"],
-            "status": "FAILED",
-            "queue_item": failed,
+            "status": "ROUND_YIELD",
+            "checkpoint": checkpoint,
         }
 
     def cycle(

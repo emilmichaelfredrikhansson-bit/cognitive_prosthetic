@@ -266,6 +266,21 @@ class WorkCampaignWorker:
             self._persist()
         return copy.deepcopy(checkpoint)
 
+    def checkpoint_round_yield(
+        self,
+        item_id: str,
+        *,
+        round_count: int,
+    ) -> dict[str, Any]:
+        return self.checkpoint(
+            item_id,
+            label="executor-round-yield",
+            verification={
+                "reason": "COGNITION_ROUND_SLICE_EXHAUSTED",
+                "round_count": int(round_count),
+            },
+        )
+
     def park(
         self,
         item_id: str,

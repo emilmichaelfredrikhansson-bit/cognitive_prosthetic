@@ -163,6 +163,33 @@ class WorkCampaignWorkerTests(unittest.TestCase):
                 item["item_id"],
             )
 
+    def test_round_yield_checkpoint_preserves_active_run(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _, _, executions, campaign, queue, worker = make_worker(root)
+            item = enqueue(queue, campaign)
+            ready = worker.cycle(campaign["campaign_id"], max_admissions=1)["ready"][0]
+
+            checkpoint = worker.checkpoint_round_yield(
+                item["item_id"], round_count=12
+            )
+
+            self.assertEqual(checkpoint["label"], "executor-round-yield")
+            self.assertEqual(
+                checkpoint["verification"]["reason"],
+                "COGNITION_ROUND_SLICE_EXHAUSTED",
+            )
+            self.assertEqual(
+                queue.snapshot(campaign["campaign_id"])["items"][0]["state"],
+                ADMITTED,
+            )
+            self.assertEqual(
+                executions.coordinator_for_run(ready["run_id"]).ledger.get_run(
+                    ready["run_id"]
+                )["state"],
+                "ACTIVE",
+            )
+
     def test_cycle_completes_campaign_only_after_explicit_verified_outcome(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
