@@ -330,16 +330,16 @@ class LocalCompanionTests(unittest.TestCase):
         class Composer:
             def __init__(self):
                 self.pressed = []
-                self.clicked = 0
+                self.focused = []
 
-            def click(self):
-                self.clicked += 1
+            def focus(self, timeout=None):
+                self.focused.append(timeout)
 
             def evaluate(self, _expression):
                 return {"tag": "div", "contenteditable": "true"}
 
-            def press(self, key):
-                self.pressed.append(key)
+            def press(self, key, timeout=None):
+                self.pressed.append((key, timeout))
 
             def fill(self, _value):
                 raise AssertionError("contenteditable must not use fill")
@@ -359,7 +359,11 @@ class LocalCompanionTests(unittest.TestCase):
         mode = chatgpt_api_server.populate_composer(page, composer, "abc")
 
         self.assertEqual(mode, "contenteditable_insert_text")
-        self.assertEqual(composer.pressed, ["Control+A", "Backspace"])
+        self.assertEqual(composer.focused, [5_000])
+        self.assertEqual(
+            composer.pressed,
+            [("Control+A", 5_000), ("Backspace", 5_000)],
+        )
         self.assertEqual(page.keyboard.inserted, ["abc"])
 
     def test_submission_actuation_uses_enter_when_send_control_is_enabled(self):
@@ -548,6 +552,96 @@ class LocalCompanionTests(unittest.TestCase):
         self.assertEqual(snapshot["user"], 1)
         self.assertEqual(snapshot["conversation_turn"], 1)
 
+    def test_submission_materialization_uses_bounded_playwright_probe(self):
+        class Handle:
+            def json_value(self):
+                return {
+                    "user": 1,
+                    "conversation_turn": 1,
+                    "assistant": 0,
+                    "transient": None,
+                }
+
+        class OpenPage:
+            url = "https://chatgpt.com/c/example"
+
+            def __init__(self):
+                self.timeouts = []
+
+            def is_closed(self):
+                return False
+
+            def wait_for_function(
+                self,
+                _expression,
+                *,
+                arg,
+                timeout,
+                polling,
+            ):
+                self.timeouts.append((timeout, polling, arg))
+                return Handle()
+
+        page = OpenPage()
+        with (
+            patch.object(
+                chatgpt_api_server,
+                "backend_submission_error_since",
+                return_value=None,
+            ),
+            patch.object(
+                chatgpt_api_server,
+                "backend_submission_accepted_since",
+                return_value=False,
+            ),
+        ):
+            snapshot = chatgpt_api_server.wait_for_submission_materialization(
+                page,
+                baseline_user_count=0,
+                baseline_turn_count=0,
+                baseline_assistant_count=0,
+                timeout=0.5,
+            )
+
+        self.assertEqual(snapshot["user"], 1)
+        self.assertEqual(snapshot["conversation_turn"], 1)
+        self.assertEqual(len(page.timeouts), 1)
+        timeout_ms, polling_ms, args = page.timeouts[0]
+        self.assertLessEqual(timeout_ms, 500)
+        self.assertLessEqual(polling_ms, 250)
+        self.assertEqual(args["user"], 0)
+
+    def test_submission_materialization_accepts_backend_before_dom_probe(self):
+        class OpenPage:
+            def is_closed(self):
+                raise AssertionError("DOM probe should not run after backend acceptance")
+
+            def wait_for_function(self, *_args, **_kwargs):
+                raise AssertionError("DOM probe should not run after backend acceptance")
+
+        with (
+            patch.object(
+                chatgpt_api_server,
+                "backend_submission_error_since",
+                return_value=None,
+            ),
+            patch.object(
+                chatgpt_api_server,
+                "backend_submission_accepted_since",
+                return_value=True,
+            ),
+        ):
+            snapshot = chatgpt_api_server.wait_for_submission_materialization(
+                OpenPage(),
+                baseline_user_count=0,
+                baseline_turn_count=0,
+                baseline_assistant_count=0,
+                baseline_network_at=123.0,
+                timeout=0.5,
+            )
+
+        self.assertTrue(snapshot["backend_accepted"])
+
     def test_submission_materialization_accepts_verified_backend_post(self):
         class OpenPage:
             url = "https://chatgpt.com/g/g-example/project"
@@ -665,10 +759,10 @@ class LocalCompanionTests(unittest.TestCase):
 
     def test_send_message_surfaces_distinct_submission_failure(self):
         class Textarea:
-            def click(self):
+            def focus(self, timeout=None):
                 return None
 
-            def fill(self, _value):
+            def fill(self, _value, timeout=None):
                 return None
 
         class Keyboard:
@@ -698,12 +792,12 @@ class LocalCompanionTests(unittest.TestCase):
         class Textarea:
             def __init__(self):
                 self.fills = []
-                self.clicks = 0
+                self.focus_timeouts = []
 
-            def click(self):
-                self.clicks += 1
+            def focus(self, timeout=None):
+                self.focus_timeouts.append(timeout)
 
-            def fill(self, value):
+            def fill(self, value, timeout=None):
                 self.fills.append(value)
 
         class Page:

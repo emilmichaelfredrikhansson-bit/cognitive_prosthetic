@@ -1093,7 +1093,9 @@ def composer_text_length(composer):
 
 def populate_composer(page, composer, prompt_text):
     """Populate ChatGPT's current editor using editor-appropriate input events."""
-    composer.click()
+    # Focus is sufficient for keyboard/editor input and avoids pointer-interception
+    # failures from transient ChatGPT overlays sitting above a visible composer.
+    composer.focus(timeout=5_000)
     try:
         meta = composer.evaluate(
             """(el) => ({
@@ -1107,12 +1109,12 @@ def populate_composer(page, composer, prompt_text):
     if isinstance(meta, dict) and meta.get("contenteditable") == "true":
         # ChatGPT's newer rich editor is a contenteditable div. Keyboard insertion
         # exercises the editor's input pipeline instead of mutating DOM text via fill().
-        composer.press("Control+A")
-        composer.press("Backspace")
+        composer.press("Control+A", timeout=5_000)
+        composer.press("Backspace", timeout=5_000)
         page.keyboard.insert_text(prompt_text)
         return "contenteditable_insert_text"
 
-    composer.fill(prompt_text)
+    composer.fill(prompt_text, timeout=5_000)
     return "fill"
 
 
@@ -1189,6 +1191,80 @@ def browser_diagnostic_snapshot(page):
     }
 
 
+def wait_for_submission_dom_signal(
+    page,
+    *,
+    baseline_user_count,
+    baseline_turn_count,
+    baseline_assistant_count,
+    timeout,
+):
+    """Return bounded DOM evidence that submission materialized.
+
+    Playwright locator probes can individually outlive a Python wall-clock loop
+    when the ChatGPT page is busy. Use one browser-side predicate with an
+    explicit Playwright timeout so the caller's submission budget stays real.
+    """
+    timeout_ms = max(1, int(max(0.001, float(timeout)) * 1000))
+    expression = r"""(baseline) => {
+        const count = (selector) => document.querySelectorAll(selector).length;
+        const user = count('[data-message-author-role="user"]');
+        const conversation_turn = count('[data-testid*="conversation-turn"]');
+        const assistant = count('[data-message-author-role="assistant"]');
+
+        const selectors = [
+            '[role="alert"]',
+            '[role="status"]',
+            '[aria-live="assertive"]',
+            '[aria-live="polite"]',
+            '[data-sonner-toast]',
+            '[data-testid*="error"]',
+            '[class*="text-token-text-error"]',
+        ];
+        const statusText = selectors
+            .flatMap((selector) => Array.from(document.querySelectorAll(selector)))
+            .filter((node) => {
+                const style = window.getComputedStyle(node);
+                return style && style.visibility !== 'hidden' && style.display !== 'none';
+            })
+            .map((node) => (node.innerText || node.textContent || '').trim())
+            .filter(Boolean)
+            .join('\n');
+
+        let transient = null;
+        if (/too many (?:concurrent )?requests|rate limit(?:ed)?|please slow down/i.test(statusText)) {
+            transient = 'RATE_LIMITED';
+        } else if (/you(?:'|\u2019)ve reached[^\n]{0,120}limit|usage limit|come back later/i.test(statusText)) {
+            transient = 'USAGE_LIMIT';
+        }
+
+        if (
+            transient ||
+            user > baseline.user ||
+            conversation_turn > baseline.conversation_turn ||
+            assistant > baseline.assistant
+        ) {
+            return {user, conversation_turn, assistant, transient};
+        }
+        return false;
+    }"""
+    try:
+        handle = page.wait_for_function(
+            expression,
+            arg={
+                "user": baseline_user_count,
+                "conversation_turn": baseline_turn_count,
+                "assistant": baseline_assistant_count,
+            },
+            timeout=timeout_ms,
+            polling=min(250, timeout_ms),
+        )
+    except PlaywrightTimeout:
+        return None
+    value = handle.json_value()
+    return value if isinstance(value, dict) else None
+
+
 def wait_for_submission_materialization(
     page,
     *,
@@ -1210,54 +1286,85 @@ def wait_for_submission_materialization(
         "assistant": baseline_assistant_count,
         "conversation_transition": False,
         "composer_cleared": False,
+        "backend_accepted": False,
     }
-    while time.time() < deadline:
+    bounded_dom_probe = callable(getattr(page, "wait_for_function", None))
+
+    while True:
+        backend_error = backend_submission_error_since(baseline_network_at)
+        if backend_error:
+            raise RuntimeError(f"CHATGPT_SUBMISSION_FAILED:{backend_error}")
+        if backend_submission_accepted_since(baseline_network_at):
+            return {
+                **last_snapshot,
+                "backend_accepted": True,
+            }
+
+        remaining = deadline - time.time()
+        if remaining <= 0:
+            break
         if page.is_closed():
             raise RuntimeError("ChatGPT page is closed")
+
+        if bounded_dom_probe:
+            signal = wait_for_submission_dom_signal(
+                page,
+                baseline_user_count=baseline_user_count,
+                baseline_turn_count=baseline_turn_count,
+                baseline_assistant_count=baseline_assistant_count,
+                timeout=min(0.5, remaining),
+            )
+            if signal:
+                transient_ui_error = signal.get("transient")
+                if transient_ui_error:
+                    raise RuntimeError(
+                        f"CHATGPT_TRANSIENT_UI:{transient_ui_error}"
+                    )
+                last_snapshot.update(
+                    {
+                        "user": int(signal.get("user") or 0),
+                        "conversation_turn": int(
+                            signal.get("conversation_turn") or 0
+                        ),
+                        "assistant": int(signal.get("assistant") or 0),
+                    }
+                )
+                return last_snapshot
+            continue
+
+        # Unit-test / non-Playwright fallback. Production pages always use the
+        # explicitly bounded browser-side probe above.
         transient_ui_error = detect_chatgpt_transient_ui_error(page)
         if transient_ui_error:
             raise RuntimeError(f"CHATGPT_TRANSIENT_UI:{transient_ui_error}")
-
         current_conversation_key = chatgpt_conversation_key(
             getattr(page, "url", None)
         )
         current_composer_length = (
             composer_text_length(composer) if composer is not None else None
         )
-        conversation_transition = bool(
-            current_conversation_key
-            and current_conversation_key != baseline_conversation_key
-        )
-        composer_cleared = bool(
-            baseline_composer_length
-            and current_composer_length == 0
-        )
-        backend_error = backend_submission_error_since(
-            baseline_network_at
-        )
-        if backend_error:
-            raise RuntimeError(
-                f"CHATGPT_SUBMISSION_FAILED:{backend_error}"
-            )
-        backend_accepted = backend_submission_accepted_since(
-            baseline_network_at
-        )
         last_snapshot = {
             "user": user_message_count(page),
             "conversation_turn": conversation_turn_count(page),
             "assistant": assistant_count(page),
-            "conversation_transition": conversation_transition,
-            "composer_cleared": composer_cleared,
-            "backend_accepted": backend_accepted,
+            "conversation_transition": bool(
+                current_conversation_key
+                and current_conversation_key != baseline_conversation_key
+            ),
+            "composer_cleared": bool(
+                baseline_composer_length
+                and current_composer_length == 0
+            ),
+            "backend_accepted": False,
         }
         if (
             last_snapshot["user"] > baseline_user_count
             or last_snapshot["conversation_turn"] > baseline_turn_count
             or last_snapshot["assistant"] > baseline_assistant_count
-            or backend_accepted
         ):
             return last_snapshot
-        time.sleep(0.25)
+        time.sleep(min(0.25, max(0.0, deadline - time.time())))
+
     logging.error(
         "ChatGPT submission did not materialize; baseline=%s final=%s",
         {
