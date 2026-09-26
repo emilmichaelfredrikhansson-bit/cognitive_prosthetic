@@ -49,20 +49,32 @@ class ChatGPTBridge:
                 raise BobError("ChatGPT bridge returned no response text")
             return text
 
-    def cognition(self, prompt: str) -> str:
-        """Run one cognition request in a fresh ChatGPT conversation.
-
-        This is the canonical primitive for the future stateless Context Compiler
-        path. Existing closed-loop V1 work still uses send() until durable
-        compiled-context continuation is implemented.
-        """
+    def cognition(
+        self,
+        prompt: str,
+        *,
+        request_id: str | None = None,
+        run_id: str | None = None,
+        cognition_id: str | None = None,
+    ) -> str:
+        """Run one fresh, optionally execution-correlated cognition request."""
+        body = {"prompt": prompt}
+        for key, value in (
+            ("request_id", request_id),
+            ("run_id", run_id),
+            ("cognition_id", cognition_id),
+        ):
+            if value not in (None, ""):
+                body[key] = str(value)
         with self._lock:
             response = requests.post(
                 self.base_url + "/cognition",
-                json={"prompt": prompt},
+                json=body,
                 timeout=self.timeout,
             )
             payload = self._payload_or_raise(response, "fresh cognition request failed")
+            if request_id not in (None, "") and payload.get("request_id") != str(request_id):
+                raise BobError("fresh cognition response request_id mismatch")
             text = payload.get("response")
             if not isinstance(text, str):
                 raise BobError("fresh cognition request returned no response text")

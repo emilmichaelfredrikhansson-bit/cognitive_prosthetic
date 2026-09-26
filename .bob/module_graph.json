@@ -426,6 +426,63 @@
       "status": "WORKING"
     },
     {
+      "id": "BOB_CAMPAIGN_REPO_ADAPTER",
+      "purpose": "Confine bounded campaign repository reads, isolated branch writes and deterministic verification to one exact coordinator-owned worktree.",
+      "source_paths": [
+        "bob/campaign_repo_adapter.py"
+      ],
+      "test_paths": [
+        "tests/test_campaign_repo_adapter.py"
+      ],
+      "contract_paths": [],
+      "producers": [
+        "BOB_EXECUTION_LEDGER",
+        "BOB_WORKTREE_COORDINATION"
+      ],
+      "consumers": [
+        "BOB_CAMPAIGN_WORK_EXECUTOR"
+      ],
+      "invariants": [
+        "Every path resolves inside the exact coordinator-owned worktree and protected runtime/secret paths fail closed.",
+        "Branch writes require pre-existing workspace write authority and model output cannot widen it.",
+        "Replace/delete effects bind to exact source content hashes and every commit is verified against exact after-state.",
+        "A persisted pending effect can adopt only the exact already-committed head; dirty or ambiguous recovery fails closed.",
+        "The adapter never merges, pushes, promotes or mutates canonical checkout state."
+      ],
+      "status": "WORKING"
+    },
+    {
+      "id": "BOB_CAMPAIGN_WORK_EXECUTOR",
+      "purpose": "Consume exact campaign-worker ready bindings through fresh cognition, bounded repository effects and deterministic verification before durable queue outcome.",
+      "source_paths": [
+        "bob/campaign_work_executor.py",
+        "bob/campaign_work_executor_api.py"
+      ],
+      "test_paths": [
+        "tests/test_campaign_work_executor.py"
+      ],
+      "contract_paths": [],
+      "producers": [
+        "BOB_WORK_CAMPAIGN_WORKER",
+        "BOB_CAMPAIGN_REPO_ADAPTER",
+        "BOB_EXECUTION_LEDGER",
+        "BOB_MODULE_COGNITION"
+      ],
+      "consumers": [
+        "BOB_RUNTIME_ORCHESTRATION"
+      ],
+      "invariants": [
+        "Executor consumes only exact ready work-item/run/worktree bindings already admitted by campaign control.",
+        "Every fresh cognition is durably correlated run_id -> cognition_id -> request_id through the existing execution ledger.",
+        "Running cognition remains a busy boundary so deadline/pre-emption never kills or parks a step mid-flight.",
+        "Interactive queued work is re-offered to the worker pre-emption path at each clean cognition boundary.",
+        "Successful queue finish occurs only after deterministic verification of exact isolated branch after-state.",
+        "Durable pending effects close the prepare-to-commit crash window without creating replayable authority.",
+        "Executor never creates execution authority, merges, pushes, promotes or expands authority from model output."
+      ],
+      "status": "WORKING"
+    },
+    {
       "id": "BOB_PROCESS_SUPERVISION",
       "purpose": "Own durable lifecycle, ports, logs and bounded cleanup for explicit Bob Local child processes.",
       "source_paths": [

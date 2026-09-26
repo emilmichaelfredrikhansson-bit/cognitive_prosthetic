@@ -61,6 +61,33 @@ No component is globally smart.
 
 The inherited ChatGPT browser bridge is a replaceable cognition transport. **Canonical large-project cognition is stateless: one cognition question -> one fresh ChatGPT conversation, with Bob carrying all continuity. Bob now has an executable stateless module path (`/bob/module-turn`) that recompiles the complete bounded module problem after Bob-owned READ/effect results and calls fresh `/cognition` each round. The ordinary `/bob/turn` path remains legacy/stateful until module selection and context compilation become the default orchestration path.** **V1 response capture is canonically the visible ChatGPT Copy action -> clipboard; DOM scraping is legacy-only, while Windows UI Automation is deferred unless real-world robustness requires it.** **Bob V1 runs as Local Companion on the operator's own PC using the operator's existing ChatGPT account/subscription but a separate Bob-managed Chromium profile. All Bob cognition is confined to one dedicated private ChatGPT Project named `Bob`, with Project-only memory as the V1 isolation setting.** Bob API and bridge remain loopback-only, the Bob Project/ChatGPT tab lives in the background, and the Bob UI is brought to the foreground in the same managed browser. DigitalOcean/persistent remote cognition is deferred to V2. **Recursive self-development is now canonicalized as a low-priority daytime background lane: interactive work always wins, background mutation uses isolated worktree/branch state plus semantic leases, and promotion remains a separate authority boundary. Bob's compounding cognition model is a provenance-rich Knowledge Fabric whose relevant verified patterns/failures/playbooks/examples/source pointers are selected into the existing bounded context envelope rather than dumped wholesale into prompts.**
 
+## ACTIVE_EXECUTOR_QUALIFICATION_2026_09_26
+
+Campaign work execution is now implemented locally on `feat/bob-execution-ledger-v1` as two separate bounded modules:
+
+- `BOB_CAMPAIGN_REPO_ADAPTER`: exact coordinator-owned worktree confinement, bounded repository reads, hash-bound isolated branch effects, verified commits and deterministic verification;
+- `BOB_CAMPAIGN_WORK_EXECUTOR`: consumes only exact `BOB_WORK_CAMPAIGN_WORKER.ready` bindings, carries `run_id -> cognition_id -> request_id`, uses fresh cognition, persists pending effects/outcomes, yields to queued interactive work at clean cognition boundaries and calls successful `queue.finish` only after deterministic verification;
+- executor owns no run creation, execution capacity, merge, push, integration or promotion authority;
+- model output cannot widen workspace write authority;
+- cognition/submission failure is durable and is not transparently retried;
+- restart can adopt only an exact already-prepared/committed pending effect; dirty or ambiguous recovery fails closed;
+- Bob API exposes `GET /bob/campaigns/<campaign_id>/executor` and `POST /bob/campaigns/<campaign_id>/executor/cycle`;
+- Bob-internal successful executor verification is configured to run the full unittest suite inside the exact isolated worktree.
+
+Deterministic pre-live qualification:
+- focused executor/adapter/cognition/server tranche: **27/27 PASS**;
+- full suite: **207/207 PASS** in 69.351 s;
+- module graph parses with 17 modules;
+- measured footprints: `BOB_CAMPAIGN_REPO_ADAPTER=8,525/15,000`, `BOB_CAMPAIGN_WORK_EXECUTOR=14,264/15,000`, `BOB_EXECUTION_LEDGER=14,800/15,000`, `BOB_WORK_CAMPAIGN_QUEUE=14,570/15,000`, `BOB_WORK_CAMPAIGN_WORKER=13,061/15,000`;
+- `git diff --check`: PASS.
+
+Still required before this tranche is LIVE GREEN:
+- checkpoint the deterministic-green implementation on the working branch so a self-hosted run can use it as its base;
+- restart/reload Bob Local without issuing a probe cognition;
+- execute one bounded Bob-internal campaign through ready -> executor -> fresh cognition -> isolated repo effect/work -> deterministic verification -> durable outcome -> concise digest;
+- then execute the planned genuine architecture-repair canary from oversized commit `c5102a9aacce349c9e5aded950daaa8c3ce825b1`, evaluating invariants/tests rather than an exact textual solution;
+- only after both are green, checkpoint/push stable working-branch state. No canonical/main promotion without explicit operator approval.
+
 ## LAST_COMPLETED
 
 `BOB_REPOSITORY_EXECUTION_AND_PROCESS_SUPERVISION_V1`
@@ -684,19 +711,35 @@ The package regression loads the real `.bob/module_graph.json`, verifies unique 
 
 ## NEXT_INTENDED_WORK
 
-1. Do not probe cognition repeatedly while ChatGPT is request-limited. Once requests are accepted again, stage a **distinct benign cleanup effect** (natural candidate: remove the approved canary marker), obtain explicit operator approval, and live-prove post-effect fresh continuation.
-2. If that fresh continuation hits a transient limit, verify `CONTINUATION_BLOCKED -> resume` works without a second Git effect; if it completes directly, record the normal green continuation path.
-3. Run the genuine self-hosting architecture-repair canary from pre-repair commit `c5102a9aacce349c9e5aded950daaa8c3ce825b1` in an isolated run/worktree branch. Bob must diagnose and repair the >15k runtime module from source reality; compare the result against invariants/tests, not against an exact textual solution, and do not promote automatically.
-4. Make module selection/Context Compiler routing the default behind ordinary Bob chat.
-5. Add cognition-contract synchronization: runtime/preflight should detect stale/missing `BOB_COGNITION_CONTRACT_VERSION` in the configured Bob Project instructions and fail closed or require re-sync.
-6. Continue Phase 3.75 from the now-LIVE-GREEN isolated selfdev worktree/branch lifecycle: semantic leases + interactive pre-emption -> checkpoint/revert/discard -> separate promotion gate.
-7. Implement Knowledge Fabric V1: item schema/provenance/freshness/maturity -> first distilled Bob failures/patterns/reference items -> bounded retrieval into Context Compiler -> retrieval/effectiveness metrics.
-8. Prove one daytime unattended multi-cycle canary and one PC restart/resume canary, producing a concise operator digest rather than background chatter.
-9. Implement a separate campaign work executor/driver that consumes `BOB_WORK_CAMPAIGN_WORKER.ready` items, grounds cognition in the exact run/worktree/repository, performs only bounded authorized effects, reaches explicit safe boundaries, records verification, and calls queue finish only from verified reality. It must preserve interactive-first parking/deadline stop semantics and never auto-merge/promote. This is the remaining execution piece for assignments such as "jobba med SL och AB kommande åtta timmarna".
-10. Configure/qualify explicit local repository bindings for SL + AB before any real multi-repo campaign; identity must fail closed and no production deploy/spend authority is implied by a local binding.
-11. Implement `BOB_SCHEDULER_V1` as Bob's own persistent scheduled-task platform: durable one-shot/recurring/conditional/dependency-driven tasks, large backlog independent of active worker count, retries/backoff, history/results, cancellation, budget/rate-limit policy and task spawning. Reuse existing repository execution authority; ChatGPT native Scheduled Tasks may optionally wake/bootstrap Bob but are not source of truth.
-12. Product-vision/bootstrap, richer durable result distillation and reusable module/template extraction remain coupled follow-up work.
-13. DigitalOcean/mobile persistence remains V2 and is not a prerequisite.
+### Priority A — finish the current Bob execution workstream
+
+1. Reconcile the current uncommitted executor-related work before making further changes. At the latest verified local state, `bob/driver.py` and `tests/test_cognition_policy.py` contain uncommitted correlation work carrying `run_id` / `cognition_id` / `request_id` through fresh cognition. Preserve or deliberately supersede that work; never overwrite it accidentally.
+2. Implement and qualify a separate campaign work executor/driver that consumes exact `BOB_WORK_CAMPAIGN_WORKER.ready` items, grounds every cognition/effect in the already-admitted repository/run/worktree, performs only bounded authorized effects, reaches explicit safe boundaries, records verification, and calls queue finish only from verified reality. Do not put executor logic into the nearly-full execution ledger or campaign queue, do not create a second execution authority, and never auto-merge/promote.
+3. Prove the executor first with a bounded Bob-internal canary: `campaign -> ready item -> fresh cognition -> bounded repository work -> deterministic verification -> durable outcome -> concise campaign digest`. The canary must use an isolated run/worktree and end with no implicit promotion authority.
+4. Preserve interactive-first behavior, deadline stop semantics, checkpoint/park/resume and restart recovery while cognition is active. Dirty/uncheckpointed work or running cognition must fail closed rather than be killed or silently discarded.
+5. Do not issue repeated cognition probes merely to retest the known submission problem. When independent evidence indicates ChatGPT submissions are being accepted again, separately complete the already-planned benign cleanup-effect continuation proof; if transient-limited, prove `CONTINUATION_BLOCKED -> resume` without replaying the Git effect.
+6. After the executor is live-green, run the genuine self-hosting architecture-repair canary from pre-repair commit `c5102a9aacce349c9e5aded950daaa8c3ce825b1` in an isolated run/worktree. Compare against invariants/tests, not an exact textual solution, and do not promote automatically.
+7. Checkpoint/push the resulting stable Bob workstream state. Promotion/merge to `feat/bob-core-v1` or `main` still requires explicit operator approval.
+
+### Priority B — Resale Engine becomes the first external project built and run inside Bob
+
+8. Onboard workspace `RE` for `emilmichaelfredrikhansson-bit/resale-engine`, repository ID `1365744245`, canonical/default branch `main`. Create/verify a local clone and explicit repository binding with its own repository-scoped coordinator, ledger and worktree root. Fail closed unless Bob workspace identity, GitHub metadata, `governance/project-identity.json`, local `origin`, repository ID and canonical ref agree.
+9. Initial RE authority must remain shadow/development only: branch writes and deterministic tests may be authorized; no automated purchase, bidding, auction timing, buyer/seller messaging, money-moving action, material spend, production mutation or automatic promotion is authorized. `BUY_CANDIDATE` remains advisory only.
+10. Make RE the first real external **Bob-builder** pilot controlled from the Bob surface. The operator should be able to tell Bob, in substance, "continue building RE from CURRENT_WORK", after which Bob reconstructs RE reality, creates bounded work items/runs/worktrees, uses fresh cognition, edits/tests/verifies, and returns an operator digest without requiring a separate RE ChatGPT development chat.
+11. Use RE's current active work as the first builder canary: compare active-ask valuation evidence against realized Tradera market-sale evidence for Sony WH1000XM5 / `used_good` / `normal` / `primary_product`; preserve production valuation; implement only an observational incumbent/challenger report if evidence warrants it; test and checkpoint on an isolated branch; no merge without operator review.
+12. Add a distinct RE **task-worker** path after the builder canary is green. First task classes should be read-only/shadow operations such as marketplace evidence collection, Semantic Listing Interpreter work, comparable/evaluation jobs, shadow scans and outcome/follow-up processing. Task runs must not inherit builder code-mutation authority merely because they target the same repository.
+13. Qualify builder and task roles separately, then prove the first Bob x RE closed loop: `RE task -> observed/evaluated failure -> builder work item -> isolated RE fix -> tests/shadow regression -> operator review -> task rerun -> before/after comparison`. Task output may create work proposals but never expands authority or promotes code by itself.
+14. Once that loop is live-green, move normal RE development into Bob as the reference external-project workflow: the operator converses with Bob; Bob owns repository grounding, work decomposition, execution bookkeeping, cognition routing, verification and digesting; RE remains its own repository/runtime with its own authority boundaries.
+15. Only after normal RE builder + task operation is proven, qualify longer bounded campaigns such as "work on RE for four/eight hours" with mixed builder/task backlog, interactive-first pre-emption, deadline checkpointing and final digest. Promotion and economic actions remain operator-gated.
+16. Implement `BOB_SCHEDULER_V1` after the RE builder/task loop is proven, then migrate appropriate recurring RE scans/follow-ups from native ChatGPT Scheduled Tasks into Bob's durable scheduler. Scheduler backlog must remain separate from active execution capacity and must reuse existing repository execution authority.
+17. Use the proven RE pattern as the reference for later SL/AB onboarding and execution. Explicit local repository bindings remain mandatory before either can participate in a real campaign.
+
+### Deferred but still intended
+
+18. Make module selection/Context Compiler routing the default behind ordinary Bob chat and add cognition-contract synchronization for `BOB_COGNITION_CONTRACT_VERSION`.
+19. Implement Knowledge Fabric V1 and richer reusable result/pattern distillation after the external-project builder loop is working; knowledge never grants authority.
+20. Product-vision/bootstrap, reusable module/template extraction and richer unattended multi-cycle operation remain follow-up work.
+21. DigitalOcean/mobile persistence remains V2 and is not a prerequisite.
 
 ## OPEN_FINDINGS
 
@@ -719,7 +762,7 @@ The package regression loads the real `.bob/module_graph.json`, verifies unique 
 
 ## FIRST_ACTION
 
-Resume from the latest pushed `feat/bob-execution-ledger-v1` head after reconciling live GitHub/runtime state; the qualified campaign-worker implementation commit is `7cb795dc11d7d4d84a70940228fe53954d3bfcbc`. Do **not** send another cognition probe merely to retest submission. Campaign control + durable queue + worker control plane are LIVE GREEN. Continue with a **separate campaign work executor/driver** that consumes exact `ready` items, grounds work in their existing repository/run/worktree, respects interactive-first parking and deadline safe boundaries, and records explicit verification before queue outcome. Do not put this logic in the nearly-full execution ledger/queue, do not add a second execution authority, and do not auto-merge/promote. If independent evidence later shows cognition submissions are accepted again, return first to the distinct benign cleanup-effect continuation proof before the genuine self-hosting architecture-repair canary rooted at `c5102a9aacce349c9e5aded950daaa8c3ce825b1`.
+Resume from the latest actual local/GitHub/runtime state on `feat/bob-execution-ledger-v1`, not from this document alone. At the latest verified local state, HEAD is `9afd018c6d6d66c6604a7e51106a2e46ac7f13c9` and `bob/driver.py` plus `tests/test_cognition_policy.py` contain uncommitted executor-related correlation work; reconcile that work first. Then finish and live-qualify the **separate campaign work executor/driver** that consumes exact `ready` items, grounds work in their existing repository/run/worktree, respects interactive-first parking and deadline safe boundaries, and records explicit verification before queue outcome. Do not grow the nearly-full execution ledger/queue, do not add a second execution authority, do not auto-merge/promote, and do not issue another cognition probe solely to retest submission. Once the current Bob execution workstream is stably checkpointed/pushed and the required self-hosting qualification is complete, the next operator-priority tranche is **Bob x Resale Engine**: onboard `RE` (`emilmichaelfredrikhansson-bit/resale-engine`, repository ID `1365744245`) as the first external project developed and operated from inside Bob, first as a bounded Bob-builder canary and then as a separate shadow/read-only task-worker, culminating in a builder<->task closed loop with operator-gated promotion and no money-moving authority.
 
 ## HARD_BLOCKERS
 

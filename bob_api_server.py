@@ -2,9 +2,12 @@
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 
 from flask import Flask, jsonify, request, send_from_directory
+from bob.campaign_work_executor import CampaignWorkExecutor
+from bob.campaign_work_executor_api import create_campaign_work_executor_blueprint
 from bob.driver import BobRuntime
 from bob.errors import BobError
 from bob.selfdev_checkpoints import SelfDevelopmentCheckpoints
@@ -102,6 +105,30 @@ work_campaign_worker = WorkCampaignWorker(
 )
 app.register_blueprint(
     create_work_campaign_worker_blueprint(work_campaign_worker)
+)
+campaign_work_executor = CampaignWorkExecutor(
+    os.environ.get("BOB_CAMPAIGN_WORK_EXECUTOR_PATH")
+    or BASE_DIR / ".bob" / "runtime" / "campaign_work_executor.json",
+    runtime,
+    work_campaigns,
+    work_campaign_queue,
+    work_campaign_worker,
+    execution_registry,
+    verification_commands_by_repository={
+        _bob_workspace.github_repository_id: [
+            [
+                sys.executable,
+                "-m",
+                "unittest",
+                "discover",
+                "-s",
+                "tests",
+            ]
+        ]
+    },
+)
+app.register_blueprint(
+    create_campaign_work_executor_blueprint(campaign_work_executor)
 )
 
 

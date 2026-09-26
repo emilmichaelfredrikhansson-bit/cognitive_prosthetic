@@ -120,6 +120,14 @@ class LocalServerSurfaceTests(unittest.TestCase):
         }
         self.assertTrue(expected.issubset(rules))
 
+    def test_campaign_executor_routes_are_exposed(self):
+        rules = {rule.rule for rule in bob_api_server.app.url_map.iter_rules()}
+        expected = {
+            "/bob/campaigns/<campaign_id>/executor",
+            "/bob/campaigns/<campaign_id>/executor/cycle",
+        }
+        self.assertTrue(expected.issubset(rules))
+
     def test_execution_coordination_routes_are_exposed(self):
         rules = {rule.rule for rule in bob_api_server.app.url_map.iter_rules()}
         expected = {

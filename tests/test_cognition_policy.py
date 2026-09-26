@@ -60,6 +60,36 @@ class CognitionPolicyTests(unittest.TestCase):
             timeout=600,
         )
 
+    @patch("bob.driver.requests.post")
+    def test_bridge_forwards_and_validates_execution_correlation(self, post):
+        response = Mock()
+        response.json.return_value = {
+            "success": True,
+            "response": "solution",
+            "request_id": "req-1",
+        }
+        post.return_value = response
+
+        bridge = ChatGPTBridge(base_url="http://127.0.0.1:5001")
+        result = bridge.cognition(
+            "bounded problem",
+            request_id="req-1",
+            run_id="run-1",
+            cognition_id="cog-1",
+        )
+
+        self.assertEqual(result, "solution")
+        post.assert_called_once_with(
+            "http://127.0.0.1:5001/cognition",
+            json={
+                "prompt": "bounded problem",
+                "request_id": "req-1",
+                "run_id": "run-1",
+                "cognition_id": "cog-1",
+            },
+            timeout=600,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
