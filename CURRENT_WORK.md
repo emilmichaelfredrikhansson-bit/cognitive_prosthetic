@@ -116,10 +116,16 @@ Self-hosting V2 / long-context finding:
 - working copy now adds separate bounded campaign cognition-context compilation: small histories remain exact; oversized history keeps recent full evidence plus compact older request/tool/status/lineage summaries under a 40k-char hard budget. The real V2 history compiles to **25,425 chars** without mutating durable state;
 - bridge network diagnostics now fail fast on conversation POST 413 as `CHATGPT_SUBMISSION_FAILED:PAYLOAD_TOO_LARGE` rather than collapsing it into `NO_CONVERSATION_TURN`;
 - the context compiler is a separate declared `BOB_CAMPAIGN_COGNITION_CONTEXT` module so the executor remains within the 15k module cap;
-- focused context/executor/bridge tests and package cap regression PASS; full suite **223/223 PASS** and `git diff --check` PASS.
+- focused context/executor/bridge tests and package cap regression PASS; full suite **223/223 PASS** and `git diff --check` PASS;
+- bounded-context + HTTP-413 classification was committed/pushed as `32e545b4ae878afb7167f06973e79c149988e38c` and Local Companion restarted cleanly with Bob API running and bridge `ready=true`;
+- explicit operator continuation resumed the **same** V2 run from `fab7f268...`; rounds 25-32 progressed with the three prior effects preserved and no replay;
+- round 32 then returned an already-completed benign `BOB.READ id=arch02-r27`. Bob correctly refused to re-execute it and blocked as `BLOCKED_PROTOCOL`, leaving the isolated branch clean and unchanged at `fab7f268...`;
+- this exposes a second long-running-work brittleness: duplicate READ ids are safe to suppress deterministically and should not require operator intervention, while duplicate/mismatched effects must remain fail-closed;
+- the working copy therefore moves prompt/framing text into `BOB_CAMPAIGN_COGNITION_CONTEXT` and converts an already-completed READ into a non-executing `repo.protocol` correction result, then continues fresh cognition. Effect authority/replay semantics are unchanged. Focused context **2/2**, executor **6/6**, package module-cap regression PASS, full suite **223/223 PASS** and `git diff --check` PASS;
+- current pushed executor footprint before this extraction was **14,997 / 15,000**, so the framing move is required architecture rather than cap relaxation.
 
 Still required before Priority A is complete:
-- checkpoint/push/restart the bounded-context + 413-classification hardening; no canonical/main promotion;
+- checkpoint/push/restart the benign duplicate-READ recovery; no canonical/main promotion;
 - continue the **same** V2 run from clean isolated head `fab7f268...` and its three durable verified effects, across as many bounded slices as needed, until deterministic verification succeeds or a genuine fail-closed blocker/deadline occurs;
 - only after that self-hosting canary is green, close Priority A and proceed directly toward `FULL_REPLACEMENT_GATE`.
 

@@ -218,7 +218,7 @@ class CampaignWorkExecutorTests(unittest.TestCase):
             ]
             self.assertEqual(cognition["state"], "FAILED")
 
-    def test_duplicate_completed_read_blocks_without_reexecuting(self):
+    def test_duplicate_completed_read_returns_correction_without_reexecuting(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             repeated = message(
@@ -229,18 +229,26 @@ class CampaignWorkExecutorTests(unittest.TestCase):
                     "args": {},
                 }
             )
-            bridge = FakeBridge([repeated, repeated])
+            done = message(
+                {
+                    "type": "BOB.DONE",
+                    "id": "done-after-correction",
+                    "args": {"summary": "done"},
+                }
+            )
+            bridge = FakeBridge([repeated, repeated, done])
             _, _, campaign, queue, _, executor = environment(root, bridge)
             enqueue(queue, campaign)
 
             outcome = executor.cycle(campaign["campaign_id"])["outcomes"][0]
 
-            self.assertEqual(outcome["status"], "BLOCKED_PROTOCOL")
-            self.assertIn("repeated completed BOB.READ id", outcome["error"])
-            self.assertEqual(len(bridge.calls), 2)
+            self.assertEqual(outcome["status"], "SUCCEEDED")
+            self.assertEqual(len(bridge.calls), 3)
             item = queue.snapshot(campaign["campaign_id"])["items"][0]
             record = executor.snapshot()["items"][item["item_id"]]
-            self.assertEqual(len(record["results"]), 1)
+            self.assertEqual(len(record["results"]), 2)
+            self.assertIn('"tool": "repo.protocol"', record["results"][1])
+            self.assertIn("already completed", record["results"][1])
 
     def test_safe_boundary_yields_to_queued_interactive(self):
         with tempfile.TemporaryDirectory() as tmp:

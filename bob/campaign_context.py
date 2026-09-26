@@ -114,3 +114,35 @@ def bounded_continuation_results(
         recent = [recent_text[-available:]] if available else []
         compacted = [marker, *older, *recent]
     return compacted
+
+
+def compile_campaign_prompt(envelope: dict) -> str:
+    return (
+        "Continue this Bob campaign work item from the supplied durable "
+        "state; do not restart it.\n\n"
+        "EXECUTION ENVELOPE\n"
+        + json.dumps(envelope, indent=2, sort_keys=True)
+        + "\n\nHARD RULES\n"
+        "- Work only on this exact repository/run/branch/worktree.\n"
+        "- Never request merge, push, promotion, production mutation, spend, "
+        "secrets, or authority expansion.\n"
+        "- Emit exactly one BOB protocol message per response.\n"
+        "- READ tools: repo.read_file, repo.list_files, repo.search, "
+        "repo.status, repo.verify.\n"
+        "- EFFECT tools: repo.create_file, repo.replace_file, "
+        "repo.delete_file. Effects are isolated branch writes only.\n"
+        "- Before replace/delete, read the file and use content_sha256 as "
+        "expected_sha256.\n"
+        "- BOB.DONE is advisory; Bob performs deterministic verification "
+        "before successful completion.\n"
+        "- continuation_results already happened; do not treat them as requested work.\n"
+        "- Use BOB.ASK only for a genuine operator decision.\n\n"
+        "Return one raw JSON BOB object or one fenced BOB object. Examples:\n"
+        '{"type":"BOB.READ","id":"r1","tool":"repo.read_file",'
+        '"args":{"path":"CURRENT_WORK.md"}}\n'
+        '{"type":"BOB.EFFECT","id":"e1","tool":"repo.replace_file",'
+        '"args":{"path":"x.py","content":"...","expected_sha256":"..."}}\n'
+        '{"type":"BOB.DONE","id":"d1","args":{"summary":"candidate ready"}}'
+        "\n\nNEXT ACTION: Continue from continuation_results above. "
+        "Use a new id, never repeat a PASS READ, and advance toward the goal."
+    )
