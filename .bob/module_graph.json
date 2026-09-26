@@ -452,6 +452,27 @@
       "status": "WORKING"
     },
     {
+      "id": "BOB_CAMPAIGN_COGNITION_CONTEXT",
+      "purpose": "Compile a deterministic bounded cognition view over full durable campaign result history without changing the audit record.",
+      "source_paths": [
+        "bob/campaign_context.py"
+      ],
+      "test_paths": [
+        "tests/test_campaign_context.py"
+      ],
+      "contract_paths": [],
+      "producers": [],
+      "consumers": [
+        "BOB_CAMPAIGN_WORK_EXECUTOR"
+      ],
+      "invariants": [
+        "Full durable campaign result history remains authoritative and unmodified by cognition compaction.",
+        "Fresh cognition receives a deterministic bounded continuation view that preserves recent evidence and older action lineage.",
+        "Context compaction never grants effect authority or changes repository state."
+      ],
+      "status": "WORKING"
+    },
+    {
       "id": "BOB_CAMPAIGN_WORK_EXECUTOR",
       "purpose": "Consume exact campaign-worker ready bindings through fresh cognition, bounded repository effects and deterministic verification before durable queue outcome.",
       "source_paths": [
@@ -463,6 +484,7 @@
       ],
       "contract_paths": [],
       "producers": [
+        "BOB_CAMPAIGN_COGNITION_CONTEXT",
         "BOB_WORK_CAMPAIGN_WORKER",
         "BOB_CAMPAIGN_REPO_ADAPTER",
         "BOB_EXECUTION_LEDGER",

@@ -467,6 +467,45 @@ class LocalCompanionTests(unittest.TestCase):
             )
         self.assertTrue(snapshot["backend_accepted"])
 
+    def test_backend_submission_error_classifies_payload_too_large(self):
+        chatgpt_api_server.network_diagnostics.clear()
+        chatgpt_api_server.network_diagnostics.append(
+            {
+                "at": 200.0,
+                "method": "POST",
+                "path": "/backend-api/f/conversation",
+                "status": 413,
+            }
+        )
+        try:
+            self.assertEqual(
+                chatgpt_api_server.backend_submission_error_since(100.0),
+                "PAYLOAD_TOO_LARGE",
+            )
+        finally:
+            chatgpt_api_server.network_diagnostics.clear()
+
+    def test_submission_materialization_surfaces_backend_payload_too_large(self):
+        class OpenPage:
+            url = "https://chatgpt.com/c/example"
+
+            def is_closed(self):
+                return False
+
+        with (
+            patch.object(chatgpt_api_server, "detect_chatgpt_transient_ui_error", return_value=None),
+            patch.object(chatgpt_api_server, "backend_submission_error_since", return_value="PAYLOAD_TOO_LARGE"),
+            self.assertRaisesRegex(RuntimeError, "PAYLOAD_TOO_LARGE"),
+        ):
+            chatgpt_api_server.wait_for_submission_materialization(
+                OpenPage(),
+                baseline_user_count=0,
+                baseline_turn_count=0,
+                baseline_assistant_count=0,
+                baseline_network_at=123.0,
+                timeout=1,
+            )
+
     def test_submission_materialization_does_not_accept_conversation_transition_alone(self):
         class OpenPage:
             url = "https://chatgpt.com/c/new-conversation"

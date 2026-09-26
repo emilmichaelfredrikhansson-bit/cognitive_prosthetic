@@ -1,0 +1,116 @@
+from __future__ import annotations
+
+import json
+from typing import Iterable
+
+MAX_CONTINUATION_CONTEXT_CHARS = 40_000
+RECENT_FULL_BUDGET_CHARS = 28_000
+MAX_HISTORY_SUMMARY_CHARS = 280
+
+
+def _json_payload(result: str) -> dict:
+    text = str(result)
+    start, end = text.find("{"), text.rfind("}")
+    if start < 0 or end < start:
+        return {}
+    try:
+        payload = json.loads(text[start : end + 1])
+    except json.JSONDecodeError:
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def _history_summary(result: str) -> str:
+    payload = _json_payload(result)
+    request_id = str(payload.get("request_id") or "?")
+    tool = str(payload.get("tool") or "?")
+    status = str(payload.get("status") or "?")
+    data = payload.get("data") if isinstance(payload.get("data"), dict) else {}
+    details = []
+    if tool == "repo.read_file":
+        if data.get("path"):
+            details.append(f"path={data['path']}")
+        if data.get("start_line") is not None:
+            details.append(
+                f"lines={data.get('start_line')}-{data.get('end_line')}"
+            )
+        if data.get("content_sha256"):
+            details.append(f"sha256={data['content_sha256']}")
+    elif tool == "repo.search":
+        if data.get("query"):
+            details.append(f"query={data['query']!r}")
+        if data.get("prefix"):
+            details.append(f"prefix={data['prefix']}")
+        if isinstance(data.get("results"), list):
+            details.append(f"matches={len(data['results'])}")
+    elif tool == "repo.list_files":
+        if data.get("prefix"):
+            details.append(f"prefix={data['prefix']}")
+        if isinstance(data.get("files"), list):
+            details.append(f"files={len(data['files'])}")
+
+    verified = data.get("verified_effect")
+    if isinstance(verified, dict):
+        details.append(f"effect={verified.get('tool')}")
+        details.append(f"path={verified.get('path')}")
+        details.append(f"head={verified.get('head_sha')}")
+    for key in ("head_sha", "base_sha", "branch", "clean", "truncated"):
+        value = data.get(key)
+        if value not in (None, "", [], {}):
+            details.append(f"{key}={value}")
+
+    summary = (
+        f"[history] request_id={request_id} tool={tool} status={status}"
+        + ((" " + " ".join(details)) if details else "")
+    )
+    if len(summary) > MAX_HISTORY_SUMMARY_CHARS:
+        summary = summary[: MAX_HISTORY_SUMMARY_CHARS - 1] + "…"
+    return summary
+
+
+def bounded_continuation_results(
+    results: Iterable[str],
+) -> list[str]:
+    raw = [str(result) for result in results]
+    if sum(len(result) for result in raw) <= MAX_CONTINUATION_CONTEXT_CHARS:
+        return raw
+
+    recent: list[str] = []
+    recent_chars = 0
+    split_at = len(raw)
+    for index in range(len(raw) - 1, -1, -1):
+        candidate = raw[index]
+        if recent and recent_chars + len(candidate) > RECENT_FULL_BUDGET_CHARS:
+            break
+        if len(candidate) > RECENT_FULL_BUDGET_CHARS:
+            candidate = candidate[-RECENT_FULL_BUDGET_CHARS:]
+        recent.insert(0, candidate)
+        recent_chars += len(candidate)
+        split_at = index
+
+    older = [_history_summary(result) for result in raw[:split_at]]
+    marker = (
+        "[continuation compacted: full durable history remains in Bob state; "
+        f"durable_results={len(raw)} older_summarized={len(older)}]"
+    )
+    compacted = [marker, *older, *recent]
+
+    while (
+        sum(len(result) for result in compacted)
+        > MAX_CONTINUATION_CONTEXT_CHARS
+        and older
+    ):
+        older.pop(0)
+        compacted = [marker, *older, *recent]
+
+    if sum(len(result) for result in compacted) > MAX_CONTINUATION_CONTEXT_CHARS:
+        available = max(
+            0,
+            MAX_CONTINUATION_CONTEXT_CHARS
+            - len(marker)
+            - sum(len(result) for result in older),
+        )
+        recent_text = "\n".join(recent)
+        recent = [recent_text[-available:]] if available else []
+        compacted = [marker, *older, *recent]
+    return compacted

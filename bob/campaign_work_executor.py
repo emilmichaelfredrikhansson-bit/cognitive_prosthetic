@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from .campaign_context import bounded_continuation_results
 from .campaign_repo_adapter import CampaignRepoAdapter
 from .errors import AuthorityError, ConfigurationError, ProtocolError
 from .protocol import make_result, parse_model_response
@@ -372,12 +373,13 @@ class CampaignWorkExecutor:
             ),
             "goal": item["goal"],
             "round": int(record.get("round_count") or 0),
-            "continuation_results": list(record.get("results") or ()),
+            "continuation_results": bounded_continuation_results(
+                record.get("results") or ()
+            ),
         }
         return (
-            "You are one fresh/stateless cognition step inside an ongoing Bob "
-            "campaign work item. Do not restart the work. Bob supplies continuity, "
-            "identity, authority and effects below.\n\n"
+            "Continue this Bob campaign work item from the supplied durable "
+            "state; do not restart it.\n\n"
             "EXECUTION ENVELOPE\n"
             + json.dumps(envelope, indent=2, sort_keys=True)
             + "\n\nHARD RULES\n"

@@ -199,6 +199,24 @@ def backend_submission_accepted_since(since_at):
     return False
 
 
+def backend_submission_error_since(since_at):
+    if since_at is None:
+        return None
+    for event in network_diagnostics:
+        if event.get("at", 0) < since_at:
+            continue
+        if event.get("method") != "POST":
+            continue
+        if not re.fullmatch(
+            r"/backend-api/(?:f/)?conversation",
+            str(event.get("path") or ""),
+        ):
+            continue
+        if int(event.get("status") or 0) == 413:
+            return "PAYLOAD_TOO_LARGE"
+    return None
+
+
 def _normalize_request_id(value=None):
     request_id = str(value or f"bridge-{uuid.uuid4().hex[:16]}").strip()
     if not request_id or len(request_id) > 128:
@@ -1159,6 +1177,13 @@ def wait_for_submission_materialization(
             baseline_composer_length
             and current_composer_length == 0
         )
+        backend_error = backend_submission_error_since(
+            baseline_network_at
+        )
+        if backend_error:
+            raise RuntimeError(
+                f"CHATGPT_SUBMISSION_FAILED:{backend_error}"
+            )
         backend_accepted = backend_submission_accepted_since(
             baseline_network_at
         )

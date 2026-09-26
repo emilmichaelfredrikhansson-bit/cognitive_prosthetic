@@ -107,9 +107,20 @@ Self-hosting architecture-repair qualification:
 - dirty worktree exhaustion still fails closed as `RECOVERY_BLOCKED_DIRTY`; cognition/effect failures remain terminal/blocking under their existing rules;
 - module hard caps remain enforced without exception: executor/worker focused suites PASS, packaged module graph cap regression PASS, full suite **219/219 PASS**, `git diff --check` PASS.
 
+Self-hosting V2 / long-context finding:
+- after round-yield hardening was committed/pushed at `ecc2da2fc52c153dde8431d61876a07e82a4bf0f`, V2 `campaign-fc8010321446` / `campaign-work-5183bb278080` / `run-02b654ab1469` restarted the same exact architecture-repair problem from `c5102a9...`;
+- slice 1 reached 12 cognition rounds with zero effects and LIVE yielded as `ROUND_YIELD` at durable checkpoint `campaign-checkpoint-081c821a889e`; campaign remained RUNNING, item ADMITTED, same run ACTIVE and exact base head clean;
+- slice 2 continued the same run/continuation and independently created three verified architecture commits: `bob/runtime_effects.py` at `e003063a...`, `bob/runtime_module.py` at `aacb3a46...`, and `bob/runtime_bridge.py` at `fab7f268...`;
+- round 24 then blocked cognition. Sanitized network diagnostics proved the submission POST itself returned **HTTP 413**, while later unrelated conversation-list traffic returned 429. The prior `NO_CONVERSATION_TURN` label therefore hid a payload-size failure, not a selector/capture failure;
+- exact durable continuation history was 23 results / **136,358 chars**. Full durable history remains authoritative, but it must not be reinjected verbatim forever;
+- working copy now adds separate bounded campaign cognition-context compilation: small histories remain exact; oversized history keeps recent full evidence plus compact older request/tool/status/lineage summaries under a 40k-char hard budget. The real V2 history compiles to **25,425 chars** without mutating durable state;
+- bridge network diagnostics now fail fast on conversation POST 413 as `CHATGPT_SUBMISSION_FAILED:PAYLOAD_TOO_LARGE` rather than collapsing it into `NO_CONVERSATION_TURN`;
+- the context compiler is a separate declared `BOB_CAMPAIGN_COGNITION_CONTEXT` module so the executor remains within the 15k module cap;
+- focused context/executor/bridge tests and package cap regression PASS; full suite **223/223 PASS** and `git diff --check` PASS.
+
 Still required before Priority A is complete:
-- checkpoint/push/restart the round-yield hardening on the working branch; no canonical/main promotion;
-- rerun the same genuine architecture-repair problem from `c5102a9aacce349c9e5aded950daaa8c3ce825b1` and allow multiple executor cycles to continue across durable round yields until verified success, explicit blocker, campaign deadline or another real fail-closed condition;
+- checkpoint/push/restart the bounded-context + 413-classification hardening; no canonical/main promotion;
+- continue the **same** V2 run from clean isolated head `fab7f268...` and its three durable verified effects, across as many bounded slices as needed, until deterministic verification succeeds or a genuine fail-closed blocker/deadline occurs;
 - only after that self-hosting canary is green, close Priority A and proceed directly toward `FULL_REPLACEMENT_GATE`.
 
 ## LAST_COMPLETED
