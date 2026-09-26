@@ -116,17 +116,25 @@ class CampaignWorkExecutorTests(unittest.TestCase):
                     ),
                 ]
             )
-            campaigns, executions, campaign, queue, _, executor = environment(
+            campaigns, executions, campaign, queue, worker, executor = environment(
                 root, bridge
             )
             enqueue(queue, campaign)
 
-            outcome = executor.cycle(campaign["campaign_id"])["outcomes"][0]
+            first = executor.cycle(campaign["campaign_id"])["outcomes"][0]
+            self.assertEqual(first["status"], "ROUND_YIELD")
+            self.assertEqual(len(bridge.calls), 1)
+
+            restarted = CampaignWorkExecutor(
+                root / "executor.json", executor.runtime, campaigns, queue, worker, executions
+            )
+            outcome = restarted.cycle(campaign["campaign_id"])["outcomes"][0]
 
             self.assertEqual(outcome["status"], "SUCCEEDED")
             item = queue.snapshot(campaign["campaign_id"])["items"][0]
             self.assertEqual(item["state"], SUCCEEDED)
             self.assertEqual(len(bridge.calls), 2)
+            self.assertNotEqual(bridge.calls[0]["cognition_id"], bridge.calls[1]["cognition_id"])
             self.assertIn("NEXT ACTION: Continue", bridge.calls[1]["prompt"])
             self.assertIn("request_id", bridge.calls[1]["prompt"])
             self.assertIn("r1", bridge.calls[1]["prompt"])
@@ -180,6 +188,8 @@ class CampaignWorkExecutorTests(unittest.TestCase):
             )
             enqueue(queue, campaign)
 
+            self.assertEqual(executor.cycle(campaign["campaign_id"])["outcomes"][0]["status"], "ROUND_YIELD")
+            self.assertEqual(executor.cycle(campaign["campaign_id"])["outcomes"][0]["status"], "ROUND_YIELD")
             outcome = executor.cycle(campaign["campaign_id"])["outcomes"][0]
 
             self.assertEqual(outcome["status"], "SUCCEEDED")
@@ -240,6 +250,8 @@ class CampaignWorkExecutorTests(unittest.TestCase):
             _, _, campaign, queue, _, executor = environment(root, bridge)
             enqueue(queue, campaign)
 
+            self.assertEqual(executor.cycle(campaign["campaign_id"])["outcomes"][0]["status"], "ROUND_YIELD")
+            self.assertEqual(executor.cycle(campaign["campaign_id"])["outcomes"][0]["status"], "ROUND_YIELD")
             outcome = executor.cycle(campaign["campaign_id"])["outcomes"][0]
 
             self.assertEqual(outcome["status"], "SUCCEEDED")

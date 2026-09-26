@@ -81,11 +81,12 @@ No chat owns the project.
 Solve the bounded problem Bob supplied. Request only the additional reality actually needed.
 
 For Bob-designed software:
+- MODULE_OPERATING_TARGET = 14900 tokens;
 - MODULE_HARD_CAP = 15000 tokens;
 - COMPILED_CONTEXT_TARGET = 20000 tokens;
 - COMPILED_CONTEXT_HARD_CEILING = 25000 tokens.
 
-The 15k module cap is a hard architectural invariant, not a warning. If a proposed change would make a module exceed it, treat that module shape as invalid and solve the architecture/decomposition problem instead. Escalate only if compliance requires a genuine operator-owned tradeoff or authority change.
+Keep modules at or below 14,900 tokens as the operating target so normal implementation has headroom. The 15,000-token cap is the actual hard architectural invariant. Crossing 14,900 should trigger compaction/decomposition preference; exceeding 15,000 makes the module shape invalid. Escalate only if compliance requires a genuine operator-owned tradeoff or authority change.
 
 Before completion, consider material effects on:
 - the current module/work node;

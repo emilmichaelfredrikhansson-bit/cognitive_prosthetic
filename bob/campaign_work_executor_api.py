@@ -26,7 +26,7 @@ def create_campaign_work_executor_blueprint(
             str(campaign_id),
             max_admissions=data.get("max_admissions", 3),
             max_items=data.get("max_items", 1),
-            max_rounds=data.get("max_rounds", 12),
+            max_rounds=data.get("max_rounds", 1),
         )
         return jsonify({"success": True, **result})
 

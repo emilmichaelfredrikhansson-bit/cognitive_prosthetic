@@ -9,6 +9,7 @@ from dataclasses import dataclass
 # context a model may technically accept. They are learnable parameters:
 # future evidence may justify changing the numbers, but callers must not
 # silently exceed the hard limit.
+DEFAULT_MODULE_TARGET_TOKENS = 14_900
 DEFAULT_MODULE_HARD_CAP_TOKENS = 15_000
 DEFAULT_COMPILED_CONTEXT_TARGET_TOKENS = 20_000
 DEFAULT_COMPILED_CONTEXT_HARD_LIMIT_TOKENS = 25_000
@@ -18,14 +19,17 @@ DEFAULT_COMPILED_CONTEXT_HARD_LIMIT_TOKENS = 25_000
 class CognitionPolicy:
     """Bounded-context policy for one stateless cognition request."""
 
+    module_target_tokens: int = DEFAULT_MODULE_TARGET_TOKENS
     module_hard_cap_tokens: int = DEFAULT_MODULE_HARD_CAP_TOKENS
     target_tokens: int = DEFAULT_COMPILED_CONTEXT_TARGET_TOKENS
     hard_limit_tokens: int = DEFAULT_COMPILED_CONTEXT_HARD_LIMIT_TOKENS
     fresh_chat_per_request: bool = True
 
     def __post_init__(self) -> None:
-        if self.module_hard_cap_tokens <= 0:
-            raise ValueError("module_hard_cap_tokens must be positive")
+        if self.module_target_tokens <= 0:
+            raise ValueError("module_target_tokens must be positive")
+        if self.module_hard_cap_tokens < self.module_target_tokens:
+            raise ValueError("module_hard_cap_tokens must be >= module_target_tokens")
         if self.target_tokens <= 0:
             raise ValueError("target_tokens must be positive")
         if self.hard_limit_tokens < self.target_tokens:

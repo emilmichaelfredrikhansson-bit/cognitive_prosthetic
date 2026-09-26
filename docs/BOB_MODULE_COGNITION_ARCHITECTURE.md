@@ -53,13 +53,14 @@ Its semantic responsibility should remain stable. New unrelated responsibility s
 
 ## Absolute module-size invariant
 
-A Bob module has an absolute hard cap:
+A Bob module has an operating target plus an absolute hard cap:
 
 ~~~text
+MODULE_OPERATING_TARGET = 14,900 tokens
 MODULE_HARD_CAP = 15,000 tokens
 ~~~
 
-This is not an alert threshold, recommendation or operator decision. It is a backend invariant known to both Bob and ChatGPT from the beginning.
+14,900 is the instruction/engineering target that preserves 100 tokens of headroom. It is not a hard rejection boundary. 15,000 is the backend invariant known to both Bob and ChatGPT from the beginning.
 
 A valid module must remain at or below 15k throughout its lifecycle, including when it is nearly complete. This preserves enough surrounding cognition space for a fresh ChatGPT conversation to understand, debug, modify and finish the module together with contracts, neighboring summaries and current evidence.
 
@@ -113,6 +114,7 @@ Legacy/external systems may already contain oversized components; those are migr
 The initial canonical engineering defaults are:
 
 ~~~text
+MODULE_OPERATING_TARGET = 14,900 tokens
 MODULE_HARD_CAP = 15,000 tokens
 COMPILED_CONTEXT_TARGET = 20,000 tokens
 COMPILED_CONTEXT_HARD_CEILING = 25,000 tokens

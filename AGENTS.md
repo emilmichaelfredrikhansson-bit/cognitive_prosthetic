@@ -81,7 +81,7 @@ verify identity
 - Cross-cutting changes must name affected contracts/nodes and integrate through explicit coordination/Fusion rather than implicit transcript memory.
 - Bob carries global structural state so cognition does not have to. Supply bounded relevant structure to a cognition task; use separate bounded cognition to revise the structure itself when semantic judgment says the map is wrong.
 - For Bob-designed software, treat modules as pre-implementation cognitive atoms: input -> bounded responsibility -> output, with explicit contracts/adapters.
-- Every Bob-designed module has an absolute hard cap of 15,000 tokens. A proposed change that would exceed the cap is invalid.
+- Keep Bob-designed modules at or below 14,900 tokens as the operating target; 15,000 tokens remains the absolute deterministic hard cap. A proposed change above 15,000 is invalid.
 - Module-cap handling is backend orchestration: Bob detects the deterministic violation, routes a fresh architecture-cognition problem, rechecks the resulting module graph, and continues only after all affected modules are <=15k. Do not ask the operator merely because the cap was reached.
 - Escalate to the operator only if the required reorganization creates a genuine product/vision/end-goal tradeoff or exceeds existing authority.
 - The surrounding cognition envelope remains 20k target / 25k hard ceiling.

@@ -20,7 +20,7 @@ from .worktree_coordination import ExecutionCoordinator, RepositoryCoordinatorRe
 
 
 SCHEMA = "BOB_CAMPAIGN_WORK_EXECUTOR_V1"
-MAX_COGNITION_ROUNDS = 12
+MAX_COGNITION_ROUNDS = 1
 MAX_DURABLE_RESULTS = 32
 
 

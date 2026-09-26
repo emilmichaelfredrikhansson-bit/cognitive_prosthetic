@@ -56,6 +56,9 @@ class ContextCompiler:
                 "repository_id": workspace.github_repository_id,
                 "ref": ref,
             },
+            "engineering_targets": {
+                "module_target_tokens": self.policy.module_target_tokens,
+            },
             "hard_invariants": {
                 "module_hard_cap_tokens": self.policy.module_hard_cap_tokens,
                 "compiled_context_hard_limit_tokens": self.policy.hard_limit_tokens,
@@ -81,9 +84,9 @@ class ContextCompiler:
             "Use the supplied repo/ref/source pointers and inspect GitHub directly whenever "
             "code/history/tests are needed. Bob summaries are navigation, not a substitute "
             "for source truth.\n"
-            f"A Bob module may never exceed {self.policy.module_hard_cap_tokens:,} "
-            "measured tokens. Treat a solution that would violate that cap as invalid; "
-            "reorganize responsibilities/contracts instead.\n"
+            f"Keep Bob modules at or below {self.policy.module_target_tokens:,} measured "
+            f"tokens as the operating target. The absolute hard cap is {self.policy.module_hard_cap_tokens:,}. "
+            "Prefer compaction/decomposition before crossing the target; a solution above the hard cap is invalid.\n"
             "Solve the bounded problem and check material impact on direct contracts/neighbors "
             "and product intent before completion. Ask the operator only for genuine "
             "product/vision/end-goal or authority decisions.\n"
