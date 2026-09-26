@@ -155,7 +155,8 @@
       "consumers": [
         "BOB_WORKTREE_COORDINATION",
         "BOB_SELF_DEVELOPMENT_SANDBOX",
-        "BOB_SELF_DEVELOPMENT_PROMOTION"
+        "BOB_SELF_DEVELOPMENT_PROMOTION",
+        "BOB_WORK_CAMPAIGN_CONTROL"
       ],
       "invariants": [
         "At most 3 active Bob runs occupy worker slots per repository ledger.",
@@ -186,7 +187,8 @@
       "consumers": [
         "BOB_SELF_DEVELOPMENT_EXECUTION",
         "BOB_SELF_DEVELOPMENT_SANDBOX",
-        "BOB_SELF_DEVELOPMENT_PROMOTION"
+        "BOB_SELF_DEVELOPMENT_PROMOTION",
+        "BOB_WORK_CAMPAIGN_CONTROL"
       ],
       "invariants": [
         "Coordinator verifies local Git origin and bound canonical ref before opening repository state.",
@@ -318,6 +320,36 @@
         "Operator approval binds an exact candidate/canonical pair and records merge_authority=NONE.",
         "Moved candidates or canonical ancestry changes fail closed as stale or rebase/reverify required.",
         "The promotion gate never merges, pushes, opens PRs, changes integration state or widens provider authority."
+      ],
+      "status": "WORKING"
+    },
+    {
+      "id": "BOB_WORK_CAMPAIGN_CONTROL",
+      "purpose": "Own durable bounded wall-clock work-campaign scope, deadlines, admission and execution-run bindings without duplicating repository execution authority.",
+      "source_paths": [
+        "bob/work_campaigns.py",
+        "bob/work_campaign_api.py"
+      ],
+      "test_paths": [
+        "tests/test_work_campaigns.py"
+      ],
+      "contract_paths": [
+        "docs/BOB_WORK_CAMPAIGNS_V1.md"
+      ],
+      "producers": [
+        "BOB_EXECUTION_LEDGER",
+        "BOB_WORKTREE_COORDINATION"
+      ],
+      "consumers": [
+        "BOB_RUNTIME_ORCHESTRATION"
+      ],
+      "invariants": [
+        "Campaign start requires exact configured local repository bindings for every target workspace.",
+        "A wall-clock deadline closes new run admission but never asynchronously kills a nonterminal run mid-step.",
+        "Campaign runs reuse existing repository coordinators, semantic leases, isolated worktrees and per-repository capacity.",
+        "Restart reconciliation may adopt exact lane=campaign runs bound by campaign_id without duplicating execution.",
+        "Campaign state and runs record promotion_authority=NONE and auto_merge=false.",
+        "Campaign control never merges, pushes, promotes, widens provider authority or invents a second execution scheduler."
       ],
       "status": "WORKING"
     },
