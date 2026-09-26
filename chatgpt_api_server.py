@@ -1109,8 +1109,10 @@ def populate_composer(page, composer, prompt_text):
     if isinstance(meta, dict) and meta.get("contenteditable") == "true":
         # ChatGPT's newer rich editor is a contenteditable div. Keyboard insertion
         # exercises the editor's input pipeline instead of mutating DOM text via fill().
-        composer.press("Control+A", timeout=5_000)
-        composer.press("Backspace", timeout=5_000)
+        # Once the editor is focused, use the page keyboard directly. Locator.press
+        # re-enters Playwright locator/actionability waits and can stall on transient UI.
+        page.keyboard.press("Control+A")
+        page.keyboard.press("Backspace")
         page.keyboard.insert_text(prompt_text)
         return "contenteditable_insert_text"
 

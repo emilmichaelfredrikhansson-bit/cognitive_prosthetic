@@ -329,7 +329,6 @@ class LocalCompanionTests(unittest.TestCase):
     def test_populate_composer_uses_keyboard_insert_for_contenteditable(self):
         class Composer:
             def __init__(self):
-                self.pressed = []
                 self.focused = []
 
             def focus(self, timeout=None):
@@ -338,15 +337,16 @@ class LocalCompanionTests(unittest.TestCase):
             def evaluate(self, _expression):
                 return {"tag": "div", "contenteditable": "true"}
 
-            def press(self, key, timeout=None):
-                self.pressed.append((key, timeout))
-
             def fill(self, _value):
                 raise AssertionError("contenteditable must not use fill")
 
         class Keyboard:
             def __init__(self):
+                self.pressed = []
                 self.inserted = []
+
+            def press(self, key):
+                self.pressed.append(key)
 
             def insert_text(self, value):
                 self.inserted.append(value)
@@ -360,10 +360,7 @@ class LocalCompanionTests(unittest.TestCase):
 
         self.assertEqual(mode, "contenteditable_insert_text")
         self.assertEqual(composer.focused, [5_000])
-        self.assertEqual(
-            composer.pressed,
-            [("Control+A", 5_000), ("Backspace", 5_000)],
-        )
+        self.assertEqual(page.keyboard.pressed, ["Control+A", "Backspace"])
         self.assertEqual(page.keyboard.inserted, ["abc"])
 
     def test_submission_actuation_uses_enter_when_send_control_is_enabled(self):
