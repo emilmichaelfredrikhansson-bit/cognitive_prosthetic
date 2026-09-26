@@ -588,19 +588,20 @@ Remaining qualification before the stateless vertical can be considered closed:
 Current authoritative `BOB_TOKEN_ESTIMATE_V1` measurement at `8de216dâ€¦`; graph-cap regression is green in the **153/153** full suite:
 
 ```text
-BOB_RUNTIME_ORCHESTRATION 13,343   compliant (1,657 tokens headroom)
-BOB_EFFECT_AUTHORITY       9,258   compliant (5,742 tokens headroom)
-BOB_STATELESS_MODULE_RUNTIME 10,525 compliant (4,475 tokens headroom)
-BOB_PROTOCOL               4,168   compliant
-BOB_MODULE_COGNITION      13,101   compliant (1,899 tokens headroom)
-BOB_EXECUTION_LEDGER      13,040   compliant
-BOB_WORKTREE_COORDINATION  9,991   compliant
-BOB_SELF_DEVELOPMENT_STATE 7,978   compliant
-BOB_SELF_DEVELOPMENT_EXECUTION 7,163 compliant
-BOB_PROCESS_SUPERVISION   13,660   compliant (1,340 tokens headroom)
+BOB_RUNTIME_ORCHESTRATION 13,344   compliant
+BOB_EFFECT_AUTHORITY       9,259   compliant
+BOB_STATELESS_MODULE_RUNTIME 10,526 compliant
+BOB_PROTOCOL               4,169   compliant
+BOB_MODULE_COGNITION      13,103   compliant
+BOB_EXECUTION_LEDGER      14,477   compliant (523 tokens headroom)
+BOB_WORKTREE_COORDINATION 10,122   compliant
+BOB_SELF_DEVELOPMENT_STATE 7,979   compliant
+BOB_SELF_DEVELOPMENT_EXECUTION 8,264 compliant
+BOB_SELF_DEVELOPMENT_SANDBOX 13,595 compliant (1,405 tokens headroom)
+BOB_PROCESS_SUPERVISION   13,661   compliant
 ```
 
-The package regression loads the real `.bob/module_graph.json`, verifies unique path ownership and asserts every declared module remains <=15,000 measured tokens. The graph still has explicit `coverage=PARTIAL`. Phase 3.75 now has two bounded runtime modules: durable repo-bound self-development state plus a separate execution-binding/reconciliation layer that reuses the existing repo coordinator. Isolated selfdev branch/worktree lifecycle is live-qualified; interactive pre-emption, checkpoint/revert/discard, promotion gate, background scheduling and Knowledge Fabric runtime remain pending.
+The package regression loads the real `.bob/module_graph.json`, verifies unique path ownership and asserts every declared module remains <=15,000 measured tokens. The graph still has explicit `coverage=PARTIAL`. Phase 3.75 now has durable state, execution binding and a separate reversible sandbox/control module. Isolated lifecycle, interactive-first pre-emption, checkpoint, revert and discard are live-qualified; the separate promotion gate, background scheduling and Knowledge Fabric runtime remain pending.
 
 ## LATEST_CHECKPOINT_2026-09-25
 
@@ -623,6 +624,13 @@ The package regression loads the real `.bob/module_graph.json`, verifies unique 
 - Commit 99e43c3 (Park self-development for interactive work) implements the first semantic-lease pre-emption primitive: idle ACTIVE selfdev runs can durably enter PARKED, releasing worker-slot and semantic-lease ownership so conflicting interactive work activates through the existing ledger. Resume reuses the same run/branch/worktree binding and returns through normal QUEUED lease/capacity arbitration; no attempt/run duplication and no promotion authority are added. Running cognition, non-selfdev lanes and non-ACTIVE states fail closed.
 - Deterministic verification for this tranche: 156/156 PASS, focused execution+selfdev 16/16 PASS, py_compile PASS and git diff --check PASS. Browser bridge read-only status remained healthy/idle; no cognition probe was sent.
 - Next local Phase 3.75 step: expose/qualify interactive-first pre-emption at the orchestration/API boundary, then implement explicit checkpoint/revert/discard semantics.
+
+- `9018a362a5f1add4decd46bb620ac15339f8b44e` (`Add reversible self-development sandbox`) reconciles the concurrent sandbox work and hardens it. The new `BOB_SELF_DEVELOPMENT_SANDBOX` module owns durable checkpoints, exact same-run revert/discard and interactive-first API/orchestration; it does not merge or promote.
+- Deterministic qualification: **166/166 PASS**, focused sandbox/server **15/15 PASS**, `py_compile` PASS, `git diff --check` PASS. All eleven declared modules remain <=15k; the closest cap is `BOB_EXECUTION_LEDGER=14,477`.
+- Live interactive-pre-emption canary is GREEN: selfdev `run-7b9d5ed5cca7` was checkpointed and moved `ACTIVE -> PARKED`; conflicting interactive `run-3c2a57e014d3` became ACTIVE; cancelling the interactive run resumed the exact same selfdev run; discard then cancelled it, removed only its worktree and returned execution to **0 active / 0 integration queue**.
+- Separate live revert canary is GREEN: checkpoint `checkpoint-b1c8a2b7b079` captured head `9018a36…`; an experimental commit moved the isolated branch to `efd3601…`; API revert restored exact head `9018a36…`, removed untracked experiment state and verified a clean worktree; subsequent discard cleaned the sandbox.
+- Restart persistence is GREEN: after a clean Local Companion stop/start the durable checkpoint store still contains both live-canary checkpoints, execution remains **0 active / 0 integration queue**, and no cognition request was issued.
+- Next Phase 3.75 boundary is the separate promotion gate. It may produce/revalidate an operator-review proposal, but must not merge, push, or convert model/selfdev success into canonical promotion authority.
 
 ## NEXT_INTENDED_WORK
 
@@ -651,7 +659,7 @@ The package regression loads the real `.bob/module_graph.json`, verifies unique 
 - The bridge now has explicit sanitized `RATE_LIMITED` / `USAGE_LIMIT` UI classification and no automatic retry for those states, plus distinct `CHATGPT_SUBMISSION_FAILED:NO_CONVERSATION_TURN` classification after a bounded 12 s materialization window.
 - An already-executed module effect can enter restart-durable `CONTINUATION_BLOCKED` state. Its verified receipt/continuation is persisted before post-effect cognition, discoverable through read-only `/bob/continuations`, and resumable through `/bob/continuations/<continuation_id>/resume` without replaying the effect.
 - Remote Desktop Commander is currently online and current local/runtime state has been reconciled.
-- Self-development now has durable repo-bound queue/state plus live-qualified isolated execution-run/worktree binding, restart reconciliation and fail-closed terminalization. Interactive pre-emption, checkpoint/revert/discard, background scheduler and separate promotion gate remain unimplemented.
+- Self-development now has durable repo-bound queue/state, isolated execution/worktree binding, restart reconciliation, interactive-first pre-emption, durable checkpoint/revert/discard and fail-closed terminalization live-qualified. Background scheduling and the separate promotion gate remain unimplemented.
 - Knowledge Fabric is canon, not implementation: no item store/schema, maturity transitions, retrieval/ranking or compiler injection exists yet.
 - Project Instructions bootloader text is canonical/versioned, but the runtime does not yet verify that the configured ChatGPT Project actually contains the expected `BOB_COGNITION_CONTRACT_VERSION`.
 - Bob effect approvals are now restart-durable in a separate pending-effect store; operator approval still never survives as implicit execution authority because the candidate is re-previewed/re-hashed before execution and the durable pending record is consumed first.
@@ -659,7 +667,7 @@ The package regression loads the real `.bob/module_graph.json`, verifies unique 
 
 ## FIRST_ACTION
 
-Resume from pushed commit `8de216dd4ccc868f9f650750df34ed4ab191a23f` or later live head after reconciling concurrent operator work. Do **not** send another cognition probe merely to retest submission: both Enter and a verified visible Send-button click have produced zero user/conversation turns. Isolated selfdev worktree/branch lifecycle is LIVE GREEN and item `selfdev-b624525477b7` is QUALIFIED with no promotion. Continue local Phase 3.75 with semantic leases + interactive pre-emption, preserving the existing execution coordinator as authority and without adding a second scheduler or promotion authority. If later independent evidence shows cognition submissions are accepted again, return to the distinct benign cleanup-effect continuation proof before the genuine self-hosting architecture-repair canary rooted at `c5102a9aacce349c9e5aded950daaa8c3ce825b1`. No candidate may promote itself to canonical.
+Resume from pushed commit `9018a362a5f1add4decd46bb620ac15339f8b44e` or later live head after reconciling concurrent operator work. Do **not** send another cognition probe merely to retest submission. Phase 3.75 isolated lifecycle + interactive-first checkpoint/revert/discard is LIVE GREEN. Implement the **separate promotion gate** next: durable candidate proposal + fresh branch/canonical revalidation + explicit operator review, with merge/push/promotion execution remaining outside this gate. If later independent evidence shows cognition submissions are accepted again, return to the distinct benign cleanup-effect continuation proof before the genuine self-hosting architecture-repair canary rooted at `c5102a9aacce349c9e5aded950daaa8c3ce825b1`. No candidate may promote itself to canonical.
 
 ## HARD_BLOCKERS
 
