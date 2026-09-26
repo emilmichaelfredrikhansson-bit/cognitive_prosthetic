@@ -38,17 +38,17 @@ Bob is a bidirectional closed-loop coordination layer. Its product behavior is g
 
 ```text
 human
-â†•
+↕
 normal ChatGPT cognition
-â†•
+↕
 BOB protocol
-â†•
+↕
 deterministic adapters
-â†•
+↕
 GitHub / Supabase / Hugging Face / Cloudflare
-â†•
+↕
 verified reality feedback
-â†•
+↕
 current V1 ChatGPT conversation transport
 ```
 
@@ -187,7 +187,7 @@ Remaining work / boundaries:
 - full post-effect fresh continuation still needs one clean live completion after ChatGPT is accepting requests again; **do not replay the already-verified canary effect merely to recover cognition**. A distinct benign cleanup effect (for example removing the canary marker) can be separately staged/approved to qualify the hardened continuation path;
 - SL/AB obtain independent repo coordinators only after their local repo paths are explicitly configured (for example through repository bindings); they do not consume Bob's slots;
 - a future `BOB_MACHINE_SCHEDULER` may impose a separate higher machine resource cap for CPU/RAM/browser/API pressure; it is not the repository safety cap and is not implemented here;
-- `BOB_SCHEDULER_V1` is now an explicit planned first-class component: Bob should own a durable, effectively unbounded scheduled-task registry independent of ChatGPT native Scheduled Tasks, with one-shot `run_at`, recurring schedules (RRULE/cron-equivalent), condition/dependency triggers, durable claims/leases, retries/backoff, task history/results, cancellation, budgets/rate limits and task-to-task spawning. Scheduler backlog size must stay separate from active execution capacity: existing per-repository coordinator caps/leases/worktrees remain authoritative, while any machine-wide cap is a distinct resource-control layer. Native ChatGPT Scheduled Tasks may optionally act as a wake-up/bootstrap mechanism, but must not be the scheduler source of truth.
+- `BOB_SCHEDULER_V1` is an explicit planned first-class component: Bob should own a durable, effectively unbounded scheduled-task registry independent of ChatGPT native Scheduled Tasks, with one-shot `run_at`, recurring schedules (RRULE/cron-equivalent), condition/dependency triggers, durable claims/leases, retries/backoff, task history/results, cancellation, budgets/rate limits and task-to-task spawning. Scheduler backlog size stays separate from active execution capacity: existing per-repository coordinators remain authoritative for actual runs, while any machine-wide cap is a distinct resource-control layer. Native ChatGPT Scheduled Tasks may optionally act as wake-up/bootstrap only, not as scheduler source of truth;
 - the browser transport remains one serialized Playwright worker, so three repository workers do not yet mean three simultaneous model generations;
 - the oversized `BOB_RUNTIME_ORCHESTRATION` recursive self-repair canary should follow the remaining post-effect continuation qualification rather than skipping it.
 
@@ -501,15 +501,15 @@ The manual relay proof covers:
 
 ```text
 LLM emits BOB.READ
-â†’ Bob executes read
-â†’ Bob returns BOB.RESULT
-â†’ external LLM continues
-â†’ LLM emits BOB.EFFECT
-â†’ Bob stages exact effect
-â†’ approval
-â†’ Bob executes/verifies
-â†’ Bob returns BOB.RESULT
-â†’ LLM emits BOB.DONE
+→ Bob executes read
+→ Bob returns BOB.RESULT
+→ external LLM continues
+→ LLM emits BOB.EFFECT
+→ Bob stages exact effect
+→ approval
+→ Bob executes/verifies
+→ Bob returns BOB.RESULT
+→ LLM emits BOB.DONE
 ```
 
 This means development and protocol qualification can continue with the current ChatGPT conversation acting as the cognition side until the real browser runtime is available.
@@ -570,7 +570,7 @@ The dedicated ChatGPT Project isolation tranche was then reconciled from its bra
 The first executable module graph + Context Compiler + fresh-cognition path is landed and its basic live `module-turn -> fresh ChatGPT -> GitHub re-ground -> BOB.DONE` path has been proven on the operator PC at exact earlier commit `008728c82138b6abb6ddfa5fe7e42d4b63c43242`.
 
 Remaining qualification before the stateless vertical can be considered closed:
-- current deterministic verification at working head `2a55a84â€¦` is **147/147 PASS**; the submission-diagnostic tranche was **145/145 PASS** before the visible-send actuator hardening; focused current Local Companion is **24/24 PASS**; `py_compile` and `git diff --check` PASS;
+- current deterministic verification at working head `2a55a84…` is **147/147 PASS**; the submission-diagnostic tranche was **145/145 PASS** before the visible-send actuator hardening; focused current Local Companion is **24/24 PASS**; `py_compile` and `git diff --check` PASS;
 - Bob-owned `BOB.READ -> BOB.RESULT -> recompile -> second fresh cognition` is **LIVE GREEN**;
 - approval-bound effect staging/execution/verified read-back is **LIVE GREEN**, but one clean post-effect fresh continuation still remains to be live-qualified after the observed transient ChatGPT request-limit episode;
 - the former oversized runtime monolith has been manually decomposed into bounded runtime, effect-authority and stateless-module-runtime modules without changing the public `BobRuntime` API or widening authority;
@@ -579,10 +579,10 @@ Remaining qualification before the stateless vertical can be considered closed:
 - Local Companion was stopped/restarted from the repaired head without issuing another cognition request. Bob API is running, bridge is `ready=true`, execution is **0 active / 0 integration queue**, exactly two supervisor-owned long-lived processes own ports 5002/5001, and live `POST /bob/module-graph` reported all eight modules `compliant=true` before the later persistence-only working-tree changes.
 - verified-effect continuation state is now written to `.bob/runtime/blocked_continuations.json` **before** post-effect cognition starts; a new `BobRuntime` loads it after restart, `/bob/continuations` exposes sanitized pending-resume metadata, and the regression test proves restart -> resume reaches DONE with the provider effect count still exactly one.
 - durability commit `5cffa6d8e5cc8f8c94680727ae776227cb3c0d5b` (`Persist blocked post-effect continuations`) is pushed exactly to `origin/feat/bob-execution-ledger-v1`; canonical remains unchanged.
-- Local Companion was then stopped/restarted from `5cffa6dâ€¦` without issuing cognition. Live read-only qualification: Bob API running; bridge `ready=true`; execution **0 active / 0 integration queue**; `GET /bob/continuations` HTTP 200 with `count=0`; exactly two supervisor-owned runtime process trees own ports 5002/5001; `POST /bob/module-graph` HTTP 200 with all eight modules `compliant=true`.
+- Local Companion was then stopped/restarted from `5cffa6d…` without issuing cognition. Live read-only qualification: Bob API running; bridge `ready=true`; execution **0 active / 0 integration queue**; `GET /bob/continuations` HTTP 200 with `count=0`; exactly two supervisor-owned runtime process trees own ports 5002/5001; `POST /bob/module-graph` HTTP 200 with all eight modules `compliant=true`.
 - pending approvals now have a separate durable `.bob/runtime/pending_effects.json` store. A staged effect is persisted before it is exposed to the operator; a restarted Bob reloads it; `GET /bob/approvals` returns the approval preview; approve/reject/relay consume the durable record before any effect can execute; restarted approvals are re-previewed/re-hashed against current provider state. Regression tests prove restart -> approval executes exactly once and restart + moved branch -> stale approval fails with zero effects.
 - approval durability is pushed at `8115692fe95db3fcecd247c85c4d9fe56b80ac90` (`Persist pending effect approvals`). Module-graph snapshot optimization is pushed at `eaad1e41f82c6f483cb45379295a2b258e82372f` (`Speed verified module graph snapshots`), which exactly matches `origin/feat/bob-execution-ledger-v1`.
-- Local Companion was cleanly restarted from `eaad1e4â€¦` without cognition. Live read-only qualification: Bob API running; bridge `ready=true`; approvals `count=0`; continuations `count=0`; execution **0 active / 0 integration queue**; exactly two supervisor-owned process trees own 5002/5001; three consecutive `POST /bob/module-graph` calls returned HTTP 200 in **5.375 s / 4.960 s / 5.243 s** versus the prior ~18â€“36 s observed latency.
+- Local Companion was cleanly restarted from `eaad1e4…` without cognition. Live read-only qualification: Bob API running; bridge `ready=true`; approvals `count=0`; continuations `count=0`; execution **0 active / 0 integration queue**; exactly two supervisor-owned process trees own 5002/5001; three consecutive `POST /bob/module-graph` calls returned HTTP 200 in **5.375 s / 4.960 s / 5.243 s** versus the prior ~18–36 s observed latency.
 - snapshot acceleration preserves identity: authenticated local Git is used only after GitHub repository identity is verified and the requested remote ref commit SHA exactly matches the local commit; stale local refs fall back to remote reads. Effect execution/read-back semantics are unchanged and remain remote/provider verified.
 - the working branch is **23 commits ahead / 0 behind** canonical at `8de216dd4ccc868f9f650750df34ed4ab191a23f`; `feat/bob-core-v1` remains unchanged at `098e6ac9f2adb47e7174c4db8ad2d0b1639d1279`.
 
@@ -615,9 +615,9 @@ The package regression loads the real `.bob/module_graph.json`, verifies unique 
 - `2a55a84` then changed actuation to prefer ChatGPT's visible enabled Send control, fail closed on a visible disabled send control, and use input-local Enter only when no send control can be discovered. Deterministic verification is **147/147 PASS**, focused Local Companion **24/24 PASS**, `py_compile` PASS and `git diff --check` PASS.
 - Local Companion was restarted from exact `2a55a84`. Live canary `submission-probe-20260925-2` logged `Submission actuated via send_button` but again remained exactly `0 -> 0` for user/conversation/assistant state and returned `CHATGPT_SUBMISSION_FAILED:NO_CONVERSATION_TURN`. Therefore the current failure is **not explained by page-level Enter or failure to click the visible Send control**. No further cognition probes should be sent until new evidence justifies one.
 - Runtime remains healthy after that failure: Bob API running; bridge `browser_ready=true`, `runtime_error=null`, `active_count=0`, no traffic cooldown/throttle state.
-- Phase 3.75 durable state remains repo/canonical-ref bound, FIFO, V1 single-active and restart-safe. `BOB_SELF_DEVELOPMENT_STATE` owns intent/lifecycle only (**7,978 / 15,000**); `BOB_SELF_DEVELOPMENT_EXECUTION` owns queueâ†”execution binding/reconciliation only (**7,163 / 15,000**). Execution ledger/worktree authority and promotion authority remain separate.
+- Phase 3.75 durable state remains repo/canonical-ref bound, FIFO, V1 single-active and restart-safe. `BOB_SELF_DEVELOPMENT_STATE` owns intent/lifecycle only (**7,978 / 15,000**); `BOB_SELF_DEVELOPMENT_EXECUTION` owns queue↔execution binding/reconciliation only (**7,163 / 15,000**). Execution ledger/worktree authority and promotion authority remain separate.
 - `dd40658fee32826e2d791d0509f3f1dbbc7e241d` (`Bind self-development to isolated execution`) introduced bounded module `BOB_SELF_DEVELOPMENT_EXECUTION`, explicit `claim`/`reconcile` APIs and crash-window adoption of an existing `lane=selfdev` run. It reuses the existing `ExecutionCoordinator`; it is not a second scheduler and records `promotion_authority=NONE`.
-- Deterministic qualification after that tranche was **152/152 PASS**. Live claim of `selfdev-b624525477b7` created exactly one run `run-e16c686791c8`, base `dd40658â€¦`, branch `bob/run/run-e16c686791c8`, clean isolated worktree `C:\\Users\\emilm\\.cognitive_prosthetic-bob-worktrees\\run-e16c686791c8`, with attempt_count=1 and no integration/promotion authority.
+- Deterministic qualification after that tranche was **152/152 PASS**. Live claim of `selfdev-b624525477b7` created exactly one run `run-e16c686791c8`, base `dd40658…`, branch `bob/run/run-e16c686791c8`, clean isolated worktree `C:\\Users\\emilm\\.cognitive_prosthetic-bob-worktrees\\run-e16c686791c8`, with attempt_count=1 and no integration/promotion authority.
 - Restart proof is LIVE GREEN: queue state became `INTERRUPTED` with `RUNTIME_RESTART_RECONCILE_REQUIRED` while the execution run remained ACTIVE; explicit reconcile restored the same item/run to ACTIVE, attempt_count remained 1, and exactly one matching selfdev run existed. No duplicate run was created.
 - `8de216dd4ccc868f9f650750df34ed4ab191a23f` (`Close self-development execution lifecycle`) added fail-closed terminalization. A bound item cannot finish while execution owns a live slot; `QUALIFIED` requires a preserved CANCELLED run plus explicit verification evidence and records exact branch head + `promotion_authority=NONE`.
 - Live terminalization is GREEN: `run-e16c686791c8` was CANCELLED with no promotion requested, then `selfdev-b624525477b7` became `QUALIFIED`; receipt records branch head `dd40658fee32826e2d791d0509f3f1dbbc7e241d`, run state CANCELLED, exactly one matching run and promotion `NOT_REQUESTED`. Execution is now **0 active / 0 integration queue**.
@@ -655,6 +655,19 @@ The package regression loads the real `.bob/module_graph.json`, verifies unique 
 - Important scope boundary: this proves durable wall-clock campaign control, **not yet an autonomous eight-hour worker**. Automatic safe task selection, repeated work admission, blocked-work reallocation, deadline checkpoint/parking and final operator digest remain to implement.
 - Next local tranche: campaign worker/orchestrator that consumes an explicit safe work backlog, admits bounded runs while before deadline/capacity, pauses at safe boundaries, and produces durable outcome/digest state without auto-merge/promotion.
 
+## LATEST_CHECKPOINT_2026-09-26_CAMPAIGN_QUEUE
+
+- Qualified implementation commit: `5f750a6e3664e0fb8cc05a49c58c534d7cc8b1dd` (`Add durable campaign work queue`). This commit is on `feat/bob-execution-ledger-v1`; canonical `feat/bob-core-v1` remains untouched at `098e6ac9f2adb47e7174c4db8ad2d0b1639d1279`.
+- `BOB_WORK_CAMPAIGN_QUEUE` is now the durable explicit backlog above campaign control. It owns FIFO work items, dependencies, capacity/blocker waiting, exact run bindings, safe-stop request state, explicit verified outcomes and final review digest. It does not perform cognition, repo mutation, merge, push, PR or promotion.
+- Execution authority remains singular: admission still goes through `WorkCampaignManager` -> existing per-repository `ExecutionCoordinator`; queue capacity waits do not create latent execution runs that could activate after deadline.
+- Crash-window hardening is implemented: each queue-created campaign run carries exact `work_item_id` in existing run authority. Restart adopts at most one matching live run if a crash occurred after coordinator admission but before queue `run_id` persistence; multiple live matches fail closed. This prevents duplicate work without creating another scheduler/execution authority.
+- Deterministic qualification is **190/190 PASS** full suite; focused queue/campaign/server/module-cap tranche is **27/27 PASS**; `py_compile` and `git diff --check` PASS.
+- Current module measurements remain compliant: `BOB_WORK_CAMPAIGN_QUEUE=14,570 / 15,000`, `BOB_EXECUTION_LEDGER=14,477 / 15,000`, `BOB_WORK_CAMPAIGN_CONTROL=13,185 / 15,000`. The queue has little remaining growth room; the worker/orchestrator must therefore be a separate declared module.
+- Live queue canary is GREEN without cognition: campaign `campaign-2c4a234f45f8` admitted item `campaign-work-05434ac1cb91` as run `run-f331d4c86feb`, explicit verified finish produced `SUCCEEDED`, review digest preserved exact branch/head with `promotion_authority=NONE` and `auto_merge=false`, campaign completed, and execution returned to **0 active / 0 integration queue**.
+- Restart persistence is LIVE GREEN: after clean Local Companion stop/start the same completed campaign/item/digest remained durable, the exact run authority includes its `work_item_id`, and execution remained **0 active / 0 integration queue**. No ChatGPT cognition request was sent.
+- Concurrent remote commit `f49075d80fec001c8a740edf3074eb4970daaa29` (`Plan Bob persistent scheduler`) was reconciled before implementation. Its scheduler intent is preserved here as `BOB_SCHEDULER_V1`; accidental text-encoding changes from that commit are not treated as architecture truth.
+- Next local tranche is the actual campaign worker/orchestrator: repeated safe selection from this durable backlog -> bounded execution -> blocker reallocation -> interactive-first parking -> stop admitting at deadline -> safe-boundary checkpoint/park/cancel -> durable outcome -> concise operator digest. It must not auto-merge/promote.
+
 ## NEXT_INTENDED_WORK
 
 1. Do not probe cognition repeatedly while ChatGPT is request-limited. Once requests are accepted again, stage a **distinct benign cleanup effect** (natural candidate: remove the approved canary marker), obtain explicit operator approval, and live-prove post-effect fresh continuation.
@@ -665,8 +678,8 @@ The package regression loads the real `.bob/module_graph.json`, verifies unique 
 6. Continue Phase 3.75 from the now-LIVE-GREEN isolated selfdev worktree/branch lifecycle: semantic leases + interactive pre-emption -> checkpoint/revert/discard -> separate promotion gate.
 7. Implement Knowledge Fabric V1: item schema/provenance/freshness/maturity -> first distilled Bob failures/patterns/reference items -> bounded retrieval into Context Compiler -> retrieval/effectiveness metrics.
 8. Prove one daytime unattended multi-cycle canary and one PC restart/resume canary, producing a concise operator digest rather than background chatter.
-9. Implement bounded Bob work campaigns soon: operator can assign one or more repos (initial target: SL + AB) a wall-clock budget such as 8 hours; Bob autonomously selects safe queued work, uses repo-isolated runs/worktrees and per-repo concurrency, checkpoints durable progress, parks blocked work, stops starting new work at deadline, never auto-merges/promotes to canonical/main, and emits a final review/merge-candidate digest.
-10. Implement `BOB_SCHEDULER_V1` as Bob's own persistent scheduled-task platform: durable one-shot/recurring/conditional/dependency-driven tasks, large backlog independent of active worker count, retries/backoff, history/results, cancellation, budget/rate-limit policy and task spawning. Reuse existing repository execution authority rather than creating a second mutation path; keep per-repo concurrency authoritative and add any machine-wide resource cap separately. ChatGPT native Scheduled Tasks may optionally wake/bootstrap Bob, but Bob's durable scheduler state is the source of truth.
+9. Continue bounded Bob work campaigns from the now-qualified durable queue into a separate worker/orchestrator module: repeated safe work selection, bounded execution, blocker reallocation, interactive-first parking, deadline safe-stop/checkpoint behavior and final review/merge-candidate digest for assignments such as "jobba med SL och AB kommande åtta timmarna". Never auto-merge/promote.
+10. Implement `BOB_SCHEDULER_V1` as Bob's own persistent scheduled-task platform: durable one-shot/recurring/conditional/dependency-driven tasks, large backlog independent of active worker count, retries/backoff, history/results, cancellation, budget/rate-limit policy and task spawning. Reuse existing repository execution authority; ChatGPT native Scheduled Tasks may optionally wake/bootstrap Bob but are not source of truth.
 11. Product-vision/bootstrap, richer durable result distillation and reusable module/template extraction remain coupled follow-up work.
 12. DigitalOcean/mobile persistence remains V2 and is not a prerequisite.
 
@@ -674,8 +687,8 @@ The package regression loads the real `.bob/module_graph.json`, verifies unique 
 
 - The module graph has explicit `coverage=PARTIAL`; it is not yet a complete semantic map of Bob.
 - `BOB_TOKEN_ESTIMATE_V1` is deterministic `ceil(UTF-8 bytes / 3)`, not ChatGPT's exact tokenizer.
-- Every currently declared module is <=15,000 measured tokens. The largest is `BOB_PROCESS_SUPERVISION` at **13,660**, followed by `BOB_RUNTIME_ORCHESTRATION` at **13,343**, `BOB_MODULE_COGNITION` at **13,101** and `BOB_EXECUTION_LEDGER` at **13,040**.
-- The former oversized `BOB_RUNTIME_ORCHESTRATION` is now **13,343 / 15,000** after extracting `BOB_EFFECT_AUTHORITY` (**9,258**) and `BOB_STATELESS_MODULE_RUNTIME` (**10,525**); Phase 3.75 additionally declares `BOB_SELF_DEVELOPMENT_STATE` at **7,978** and `BOB_SELF_DEVELOPMENT_EXECUTION` at **7,163**.
+- Every currently declared module is <=15,000 measured tokens. The tightest modules are `BOB_WORK_CAMPAIGN_QUEUE` at **14,570**, `BOB_EXECUTION_LEDGER` at **14,477**, `BOB_PROCESS_SUPERVISION` at **13,661**, `BOB_SELF_DEVELOPMENT_SANDBOX` at **13,595**, `BOB_RUNTIME_ORCHESTRATION` at **13,344**, `BOB_WORK_CAMPAIGN_CONTROL` at **13,185** and `BOB_MODULE_COGNITION` at **13,103**.
+- The former oversized `BOB_RUNTIME_ORCHESTRATION` remains bounded after extracting `BOB_EFFECT_AUTHORITY` (**9,259**) and `BOB_STATELESS_MODULE_RUNTIME` (**10,526**); Phase 3.75 additionally declares bounded self-development and campaign modules. Do not grow `BOB_EXECUTION_LEDGER` or `BOB_WORK_CAMPAIGN_QUEUE` with worker/orchestrator logic.
 - This repaired branch is a deterministic reference implementation, not evidence that Bob cognition can independently perform the same architecture repair. The live self-hosting proof remains pending on an isolated branch rooted at pre-repair commit `c5102a9aacce349c9e5aded950daaa8c3ce825b1`.
 - Normal module effects remain one effect per fresh cognition request, manifest-owned path/ref constrained; architecture-repair scope is wider but still approval/authority/read-back bounded.
 - Ordinary `/bob/turn` is still stateful. Statelessness is executable through `/bob/module-turn`, not yet automatic for every operator message.
@@ -683,7 +696,7 @@ The package regression loads the real `.bob/module_graph.json`, verifies unique 
 - The bridge now has explicit sanitized `RATE_LIMITED` / `USAGE_LIMIT` UI classification and no automatic retry for those states, plus distinct `CHATGPT_SUBMISSION_FAILED:NO_CONVERSATION_TURN` classification after a bounded 12 s materialization window.
 - An already-executed module effect can enter restart-durable `CONTINUATION_BLOCKED` state. Its verified receipt/continuation is persisted before post-effect cognition, discoverable through read-only `/bob/continuations`, and resumable through `/bob/continuations/<continuation_id>/resume` without replaying the effect.
 - Remote Desktop Commander is currently online and current local/runtime state has been reconciled.
-- Self-development now has durable repo-bound queue/state, isolated execution/worktree binding, restart reconciliation, interactive-first pre-emption, durable checkpoint/revert/discard, fail-closed terminalization and a separate no-merge promotion-review gate live-qualified. Background scheduling remains unimplemented.
+- Self-development now has durable repo-bound queue/state, isolated execution/worktree binding, restart reconciliation, interactive-first pre-emption, durable checkpoint/revert/discard, fail-closed terminalization and a separate no-merge promotion-review gate live-qualified. Work-campaign control and durable campaign backlog are also live-qualified; autonomous campaign worker/orchestration and general persistent scheduling remain unimplemented.
 - Knowledge Fabric is canon, not implementation: no item store/schema, maturity transitions, retrieval/ranking or compiler injection exists yet.
 - Project Instructions bootloader text is canonical/versioned, but the runtime does not yet verify that the configured ChatGPT Project actually contains the expected `BOB_COGNITION_CONTRACT_VERSION`.
 - Bob effect approvals are now restart-durable in a separate pending-effect store; operator approval still never survives as implicit execution authority because the candidate is re-previewed/re-hashed before execution and the durable pending record is consumed first.
@@ -691,7 +704,7 @@ The package regression loads the real `.bob/module_graph.json`, verifies unique 
 
 ## FIRST_ACTION
 
-Resume from pushed commit `3bc3c02` or later live head after reconciling concurrent operator work. Do **not** send another cognition probe merely to retest submission. Phase 3.75 isolated selfdev lifecycle, interactive-first reversible sandbox, promotion review and durable work-campaign deadline/admission control are LIVE GREEN. Continue with the **campaign worker/orchestrator**: explicit durable work backlog -> safe admission through existing per-repo coordinators -> blocker/deadline parking at safe boundaries -> outcome/digest state. Do not add a second execution authority and do not auto-merge/promote. If independent evidence later shows cognition submissions are accepted again, return to the distinct benign cleanup-effect continuation proof before the genuine self-hosting architecture-repair canary rooted at `c5102a9aacce349c9e5aded950daaa8c3ce825b1`.
+Resume from the latest pushed `feat/bob-execution-ledger-v1` head after reconciling live GitHub/runtime state; the qualified campaign-queue implementation commit is `5f750a6e3664e0fb8cc05a49c58c534d7cc8b1dd`. Do **not** send another cognition probe merely to retest submission. Campaign control + durable queue are LIVE GREEN. Continue with a **separate campaign worker/orchestrator module**: repeated selection from the explicit durable backlog -> safe admission through existing per-repo coordinators -> blocker reallocation -> interactive-first parking -> deadline safe-boundary checkpoint/park/cancel -> explicit outcome -> concise final digest. Do not add a second execution authority and do not auto-merge/promote. If independent evidence later shows cognition submissions are accepted again, return first to the distinct benign cleanup-effect continuation proof before the genuine self-hosting architecture-repair canary rooted at `c5102a9aacce349c9e5aded950daaa8c3ce825b1`.
 
 ## HARD_BLOCKERS
 
