@@ -598,10 +598,11 @@ BOB_WORKTREE_COORDINATION 10,122   compliant
 BOB_SELF_DEVELOPMENT_STATE 7,979   compliant
 BOB_SELF_DEVELOPMENT_EXECUTION 8,264 compliant
 BOB_SELF_DEVELOPMENT_SANDBOX 13,595 compliant (1,405 tokens headroom)
+BOB_SELF_DEVELOPMENT_PROMOTION 9,624 compliant
 BOB_PROCESS_SUPERVISION   13,661   compliant
 ```
 
-The package regression loads the real `.bob/module_graph.json`, verifies unique path ownership and asserts every declared module remains <=15,000 measured tokens. The graph still has explicit `coverage=PARTIAL`. Phase 3.75 now has durable state, execution binding and a separate reversible sandbox/control module. Isolated lifecycle, interactive-first pre-emption, checkpoint, revert and discard are live-qualified; the separate promotion gate, background scheduling and Knowledge Fabric runtime remain pending.
+The package regression loads the real `.bob/module_graph.json`, verifies unique path ownership and asserts every declared module remains <=15,000 measured tokens. The graph still has explicit `coverage=PARTIAL`. Phase 3.75 now has durable state, execution binding, reversible sandbox/control and a separate durable promotion-review gate. Isolated lifecycle, interactive-first pre-emption, checkpoint, revert, discard and promotion review are live-qualified; background scheduling and Knowledge Fabric runtime remain pending.
 
 ## LATEST_CHECKPOINT_2026-09-25
 
@@ -632,6 +633,12 @@ The package regression loads the real `.bob/module_graph.json`, verifies unique 
 - Restart persistence is GREEN: after a clean Local Companion stop/start the durable checkpoint store still contains both live-canary checkpoints, execution remains **0 active / 0 integration queue**, and no cognition request was issued.
 - Next Phase 3.75 boundary is the separate promotion gate. It may produce/revalidate an operator-review proposal, but must not merge, push, or convert model/selfdev success into canonical promotion authority.
 
+- `9ea9b62` (`Add self-development promotion review gate`) adds `BOB_SELF_DEVELOPMENT_PROMOTION`: exact candidate/qualification/canonical binding, stale/rebase detection, restart-durable operator review state and API surface. The module has no merge/push/PR/integration effect capability and persists `merge_authority=NONE` + `provider_effect_performed=false`.
+- Deterministic qualification: **173/173 PASS**, focused promotion/server **13/13 PASS**, `py_compile` PASS and `git diff --check` PASS. Promotion module = **9,624 / 15,000**; execution ledger remains **14,477 / 15,000**.
+- Live promotion-gate canary on previously qualified lifecycle item `selfdev-b624525477b7`: proposal `promotion-79274f608428` bound candidate `dd40658…` against canonical `098e6ac9…`, revalidated fresh, then was explicitly **REJECTED** as canary-only. No approval, merge, push, PR, integration or provider effect occurred.
+- Promotion review restart persistence is LIVE GREEN: after clean Local Companion restart the rejected proposal remains durable, execution is **0 active / 0 integration queue**, and canonical `feat/bob-core-v1` remains unchanged.
+- Phase 3.75 next local foundation is background scheduling/campaign control: durable bounded work windows, safe stop-at-deadline semantics and interactive-first parking, reusing existing repo coordinators rather than creating a second execution authority.
+
 ## NEXT_INTENDED_WORK
 
 1. Do not probe cognition repeatedly while ChatGPT is request-limited. Once requests are accepted again, stage a **distinct benign cleanup effect** (natural candidate: remove the approved canary marker), obtain explicit operator approval, and live-prove post-effect fresh continuation.
@@ -659,7 +666,7 @@ The package regression loads the real `.bob/module_graph.json`, verifies unique 
 - The bridge now has explicit sanitized `RATE_LIMITED` / `USAGE_LIMIT` UI classification and no automatic retry for those states, plus distinct `CHATGPT_SUBMISSION_FAILED:NO_CONVERSATION_TURN` classification after a bounded 12 s materialization window.
 - An already-executed module effect can enter restart-durable `CONTINUATION_BLOCKED` state. Its verified receipt/continuation is persisted before post-effect cognition, discoverable through read-only `/bob/continuations`, and resumable through `/bob/continuations/<continuation_id>/resume` without replaying the effect.
 - Remote Desktop Commander is currently online and current local/runtime state has been reconciled.
-- Self-development now has durable repo-bound queue/state, isolated execution/worktree binding, restart reconciliation, interactive-first pre-emption, durable checkpoint/revert/discard and fail-closed terminalization live-qualified. Background scheduling and the separate promotion gate remain unimplemented.
+- Self-development now has durable repo-bound queue/state, isolated execution/worktree binding, restart reconciliation, interactive-first pre-emption, durable checkpoint/revert/discard, fail-closed terminalization and a separate no-merge promotion-review gate live-qualified. Background scheduling remains unimplemented.
 - Knowledge Fabric is canon, not implementation: no item store/schema, maturity transitions, retrieval/ranking or compiler injection exists yet.
 - Project Instructions bootloader text is canonical/versioned, but the runtime does not yet verify that the configured ChatGPT Project actually contains the expected `BOB_COGNITION_CONTRACT_VERSION`.
 - Bob effect approvals are now restart-durable in a separate pending-effect store; operator approval still never survives as implicit execution authority because the candidate is re-previewed/re-hashed before execution and the durable pending record is consumed first.
@@ -667,7 +674,7 @@ The package regression loads the real `.bob/module_graph.json`, verifies unique 
 
 ## FIRST_ACTION
 
-Resume from pushed commit `9018a362a5f1add4decd46bb620ac15339f8b44e` or later live head after reconciling concurrent operator work. Do **not** send another cognition probe merely to retest submission. Phase 3.75 isolated lifecycle + interactive-first checkpoint/revert/discard is LIVE GREEN. Implement the **separate promotion gate** next: durable candidate proposal + fresh branch/canonical revalidation + explicit operator review, with merge/push/promotion execution remaining outside this gate. If later independent evidence shows cognition submissions are accepted again, return to the distinct benign cleanup-effect continuation proof before the genuine self-hosting architecture-repair canary rooted at `c5102a9aacce349c9e5aded950daaa8c3ce825b1`. No candidate may promote itself to canonical.
+Resume from pushed commit `9ea9b62` or later live head after reconciling concurrent operator work. Do **not** send another cognition probe merely to retest submission. Phase 3.75 isolated lifecycle + interactive-first checkpoint/revert/discard + separate promotion review is LIVE GREEN. Continue with **background scheduling/campaign control** using durable wall-clock budgets, interactive-first parking and existing repository coordinators; no second execution authority and no automatic promotion. If later independent evidence shows cognition submissions are accepted again, return to the distinct benign cleanup-effect continuation proof before the genuine self-hosting architecture-repair canary rooted at `c5102a9aacce349c9e5aded950daaa8c3ce825b1`. No candidate may promote itself to canonical.
 
 ## HARD_BLOCKERS
 
