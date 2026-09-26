@@ -436,7 +436,95 @@ class LocalCompanionTests(unittest.TestCase):
             patch.object(chatgpt_api_server, "detect_chatgpt_transient_ui_error", return_value=None),
             self.assertRaisesRegex(RuntimeError, "SEND_CONTROL_DISABLED"),
         ):
-            chatgpt_api_server.actuate_submission(Page(), object())
+            chatgpt_api_server.actuate_submission(
+                Page(),
+                object(),
+                timeout=0,
+            )
+
+    def test_submission_actuation_waits_for_temporarily_disabled_send_control(self):
+        class Button:
+            def __init__(self):
+                self.enabled_checks = 0
+
+            def is_visible(self):
+                return True
+
+            def is_enabled(self):
+                self.enabled_checks += 1
+                return self.enabled_checks >= 3
+
+            def evaluate(self, _expression):
+                return '<button data-testid="send-button"></button>'
+
+        class Items:
+            def __init__(self, button):
+                self.button = button
+
+            def all(self):
+                return [self.button]
+
+        class Page:
+            def __init__(self, button):
+                self.button = button
+
+            def locator(self, _selector):
+                return Items(self.button)
+
+        class Textarea:
+            def __init__(self):
+                self.pressed = []
+
+            def press(self, key):
+                self.pressed.append(key)
+
+        button = Button()
+        textarea = Textarea()
+        with (
+            patch.object(
+                chatgpt_api_server,
+                "detect_chatgpt_transient_ui_error",
+                return_value=None,
+            ),
+            patch.object(
+                chatgpt_api_server,
+                "detect_chatgpt_processing_ui",
+                return_value=False,
+            ),
+            patch.object(chatgpt_api_server.time, "sleep", return_value=None),
+        ):
+            actuator = chatgpt_api_server.actuate_submission(
+                Page(button),
+                textarea,
+                timeout=1,
+            )
+
+        self.assertEqual(actuator, "input_enter")
+        self.assertEqual(textarea.pressed, ["Enter"])
+        self.assertGreaterEqual(button.enabled_checks, 3)
+
+    def test_processing_status_is_detected_without_becoming_transient_error(self):
+        class Status:
+            def is_visible(self):
+                return True
+
+            def inner_text(self, timeout=None):
+                return "Våra system bearbetar den här begäran lite till innan de svarar."
+
+        class Items:
+            def count(self):
+                return 1
+
+            def nth(self, _index):
+                return Status()
+
+        class Page:
+            def locator(self, _selector):
+                return Items()
+
+        page = Page()
+        self.assertTrue(chatgpt_api_server.detect_chatgpt_processing_ui(page))
+        self.assertIsNone(chatgpt_api_server.detect_chatgpt_transient_ui_error(page))
 
     def test_submission_materialization_accepts_new_conversation_state(self):
         class OpenPage:

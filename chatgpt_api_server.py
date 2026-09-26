@@ -888,6 +888,40 @@ def global_message_copy_candidates(page):
     return fallbacks
 
 
+CHATGPT_STATUS_SELECTORS = (
+    '[role="alert"]',
+    '[role="status"]',
+    '[aria-live="assertive"]',
+    '[aria-live="polite"]',
+    '[data-sonner-toast]',
+    '[data-testid*="error"]',
+    '[class*="text-token-text-error"]',
+)
+
+CHATGPT_PROCESSING_UI_PATTERN = re.compile(
+    r"(?:our systems?[^\n]{0,80}process(?:ing)?[^\n]{0,80}request[^\n]{0,80}longer"
+    r"|v[åa]ra system[^\n]{0,80}bearbetar[^\n]{0,80}beg[äa]ran[^\n]{0,80}lite till)",
+    re.IGNORECASE,
+)
+
+
+def visible_chatgpt_status_text(page):
+    visible_text = []
+    for selector in CHATGPT_STATUS_SELECTORS:
+        try:
+            items = page.locator(selector)
+            for index in range(min(items.count(), 12)):
+                item = items.nth(index)
+                if not item.is_visible():
+                    continue
+                text = item.inner_text(timeout=1000)
+                if isinstance(text, str) and text.strip():
+                    visible_text.append(text.strip())
+        except Exception:
+            continue
+    return visible_text
+
+
 CHATGPT_TRANSIENT_UI_PATTERNS = (
     (
         "RATE_LIMITED",
@@ -912,29 +946,7 @@ def detect_chatgpt_transient_ui_error(page):
     Only alert/live-region/error surfaces are inspected. Raw UI text is never
     logged or returned so prompts/responses do not leak into diagnostics.
     """
-    selectors = (
-        '[role="alert"]',
-        '[role="status"]',
-        '[aria-live="assertive"]',
-        '[aria-live="polite"]',
-        '[data-sonner-toast]',
-        '[data-testid*="error"]',
-        '[class*="text-token-text-error"]',
-    )
-    visible_text = []
-    for selector in selectors:
-        try:
-            items = page.locator(selector)
-            for index in range(min(items.count(), 12)):
-                item = items.nth(index)
-                if not item.is_visible():
-                    continue
-                text = item.inner_text(timeout=1000)
-                if isinstance(text, str) and text.strip():
-                    visible_text.append(text.strip())
-        except Exception:
-            continue
-
+    visible_text = visible_chatgpt_status_text(page)
     if not visible_text:
         return None
 
@@ -943,6 +955,13 @@ def detect_chatgpt_transient_ui_error(page):
         if pattern.search(haystack):
             return category
     return None
+
+
+def detect_chatgpt_processing_ui(page):
+    visible_text = visible_chatgpt_status_text(page)
+    if not visible_text:
+        return False
+    return bool(CHATGPT_PROCESSING_UI_PATTERN.search("\n".join(visible_text)))
 
 
 def find_send_button(page):
@@ -978,13 +997,49 @@ def find_send_button(page):
     return None, saw_disabled
 
 
-def actuate_submission(page, textarea):
-    transient_ui_error = detect_chatgpt_transient_ui_error(page)
-    if transient_ui_error:
-        raise RuntimeError(f"CHATGPT_TRANSIENT_UI:{transient_ui_error}")
-    send_button, saw_disabled = find_send_button(page)
-    if send_button is None and saw_disabled:
-        raise RuntimeError("CHATGPT_SUBMISSION_FAILED:SEND_CONTROL_DISABLED")
+def wait_for_submission_control(page, *, timeout):
+    deadline = time.time() + max(0.0, float(timeout))
+    waiting_logged = False
+    last_processing = False
+    while True:
+        transient_ui_error = detect_chatgpt_transient_ui_error(page)
+        if transient_ui_error:
+            raise RuntimeError(f"CHATGPT_TRANSIENT_UI:{transient_ui_error}")
+
+        send_button, saw_disabled = find_send_button(page)
+        if send_button is not None:
+            return send_button
+
+        last_processing = detect_chatgpt_processing_ui(page)
+        if not saw_disabled and not last_processing:
+            return None
+
+        if time.time() >= deadline:
+            if last_processing:
+                raise RuntimeError(
+                    "CHATGPT_SUBMISSION_FAILED:PROCESSING_REQUEST"
+                )
+            raise RuntimeError(
+                "CHATGPT_SUBMISSION_FAILED:SEND_CONTROL_DISABLED"
+            )
+        if not waiting_logged:
+            logging.info(
+                "ChatGPT send control temporarily unavailable; "
+                "waiting for bounded submission readiness"
+            )
+            waiting_logged = True
+        time.sleep(0.25)
+
+
+def actuate_submission(page, textarea, *, timeout=None):
+    wait_for_submission_control(
+        page,
+        timeout=(
+            CHATGPT_SUBMISSION_TIMEOUT_SECONDS
+            if timeout is None
+            else timeout
+        ),
+    )
     # Enter is the last live-proven ChatGPT submission path. The visible send
     # control remains a readiness/preflight signal, but clicking it has produced
     # repeatable blank conversation-route transitions with no materialized turn.
