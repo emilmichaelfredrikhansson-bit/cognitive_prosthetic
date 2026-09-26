@@ -205,6 +205,26 @@ durable Bob state
 
 Fresh cognition is the default. Conversation reuse is not part of the canonical large-project architecture.
 
+### Long-running campaign cadence
+
+A long Bob work session is persistent at the campaign/work-item layer, not at the ChatGPT-conversation layer.
+
+Canonical runtime shape:
+
+~~~text
+hours-long campaign
+→ many short fresh cognition slices
+→ durable continuation/result after every slice
+→ deterministic effects and verification between slices as needed
+→ resume from Bob-owned state, never from chat-memory dependence
+~~~
+
+Bob should deliberately prefer relatively short individual cognition conversations. A slice should solve the next bounded semantic problem and then terminate; later cognition receives a newly compiled context from durable state. If more work remains, Bob creates another fresh slice rather than extending the existing conversation merely to preserve continuity.
+
+There is no canonical fixed slice count per campaign. A four/eight-hour job may require dozens or more fresh conversations. The invariant is that continuity, progress, decisions, evidence, effect lineage and resumability live outside the chat.
+
+This turns ChatGPT conversations into short-lived cognition workers while Bob remains the persistent process coordinator and memory substrate.
+
 ## Tool/reality continuation
 
 A cognition answer may discover that more reality is required.

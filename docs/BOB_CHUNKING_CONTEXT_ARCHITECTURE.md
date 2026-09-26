@@ -227,6 +227,22 @@ The canonical large-project rule is:
 
 A cognition thread is a disposable reasoning process, not durable state and not a resource Bob tries to extend.
 
+A long-running Bob job therefore MUST NOT be implemented as a long-running ChatGPT conversation. A persistent campaign is decomposed into many short-lived cognition slices. Each slice receives the smallest sufficient compiled world, performs one bounded reasoning step, and exits after returning a durable result, request/effect, blocker, or continuation checkpoint.
+
+Conceptually:
+
+```text
+persistent Bob campaign/work item
+→ short fresh cognition slice
+→ durable result/checkpoint
+→ short fresh cognition slice
+→ durable result/checkpoint
+→ ...
+→ deterministic verification / DONE
+```
+
+The campaign may live for hours or days while each individual ChatGPT conversation remains deliberately short. Increasing campaign duration therefore increases the number of bounded cognition slices, not the intended lifespan or transcript size of any one chat.
+
 Anything required by the next question must be recompiled from Bob's durable canon/state/evidence. A fresh thread must never depend on having seen the previous transcript.
 
 Therefore:
@@ -460,7 +476,7 @@ better chunking/context compilation
 
 Again, capability may compound; authority does not.
 
-## Five non-negotiable rules
+## Six non-negotiable rules
 
 > **1. No chat owns the project. Bob owns durable project state.**
 
@@ -470,6 +486,8 @@ Again, capability may compound; authority does not.
 
 > **4. One cognition question uses one fresh ChatGPT conversation; Bob carries continuity between questions.**
 
-> **5. Fresh cognition re-grounds in source truth when needed and checks material contract/module/product impact before completion; a separate review stage is optional, not mandatory.**
+> **5. Long-running work scales through many short-lived cognition slices with durable checkpoints/results, never by stretching one ChatGPT conversation across the campaign.**
+
+> **6. Fresh cognition re-grounds in source truth when needed and checks material contract/module/product impact before completion; a separate review stage is optional, not mandatory.**
 
 These are foundational Bob architecture, not optional optimizations to add only after context limits become painful.
