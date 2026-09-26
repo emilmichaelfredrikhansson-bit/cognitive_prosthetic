@@ -7,9 +7,26 @@ from unittest.mock import patch
 import bob_local
 import chatgpt_api_server
 from bob.driver import ChatGPTBridge
+from bob.errors import IdentityMismatch
 
 
 class LocalCompanionTests(unittest.TestCase):
+    def test_cleanup_does_not_mask_primary_failure_on_stale_process_identity(self):
+        class StaleSupervisor:
+            def __init__(self):
+                self.calls = []
+
+            def stop(self, process_id):
+                self.calls.append(process_id)
+                raise IdentityMismatch("stale child identity")
+
+        supervisor = StaleSupervisor()
+        self.assertFalse(
+            bob_local.stop_supervised_process(supervisor, "proc-stale")
+        )
+        self.assertEqual(supervisor.calls, ["proc-stale"])
+        self.assertFalse(bob_local.stop_supervised_process(supervisor, None))
+
     def test_env_parser_is_optional_and_bounded_to_key_value_lines(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp, ".env.local")

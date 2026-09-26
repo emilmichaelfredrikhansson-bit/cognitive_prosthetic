@@ -13,6 +13,7 @@ from urllib.parse import urlsplit
 
 import requests
 
+from bob.errors import BobError
 from bob.process_supervision import ProcessSupervisor
 from bob.workspaces import WorkspaceRegistry
 from profile_config import load_profile_path
@@ -35,6 +36,19 @@ def parse_env_file(path: Path) -> dict[str, str]:
         key, value = line.split("=", 1)
         values[key.strip()] = value.strip().strip('"').strip("'")
     return values
+
+
+def stop_supervised_process(
+    supervisor: ProcessSupervisor,
+    process_id: str | None,
+) -> bool:
+    if process_id is None:
+        return False
+    try:
+        supervisor.stop(process_id)
+    except BobError:
+        return False
+    return True
 
 
 def is_loopback_host(value: str) -> bool:
@@ -360,12 +374,7 @@ def main() -> int:
     finally:
         if not leave_running:
             for process_id in (bridge_id, bob_api_id):
-                if process_id is None:
-                    continue
-                try:
-                    supervisor.stop(process_id)
-                except ProtocolError:
-                    pass
+                stop_supervised_process(supervisor, process_id)
             supervisor.reap_completed()
 
 
