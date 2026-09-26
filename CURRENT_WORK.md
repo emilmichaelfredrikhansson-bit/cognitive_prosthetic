@@ -778,23 +778,24 @@ The package regression loads the real `.bob/module_graph.json`, verifies unique 
 9. Close the autonomous execution loop completely: `operator task -> Bob-owned cognition -> bounded effect -> deterministic verification -> durable outcome/digest`, including multi-round work and clean failure/recovery semantics.
 10. Make ordinary Bob chat route through the correct module/context path by default, with persistent project/conversation continuity owned by Bob rather than by the transient ChatGPT conversation.
 11. Finish the Bob-first application surface so Projects, conversations, work items, workers, approvals, long-running campaigns, scheduler state, failures/recovery and results can all be operated from Bob without opening ChatGPT as the primary UI.
-12. Qualify long-lived work: bounded four/eight-hour campaigns, checkpoint/resume, interactive-first pre-emption, restart recovery and unattended multi-cycle execution.
-13. Implement and live-qualify `BOB_SCHEDULER_V1` so recurring/future work is Bob-owned and no longer depends on native ChatGPT Scheduled Tasks for normal operation.
-14. Qualify cross-project execution as a Bob capability while keeping repository-scoped authority/ledgers/worktrees. External projects may be bound for infrastructure qualification if strictly necessary, but no substantive RE development begins before the replacement gate below.
-15. **FULL_REPLACEMENT_GATE:** Bob is considered ready to replace ChatGPT as the primary working environment only when the operator can use Bob for normal conversations and project work; Bob persistently owns context/state; cognition routing and repo/tool execution are reliable; longer/scheduled work survives restart; failures are surfaced/recoverable without losing continuity; and normal workflows do not require a separate ChatGPT development chat.
+12. **Implement `BOB_LIVE_WORK_PROGRESS_V1`.** Bob must expose runtime-derived current activity, bounded verified progress (`completed/planned` plus percentage only when a real denominator exists), heartbeat/last verified activity, explicit WORKING/WAITING/BLOCKED/NEEDS_YOU/DONE state, concrete wait/block reason and remaining planned steps. Open-ended work must report progress for the current bounded tranche rather than inventing an overall percentage. This must be derived from durable Bob work/runtime state, not ChatGPT self-report, so the operator can always distinguish active work from a hang.
+13. Qualify long-lived work: bounded four/eight-hour campaigns, checkpoint/resume, interactive-first pre-emption, restart recovery and unattended multi-cycle execution.
+14. Implement and live-qualify `BOB_SCHEDULER_V1` so recurring/future work is Bob-owned and no longer depends on native ChatGPT Scheduled Tasks for normal operation.
+15. Qualify cross-project execution as a Bob capability while keeping repository-scoped authority/ledgers/worktrees. External projects may be bound for infrastructure qualification if strictly necessary, but no substantive RE development begins before the replacement gate below.
+16. **FULL_REPLACEMENT_GATE:** Bob is considered ready to replace ChatGPT as the primary working environment only when the operator can use Bob for normal conversations and project work; Bob persistently owns context/state; cognition routing and repo/tool execution are reliable; longer/scheduled work survives restart; failures are surfaced/recoverable without losing continuity; and normal workflows do not require a separate ChatGPT development chat.
 
 ### Priority C — Resale Engine after FULL_REPLACEMENT_GATE
 
-16. Only after `FULL_REPLACEMENT_GATE` is live-green, onboard workspace `RE` for `emilmichaelfredrikhansson-bit/resale-engine`, repository ID `1365744245`, canonical/default branch `main`, with its own repository-scoped coordinator, ledger and worktree root.
-17. Initial RE authority remains shadow/development only: branch writes and deterministic tests may be authorized; no automated purchase, bidding, auction timing, buyer/seller messaging, money-moving action, material spend, production mutation or automatic promotion. `BUY_CANDIDATE` remains advisory only.
-18. RE then becomes the first external production proving ground for the already-complete Bob environment: first builder work, then separate read-only/shadow task-worker work, then a closed task -> builder -> verify -> rerun loop. No separate RE ChatGPT development chat should be needed.
-19. Once RE is proven from inside Bob, use that pattern for later SL/AB onboarding. Explicit local repository bindings remain mandatory.
+17. Only after `FULL_REPLACEMENT_GATE` is live-green, onboard workspace `RE` for `emilmichaelfredrikhansson-bit/resale-engine`, repository ID `1365744245`, canonical/default branch `main`, with its own repository-scoped coordinator, ledger and worktree root.
+18. Initial RE authority remains shadow/development only: branch writes and deterministic tests may be authorized; no automated purchase, bidding, auction timing, buyer/seller messaging, money-moving action, material spend, production mutation or automatic promotion. `BUY_CANDIDATE` remains advisory only.
+19. RE then becomes the first external production proving ground for the already-complete Bob environment: first builder work, then separate read-only/shadow task-worker work, then a closed task -> builder -> verify -> rerun loop. No separate RE ChatGPT development chat should be needed.
+20. Once RE is proven from inside Bob, use that pattern for later SL/AB onboarding. Explicit local repository bindings remain mandatory.
 
 ### Deferred but still intended
 
-20. Implement Knowledge Fabric V1 and richer reusable result/pattern distillation after full replacement unless it becomes necessary to satisfy the replacement gate; knowledge never grants authority.
-21. Product-vision/bootstrap and reusable module/template extraction remain follow-up work where they are not required for the replacement gate.
-22. DigitalOcean/mobile persistence remains V2 and is not a prerequisite for local full replacement.
+21. Implement Knowledge Fabric V1 and richer reusable result/pattern distillation after full replacement unless it becomes necessary to satisfy the replacement gate; knowledge never grants authority.
+22. Product-vision/bootstrap and reusable module/template extraction remain follow-up work where they are not required for the replacement gate.
+23. DigitalOcean/mobile persistence remains V2 and is not a prerequisite for local full replacement.
 
 ## OPEN_FINDINGS
 

@@ -178,6 +178,23 @@ Example:
 
 The underlying evidence, work graph and technical logs may be available, but they should not dominate the default conversation.
 
+### Live work visibility
+
+Long-running or multi-step work must not look indistinguishable from a hung process. Bob should expose a compact live progress surface derived from durable runtime/work state, not model guesswork.
+
+For the currently bounded work unit, show at minimum:
+
+- the current step/activity;
+- verified progress as completed/planned work units, with a percentage only when a bounded denominator actually exists;
+- a heartbeat / last verified activity timestamp;
+- explicit WORKING, WAITING, BLOCKED, NEEDS_YOU or DONE state;
+- when waiting or blocked, the concrete dependency/reason;
+- the small set of remaining planned steps.
+
+Progress percentages must be evidence-based. Bob must never invent a percent-complete estimate for open-ended work. Open-ended campaigns should instead expose progress for the current bounded tranche/work package and create another tranche when needed.
+
+This status surface is a runtime/UI responsibility. ChatGPT cognition may explain work, but it must not be the source of truth for whether work is alive or how much verified work is complete.
+
 ## 10. Progressive disclosure, not black-boxing
 
 Simplicity must not mean hiding truth.
