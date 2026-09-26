@@ -154,7 +154,8 @@
       "producers": [],
       "consumers": [
         "BOB_WORKTREE_COORDINATION",
-        "BOB_SELF_DEVELOPMENT_SANDBOX"
+        "BOB_SELF_DEVELOPMENT_SANDBOX",
+        "BOB_SELF_DEVELOPMENT_PROMOTION"
       ],
       "invariants": [
         "At most 3 active Bob runs occupy worker slots per repository ledger.",
@@ -184,7 +185,8 @@
       ],
       "consumers": [
         "BOB_SELF_DEVELOPMENT_EXECUTION",
-        "BOB_SELF_DEVELOPMENT_SANDBOX"
+        "BOB_SELF_DEVELOPMENT_SANDBOX",
+        "BOB_SELF_DEVELOPMENT_PROMOTION"
       ],
       "invariants": [
         "Coordinator verifies local Git origin and bound canonical ref before opening repository state.",
@@ -211,7 +213,8 @@
       "consumers": [
         "BOB_RUNTIME_ORCHESTRATION",
         "BOB_SELF_DEVELOPMENT_EXECUTION",
-        "BOB_SELF_DEVELOPMENT_SANDBOX"
+        "BOB_SELF_DEVELOPMENT_SANDBOX",
+        "BOB_SELF_DEVELOPMENT_PROMOTION"
       ],
       "invariants": [
         "Queue state is bound to exact repository identity and canonical ref.",
@@ -240,7 +243,8 @@
       ],
       "consumers": [
         "BOB_RUNTIME_ORCHESTRATION",
-        "BOB_SELF_DEVELOPMENT_SANDBOX"
+        "BOB_SELF_DEVELOPMENT_SANDBOX",
+        "BOB_SELF_DEVELOPMENT_PROMOTION"
       ],
       "invariants": [
         "Every claimed item binds at most one lane=selfdev execution run with matching selfdev_item_id authority metadata.",
@@ -283,6 +287,37 @@
         "Revert restores an exact same-run checkpoint and verifies resulting HEAD plus clean worktree state.",
         "Discard restores the isolated run to its base SHA, cancels execution, removes only its worktree and records promotion_authority=NONE.",
         "Terminal interactive work may resume the exact parked selfdev run through ordinary lease/capacity arbitration."
+      ],
+      "status": "WORKING"
+    },
+    {
+      "id": "BOB_SELF_DEVELOPMENT_PROMOTION",
+      "purpose": "Persist exact self-development candidate review proposals and stale-state revalidation without performing canonical promotion.",
+      "source_paths": [
+        "bob/selfdev_promotion.py",
+        "bob/selfdev_promotion_api.py"
+      ],
+      "test_paths": [
+        "tests/test_selfdev_promotion.py"
+      ],
+      "contract_paths": [
+        "docs/BOB_SELF_DEVELOPMENT_PROMOTION_V1.md"
+      ],
+      "producers": [
+        "BOB_EXECUTION_LEDGER",
+        "BOB_WORKTREE_COORDINATION",
+        "BOB_SELF_DEVELOPMENT_STATE",
+        "BOB_SELF_DEVELOPMENT_EXECUTION"
+      ],
+      "consumers": [
+        "BOB_RUNTIME_ORCHESTRATION"
+      ],
+      "invariants": [
+        "Promotion proposals require QUALIFIED self-development with exact no-promotion run/branch/head receipts.",
+        "Candidate head, qualification evidence and current canonical SHA are freshly revalidated before approval.",
+        "Operator approval binds an exact candidate/canonical pair and records merge_authority=NONE.",
+        "Moved candidates or canonical ancestry changes fail closed as stale or rebase/reverify required.",
+        "The promotion gate never merges, pushes, opens PRs, changes integration state or widens provider authority."
       ],
       "status": "WORKING"
     },
