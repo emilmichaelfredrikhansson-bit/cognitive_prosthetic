@@ -7,6 +7,9 @@ from pathlib import Path
 from flask import Flask, jsonify, request, send_from_directory
 from bob.driver import BobRuntime
 from bob.errors import BobError
+from bob.selfdev_checkpoints import SelfDevelopmentCheckpoints
+from bob.selfdev_control import SelfDevelopmentControl
+from bob.selfdev_control_api import create_selfdev_control_blueprint
 from bob.selfdev_execution import SelfDevelopmentExecution
 from bob.worktree_coordination import RepositoryCoordinatorRegistry
 
@@ -38,6 +41,22 @@ if runtime.selfdev_queue is None:
 selfdev_execution = SelfDevelopmentExecution(
     runtime.selfdev_queue,
     execution_registry.coordinator_for_workspace("BOB"),
+)
+selfdev_checkpoints = SelfDevelopmentCheckpoints(
+    os.environ.get("BOB_SELFDEV_CHECKPOINT_PATH")
+    or BASE_DIR / ".bob" / "runtime" / "selfdev_checkpoints.json",
+    runtime.selfdev_queue,
+    execution_registry.coordinator_for_workspace("BOB"),
+)
+selfdev_control = SelfDevelopmentControl(
+    selfdev_execution,
+    selfdev_checkpoints,
+)
+app.register_blueprint(
+    create_selfdev_control_blueprint(
+        selfdev_execution,
+        selfdev_checkpoints,
+    )
 )
 
 
@@ -225,19 +244,32 @@ def execution_create_run():
     workspace_code = str(data["workspace"])
     workspace = runtime.registry.get(workspace_code)
     execution = execution_registry.coordinator_for_workspace(workspace_code)
+    lane = str(data.get("lane") or "interactive")
+    authority = {
+        "workspace": workspace.code,
+        "repository": workspace.github_repository,
+        "repository_id": workspace.github_repository_id,
+        "effects": dict(workspace.effects),
+    }
+    if lane == "interactive":
+        result = selfdev_control.create_interactive(
+            execution,
+            goal=str(data["goal"]),
+            workspace=workspace_code,
+            base_ref=str(data["base_ref"]),
+            leases=[str(item) for item in (data.get("leases") or [])],
+            depends_on=[str(item) for item in (data.get("depends_on") or [])],
+            authority=authority,
+        )
+        return jsonify({"success": True, **result})
     result = execution.create_run(
         goal=str(data["goal"]),
         workspace=workspace_code,
         base_ref=str(data["base_ref"]),
         leases=[str(item) for item in (data.get("leases") or [])],
         depends_on=[str(item) for item in (data.get("depends_on") or [])],
-        lane=str(data.get("lane") or "interactive"),
-        authority={
-            "workspace": workspace.code,
-            "repository": workspace.github_repository,
-            "repository_id": workspace.github_repository_id,
-            "effects": dict(workspace.effects),
-        },
+        lane=lane,
+        authority=authority,
     )
     return jsonify({"success": True, "run": result})
 
@@ -345,7 +377,13 @@ def execution_integrated(run_id):
         run_id,
         canonical_ref=None if data.get("canonical_ref") in (None, "") else str(data["canonical_ref"]),
     )
-    return jsonify({"success": True, "run": result})
+    release = None
+    if (
+        result.get("lane") == "interactive"
+        and execution.repository_id == selfdev_execution.execution.repository_id
+    ):
+        release = selfdev_control.resume_after_interactive(run_id)
+    return jsonify({"success": True, "run": result, "preemption_release": release})
 
 
 @app.post("/bob/execution/runs/<run_id>/cancel")
@@ -356,7 +394,13 @@ def execution_cancel(run_id):
         run_id,
         reason=str(data.get("reason") or "cancelled"),
     )
-    return jsonify({"success": True, "run": result})
+    release = None
+    if (
+        result.get("lane") == "interactive"
+        and execution.repository_id == selfdev_execution.execution.repository_id
+    ):
+        release = selfdev_control.resume_after_interactive(run_id)
+    return jsonify({"success": True, "run": result, "preemption_release": release})
 
 
 @app.post("/bob/relay/start")

@@ -153,7 +153,8 @@
       ],
       "producers": [],
       "consumers": [
-        "BOB_WORKTREE_COORDINATION"
+        "BOB_WORKTREE_COORDINATION",
+        "BOB_SELF_DEVELOPMENT_SANDBOX"
       ],
       "invariants": [
         "At most 3 active Bob runs occupy worker slots per repository ledger.",
@@ -161,6 +162,7 @@
         "One run has at most one RUNNING cognition.",
         "Every cognition has stable run_id/cognition_id/request_id correlation.",
         "Integration is FIFO, single-owner per repo and stale candidates require rebase/reverification.",
+        "PARKED selfdev runs hold neither worker slots nor semantic leases and can resume only through ordinary queue arbitration.",
         "Ledger state never grants effect authority or performs promotion."
       ],
       "status": "WORKING"
@@ -181,7 +183,8 @@
         "BOB_EXECUTION_LEDGER"
       ],
       "consumers": [
-        "BOB_SELF_DEVELOPMENT_EXECUTION"
+        "BOB_SELF_DEVELOPMENT_EXECUTION",
+        "BOB_SELF_DEVELOPMENT_SANDBOX"
       ],
       "invariants": [
         "Coordinator verifies local Git origin and bound canonical ref before opening repository state.",
@@ -207,7 +210,8 @@
       "producers": [],
       "consumers": [
         "BOB_RUNTIME_ORCHESTRATION",
-        "BOB_SELF_DEVELOPMENT_EXECUTION"
+        "BOB_SELF_DEVELOPMENT_EXECUTION",
+        "BOB_SELF_DEVELOPMENT_SANDBOX"
       ],
       "invariants": [
         "Queue state is bound to exact repository identity and canonical ref.",
@@ -235,7 +239,8 @@
         "BOB_WORKTREE_COORDINATION"
       ],
       "consumers": [
-        "BOB_RUNTIME_ORCHESTRATION"
+        "BOB_RUNTIME_ORCHESTRATION",
+        "BOB_SELF_DEVELOPMENT_SANDBOX"
       ],
       "invariants": [
         "Every claimed item binds at most one lane=selfdev execution run with matching selfdev_item_id authority metadata.",
@@ -244,6 +249,40 @@
         "Ambiguous or conflicting queue/run bindings fail closed.",
         "Bound items can finish only after execution is terminal; QUALIFIED requires explicit verification and a preserved cancelled branch receipt.",
         "Self-development execution never integrates or promotes a candidate and records promotion_authority=NONE."
+      ],
+      "status": "WORKING"
+    },
+    {
+      "id": "BOB_SELF_DEVELOPMENT_SANDBOX",
+      "purpose": "Own reversible self-development checkpoints/discard and safe interactive-first orchestration without canonical promotion.",
+      "source_paths": [
+        "bob/selfdev_checkpoints.py",
+        "bob/selfdev_control.py",
+        "bob/selfdev_control_api.py"
+      ],
+      "test_paths": [
+        "tests/test_selfdev_checkpoints.py",
+        "tests/test_selfdev_control.py"
+      ],
+      "contract_paths": [
+        "docs/BOB_SELF_DEVELOPMENT_CHECKPOINTS_V1.md"
+      ],
+      "producers": [
+        "BOB_EXECUTION_LEDGER",
+        "BOB_WORKTREE_COORDINATION",
+        "BOB_SELF_DEVELOPMENT_STATE",
+        "BOB_SELF_DEVELOPMENT_EXECUTION"
+      ],
+      "consumers": [
+        "BOB_RUNTIME_ORCHESTRATION"
+      ],
+      "invariants": [
+        "Interactive pre-emption requires a clean durable checkpoint before a selfdev lease is parked.",
+        "Dirty or cognition-busy selfdev work fails closed and keeps its lease instead of being silently discarded.",
+        "Checkpoint/revert/discard operate only on the exact bound Bob-owned selfdev run worktree and never on canonical checkout state.",
+        "Revert restores an exact same-run checkpoint and verifies resulting HEAD plus clean worktree state.",
+        "Discard restores the isolated run to its base SHA, cancels execution, removes only its worktree and records promotion_authority=NONE.",
+        "Terminal interactive work may resume the exact parked selfdev run through ordinary lease/capacity arbitration."
       ],
       "status": "WORKING"
     },

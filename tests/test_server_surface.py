@@ -41,6 +41,39 @@ class LocalServerSurfaceTests(unittest.TestCase):
             "/bob/self-development/items/<item_id>/finish",
             rules,
         )
+        self.assertIn("/bob/self-development/checkpoints", rules)
+        self.assertIn(
+            "/bob/self-development/items/<item_id>/checkpoints",
+            rules,
+        )
+        self.assertIn(
+            "/bob/self-development/items/<item_id>/checkpoints/<checkpoint_id>/revert",
+            rules,
+        )
+        self.assertIn(
+            "/bob/self-development/items/<item_id>/discard",
+            rules,
+        )
+        self.assertIn(
+            "/bob/self-development/items/<item_id>/resume-preempted",
+            rules,
+        )
+
+    def test_selfdev_control_bad_payloads_fail_as_protocol_errors(self):
+        client = bob_api_server.app.test_client()
+        missing_reason = client.post(
+            "/bob/self-development/items/not-an-item/discard",
+            json={},
+        )
+        self.assertEqual(missing_reason.status_code, 400)
+        self.assertEqual(missing_reason.get_json()["type"], "ProtocolError")
+
+        bad_verification = client.post(
+            "/bob/self-development/items/not-an-item/checkpoints",
+            json={"verification": "not-an-object"},
+        )
+        self.assertEqual(bad_verification.status_code, 400)
+        self.assertEqual(bad_verification.get_json()["type"], "ProtocolError")
 
     def test_execution_coordination_routes_are_exposed(self):
         rules = {rule.rule for rule in bob_api_server.app.url_map.iter_rules()}
